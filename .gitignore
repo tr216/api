@@ -1,3 +1,10 @@
+log/
+downloads/
+config.json
+config_local.json
+api_run_local.bat
+apidoc.json
+
 # Logs
 logs
 *.log
