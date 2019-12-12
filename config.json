@@ -1,14 +1,15 @@
 {
   "httpserver":{
-  	"port" : 5000
+  	"port" : 3500
   },
-  "api": {
-  	"url":"http://localhost:3500/api/v1"
+  "host":{
+    "url" : "http://localhost:3500"
   },
   "mongodb": {
-    "address":"mongodb://localhost:27017/tr216com"
+  	"address":"mongodb://localhost:27017/etuliaportal",
+  	"userAddress":"mongodb://localhost:27017/"
   },
-  "pagination":{
-  	"pageSize":10
+  "connector_service":{
+  	"port":33216
   }
 }
