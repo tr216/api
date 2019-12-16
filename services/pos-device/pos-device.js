@@ -105,7 +105,7 @@ function scheduler(){
 
 
 setTimeout(()=>{
-	scheduler();
+	//scheduler(); qwerty
  // },60000*30);
  
 },10000*1);

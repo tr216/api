@@ -13,8 +13,8 @@ module.exports=function(conn){
         region:{ type: String, trim:true, default: ''},
         district:{ type: String, trim:true, default: ''},
         country:{
-            code:{ type: String},
-            name:{ type: String, trim:true, default: ''}
+            code:{ type: String, default: 'tr'},
+            name:{ type: String, trim:true, default: 'Türkiye'}
         },
         passive:{type:Boolean , default:false},
         createdDate: { type: Date,default: Date.now},

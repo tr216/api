@@ -2,7 +2,7 @@ module.exports=function(conn){
     var schema = mongoose.Schema({
         ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
         eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'e_integrators', required: true},
-        profileID: { type: String,default: '', trim:true, enum:['TEMELFATURA','TICARIFATURA','IHRACAT','YOLCUBERABERFATURA','EARSIVFATURA'], required: true},
+        profileId: { type: String,default: '', trim:true, enum:['TEMELFATURA','TICARIFATURA','IHRACAT','YOLCUBERABERFATURA','EARSIVFATURA'], required: true},
         id: { type: String, trim:true, default: '',
             validate: {
               validator: function(v) {
@@ -18,10 +18,10 @@ module.exports=function(conn){
         uuid: { type: String, trim:true, default: ''},
         issueDate: { type: String,  required: [true,'Fatura tarihi gereklidir']},
         issueTime: { type: String,default: '00:00:00.0000000+03:00'},
-        invoiceType: { type: String,default: '', trim:true, enum:['SATIS','IADE','TEVKIFAT','ISTISNA','OZELMATRAH','IHRACKAYITLI'],
+        invoiceTypeCode: { type: String,default: '', trim:true, enum:['SATIS','IADE','TEVKIFAT','ISTISNA','OZELMATRAH','IHRACKAYITLI'],
             validate: {
               validator: function(v) {
-                if(this.ioType==0 && (this.profileID=='IHRACAT' || this.profileID=='YOLCUBERABERFATURA') && v!='ISTISNA'){
+                if(this.ioType==0 && (this.profileId=='IHRACAT' || this.profileId=='YOLCUBERABERFATURA') && v!='ISTISNA'){
                     return false;
                 }else{
                     return true;
@@ -29,6 +29,10 @@ module.exports=function(conn){
               },
               message: 'Senaryo: IHRACAT veya YOLCUBERABERFATURA oldugunda fatura turu ISTISNA olarak secilmelidir.'
             }
+        },
+        invoicePeriod: {
+            startDate: { type: String },
+            endDate: { type: String }
         },
         note:[{ type: String, trim:true, default: ''}],
         documentCurrencyCode:{ type: String, trim:true, default: 'TRY'},
@@ -45,14 +49,25 @@ module.exports=function(conn){
             id:{ type: String, trim:true, default: ''},
             issueDate:{ type: String, trim:true, default: ''}
         }],
-        accountingSupplierParty: {
-            Party: {type: mongoose.Schema.Types.ObjectId, ref: 'parties' },
-            AgentParty: {type: mongoose.Schema.Types.ObjectId, ref: 'parties'}
-        },
-        accountingCustomerParty: {
-            Party: {type: mongoose.Schema.Types.ObjectId, ref: 'parties' },
-            AgentParty: {type: mongoose.Schema.Types.ObjectId, ref: 'parties'}
-        },
+        additionalDocumentReference:[{ 
+            id:{ type: String, trim:true, default: ''},
+            issueDate:{ type: String, trim:true, default: ''},
+            documentTypeCode:{ type: String, trim:true, default: ''},
+            documentType:{ type: String, trim:true, default: ''},
+            documentDescription:[{ type: String, trim:true, default: ''}],
+            attachment: {type: Object},
+            validityPeriod:{ type:Object }
+        }],
+        accountingSupplierParty:{},
+        accountingCustomerParty:{},
+        // accountingSupplierParty: {
+        //     party: {type: mongoose.Schema.Types.ObjectId, ref: 'parties' },
+        //     agentParty: {type: mongoose.Schema.Types.ObjectId, ref: 'parties'}
+        // },
+        // accountingCustomerParty: {
+        //     Party: {type: mongoose.Schema.Types.ObjectId, ref: 'parties' },
+        //     AgentParty: {type: mongoose.Schema.Types.ObjectId, ref: 'parties'}
+        // },
         pricingExchangeRate:{ 
             sourceCurrencyCode  :{ type: String,default: 'TRY'},
             targetCurrencyCode  :{ type: String,default: 'TRY'},
@@ -107,31 +122,36 @@ module.exports=function(conn){
                 name:{type: String, default: ''},
                 additionalItemIdentification:{type: String, default: ''},
                 brandName:{type: String, default: ''},
-                buyersItemIdentification:{type: String, default: ''},
-                sellersItemIdentification:{type: String, default: ''},
-                manufacturersItemIdentification:{type: String, default: ''},
-                commodityClassification:{type: String, default: ''},
+                buyersItemIdentification:{id:{type: String, default: ''}},
+                sellersItemIdentification:{id:{type: String, default: ''}},
+                manufacturersItemIdentification:{id:{type: String, default: ''}},
+                commodityClassification:[
+                    { 
+                        itemClassificationCode:{type: String, default: ''}
+                    }
+                ],
                 modelName:{type: String, default: ''},
                 keyword:{type: String, default: ''},
                 description:{type: String, default: ''},
-                itemInstance:[{
-                    additionalItemProperty:[{
-                        id:{type: String, default: ''},
-                        name:{type: String, default: ''},
-                        nameCode:{type: String, default: ''},
-                        testMethod:{type: String, default: ''},
-                        value:{type: Number, default: 0},
-                        valueQuantity:{type: Number, default: 0},
-                        valueQualifier:[],
-                        importanceCode:{type: String, default: ''},
-                        listValue:[],
-                        importanceCode:{type: String, default: ''},
-                        period:{type: String, default: ''},
-                        itemPropertyGroup:[],
-                        dimension:{type: String, default: ''},
-                        itemPropertyRange:{}
-                    }]
-                }]
+                itemInstance:[]
+                // itemInstance:[{
+                //     additionalItemProperty:[{
+                //         id:{type: String, default: ''},
+                //         name:{type: String, default: ''},
+                //         nameCode:{type: String, default: ''},
+                //         testMethod:{type: String, default: ''},
+                //         value:{type: Number, default: 0},
+                //         valueQuantity:{type: Number, default: 0},
+                //         valueQualifier:[],
+                //         importanceCode:{type: String, default: ''},
+                //         listValue:[],
+                //         importanceCode:{type: String, default: ''},
+                //         period:{type: String, default: ''},
+                //         itemPropertyGroup:[],
+                //         dimension:{type: String, default: ''},
+                //         itemPropertyRange:{}
+                //     }]
+                // }]
                  
             },
             price : {

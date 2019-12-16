@@ -9,31 +9,31 @@ var optionExample={
 var BasicHttpBinding = require('wcf.js').BasicHttpBinding;
 var Proxy = require('wcf.js').Proxy;
 
-function generateRequestMessage(funcName,query){
+function generateRequestMessage(funcName,query,isQuery=true){
     var message =  '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">' +
                      '<s:Header />' +
                        '<s:Body>' +
                          '<s:' + funcName + ' xmlns:s="http://tempuri.org/">'
-
-    message +='<s:query PageIndex="' + (query.pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 20) + '">';
-    
-    for(let k in query){
-        if(k!='pageIndex' && k!='PageIndex' && k!='pageSize' && k!='PageSize'){
+    if(isQuery){
+        message +='<s:query PageIndex="' + (query.pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 20) + '">';
+        for(let k in query){
+            if(k!='pageIndex' && k!='PageIndex' && k!='pageSize' && k!='PageSize'){
+                message +="<s:" + k + ">" + query[k].toString() + "</s:" + k +">";
+            }
+        }
+        message +='</s:query>';
+    }else{
+        for(let k in query){
             message +="<s:" + k + ">" + query[k].toString() + "</s:" + k +">";
         }
     }
-
-
-    message +='</s:query>';
-    
-
     message +='</s:' + funcName + '>';
-    
-
     message +='</s:Body>' +
     '</s:Envelope>'
     return message;
 }
+
+
 
 function seperateItems(response){
     var items=[]
@@ -72,6 +72,7 @@ function seperateInvoice(items){
 *
 *  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined, Return, EArchivedCanceled, Error
 */
+
 exports.getInboxInvoiceList = function (options,query,callback) {
     var binding = new BasicHttpBinding(
         { SecurityMode: "TransportWithMessageCredential"
@@ -83,19 +84,13 @@ exports.getInboxInvoiceList = function (options,query,callback) {
     proxy.ClientCredentials.Username.Password =options.password ;
 
     var message=generateRequestMessage('GetInboxInvoiceList',query);
-    //console.log('message:',message);
-    // var message='<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header />' +
-    //     '<s:Body><s:GetInboxInvoiceList xmlns:s="http://tempuri.org/" >' + 
-    //     '<s:query PageIndex="' + query.PageIndex + '" PageSize="10"><s:ExecutionStartDate>2019-01-01T00:00:00.000Z</s:ExecutionStartDate><s:ExecutionEndDate>2019-10-01T23:59:59.000Z</s:ExecutionEndDate>' +
-    //     '<s:pageIndex>' + query.PageIndex + '</s:pageIndex><s:pageSize>10</s:pageSize><s:OnlyNewestInvoices>false</s:OnlyNewestInvoices><s:SetTaken>false</s:SetTaken>' +
-    //     '</s:query></s:GetInboxInvoiceList>'+
-    //     '</s:Body></s:Envelope>';
+    
     
     proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {
-        // var fileName=path.join(__dirname,'../../../../temp','GetInboxInvoiceList');
+        var fileName=path.join(__dirname,'../../../../temp','GetInboxInvoiceList');
 
-        // fs.writeFileSync(fileName + '.xml', response,'utf8');
-        // fs.writeFileSync(fileName+'-ctx.json', JSON.stringify(ctx,null,2),'utf8');
+        fs.writeFileSync(fileName + '.xml', response,'utf8');
+        
 
         if(ctx.error!=undefined){
             if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
@@ -105,7 +100,7 @@ exports.getInboxInvoiceList = function (options,query,callback) {
         try{ 
             mrutil.xml2json(response,(err,jsObject)=>{
                 if(!err){
-                    // callback({success:true,data:jsObject});
+                    fs.writeFileSync(fileName+'.json', JSON.stringify(jsObject,null,2),'utf8');
                     if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
                         var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
 
@@ -344,6 +339,75 @@ exports.getInboxInvoices = function (options,query,callback) {
     
 }; 
 
+/**
+* @query :{ invoiceId: String}
+*/
+exports.getInboxInvoice = function (options,invoiceId,callback) {
+    var binding = new BasicHttpBinding(
+        { SecurityMode: "TransportWithMessageCredential"
+        , MessageClientCredentialType: "UserName"
+    })
+    var proxy = new Proxy(binding, options.url);
+    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+    proxy.ClientCredentials.Username.Username =options.username;
+    proxy.ClientCredentials.Username.Password =options.password ;
+
+    var message=generateRequestMessage('GetInboxInvoice',{invoiceId:invoiceId},false);
+
+    proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {
+        var fileName=path.join(__dirname,'../../../../temp','GetInboxInvoice');
+        
+        fs.writeFileSync(fileName + '.xml', response,'utf8');
+        // fs.writeFileSync(fileName+'-ctx', JSON.stringify(ctx,null,2),'utf8');
+        
+        if(ctx.error!=undefined){
+            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+
+            return callback({code:ctx.error['code'],message:ctx.error['code']});
+        }
+        try{ 
+            mrutil.xml2json2(response,(err,jsObject)=>{
+                if(!err){
+                    // fs.writeFileSync(fileName + '.xml', response,'utf8');
+                    fs.writeFileSync(fileName + '.json', JSON.stringify(jsObject,null,2),'utf8');
+                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
+
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+
+                    var result={
+                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceResponse'][0]['GetInboxInvoiceResult'][0]['$'].IsSucceded=='true',
+                        doc:{invoice:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['Value']['Invoice']}
+                    }
+                    // if(!result.IsSucceded){
+                    //     return callback({code:'Basarisiz',message:'Uyumsoft getInboxInvoice Basarisiz'});
+                    // }
+                    
+                    // if(result.doc.invoice.UBLExtensions!=undefined){
+                    //     result.doc.invoice.UBLExtensions=undefined;
+                    //     delete result.doc.invoice.UBLExtensions;
+                    // }
+                    // if(result.doc.invoice.AdditionalDocumentReference!=undefined){
+
+                    // }
+                    callback(null,result);
+                    
+                    
+                }else{
+                    callback(err);
+                }
+            });
+
+        }catch(err){
+            callback(err);
+        }
+
+        
+        
+    });
+    
+}; 
 
 
 
