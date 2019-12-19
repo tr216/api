@@ -15,13 +15,29 @@ module.exports=function(conn){
         },
         websiteURI:{ type: String, trim:true, default: ''},
         partyIdentification:[{
-            schemeID:{ type: String, trim:true, default: 'VKN'},
+            schemeId:{ type: String, trim:true, default: 'VKN'},
             id:{ type: String, trim:true, default: ''}
         }],
         partyName:{
             name:{ type: String, trim:true, default: ''}
         },
-        postalAddress:{type: mongoose.Schema.Types.ObjectId, ref: 'address'},
+        postalAddress:{
+            room:{ type: String, trim:true, default: ''},
+            streetName:{ type: String, trim:true, default: ''},
+            blockName:{ type: String, trim:true, default: ''},
+            buildingName:{ type: String, trim:true, default: ''},
+            buildingNumber:{ type: String, trim:true, default: ''},
+            citySubdivisionName:{ type: String, trim:true, default: ''},
+            cityName:{ type: String, trim:true, default: ''},
+            postalZone:{ type: String, trim:true, default: ''},
+            postbox:{ type: String, trim:true, default: ''},
+            region:{ type: String, trim:true, default: ''},
+            district:{ type: String, trim:true, default: ''},
+            country:{
+                identificationCode:{ type: String, default: 'TR'},
+                name:{ type: String, trim:true, default: 'Türkiye'}
+            }
+        },
         partyTaxScheme:{
             taxScheme:{
                 name:{ type: String, trim:true, default: ''},

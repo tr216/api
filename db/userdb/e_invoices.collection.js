@@ -2,176 +2,443 @@ module.exports=function(conn){
     var schema = mongoose.Schema({
         ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
         eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'e_integrators', required: true},
-        profileId: { type: String,default: '', trim:true, enum:['TEMELFATURA','TICARIFATURA','IHRACAT','YOLCUBERABERFATURA','EARSIVFATURA'], required: true},
-        id: { type: String, trim:true, default: '',
-            validate: {
-              validator: function(v) {
-                if(this.ioType==0 && v!='' && v.length!=16){
-                    return false;
-                }else{
-                    return true;
+        profileId: { 
+            value: { type: String,default: '', trim:true, enum:['TEMELFATURA','TICARIFATURA','IHRACAT','YOLCUBERABERFATURA','EARSIVFATURA'], required: true}
+        },
+        ID: {
+            value: { type: String, trim:true, default: '',
+                validate: {
+                  validator: function(v) {
+                    if(this.ioType==0 && v!='' && v.length!=16){
+                        return false;
+                    }else{
+                        return true;
+                    }
+                  },
+                  message: 'Fatura numarasi 16 karakter olmalidir veya bos birakiniz.'
                 }
-              },
-              message: 'Fatura numarasi 16 karakter olmalidir veya bos birakiniz.'
             }
         },
-        uuid: { type: String, trim:true, default: ''},
-        issueDate: { type: String,  required: [true,'Fatura tarihi gereklidir']},
-        issueTime: { type: String,default: '00:00:00.0000000+03:00'},
-        invoiceTypeCode: { type: String,default: '', trim:true, enum:['SATIS','IADE','TEVKIFAT','ISTISNA','OZELMATRAH','IHRACKAYITLI'],
-            validate: {
-              validator: function(v) {
-                if(this.ioType==0 && (this.profileId=='IHRACAT' || this.profileId=='YOLCUBERABERFATURA') && v!='ISTISNA'){
-                    return false;
-                }else{
-                    return true;
+        uuid: {value : { type: String, trim:true, default: ''}},
+        issueDate: {value :{ type: String,  required: [true,'Fatura tarihi gereklidir']}},
+        issueTime: {value :{ type: String,default: '00:00:00.0000000+03:00'}},
+        invoiceTypeCode: {
+            value:{ type: String,default: '', trim:true, enum:['SATIS','IADE','TEVKIFAT','ISTISNA','OZELMATRAH','IHRACKAYITLI'],
+                validate: {
+                  validator: function(v) {
+                    if(this.ioType==0 && (this.profileId=='IHRACAT' || this.profileId=='YOLCUBERABERFATURA') && v!='ISTISNA'){
+                        return false;
+                    }else{
+                        return true;
+                    }
+                  },
+                  message: 'Senaryo: IHRACAT veya YOLCUBERABERFATURA oldugunda fatura turu ISTISNA olarak secilmelidir.'
                 }
-              },
-              message: 'Senaryo: IHRACAT veya YOLCUBERABERFATURA oldugunda fatura turu ISTISNA olarak secilmelidir.'
             }
         },
         invoicePeriod: {
-            startDate: { type: String },
-            endDate: { type: String }
+            startDate: {value:{ type: String}},
+            startTime: {value:{ type: String}},
+            endDate: {value:{ type: String}},
+            endTime: {value:{ type: String}}
         },
-        note:[{ type: String, trim:true, default: ''}],
-        documentCurrencyCode:{ type: String, trim:true, default: 'TRY'},
-        taxCurrencyCode:{ type: String, trim:true, default: 'TRY'},
-        pricingCurrencyCode:{ type: String, trim:true, default: 'TRY'},
-        paymentCurrencyCode:{ type: String, trim:true, default: 'TRY'},
-        paymentAlternativeCurrencyCode:{ type: String, trim:true, default: 'TRY'},
-        lineCountNumeric:{ type: Number,default: 0},
+        note:[{ value:{ type: String, trim:true, default: ''}}],
+        documentCurrencyCode:{value:{ type: String, trim:true, default: 'TRY'}},
+        taxCurrencyCode:{value:{ type: String, trim:true, default: 'TRY'}},
+        pricingCurrencyCode:{value:{ type: String, trim:true, default: 'TRY'}},
+        paymentCurrencyCode:{value:{ type: String, trim:true, default: 'TRY'}},
+        paymentAlternativeCurrencyCode:{value:{ type: String, trim:true, default: 'TRY'}},
+        lineCountNumeric:{value:{ type: Number,default: 0}},
         orderReference:[{ 
-            id:{ type: String, trim:true, default: ''},
-            issueDate:{ type: String, trim:true, default: ''}
+            ID:{value:{ type: String, trim:true, default: ''}},
+            issueDate:{value:{ type: String, trim:true, default: ''}}
         }],
         despatchDocumentReference:[{ 
-            id:{ type: String, trim:true, default: ''},
-            issueDate:{ type: String, trim:true, default: ''}
+            ID:{value:{ type: String, trim:true, default: ''}},
+            issueDate:{value:{ type: String, trim:true, default: ''}}
         }],
         additionalDocumentReference:[{ 
-            id:{ type: String, trim:true, default: ''},
-            issueDate:{ type: String, trim:true, default: ''},
-            documentTypeCode:{ type: String, trim:true, default: ''},
-            documentType:{ type: String, trim:true, default: ''},
-            documentDescription:[{ type: String, trim:true, default: ''}],
-            attachment: {type: Object},
-            validityPeriod:{ type:Object }
+            ID:{value:{ type: String, trim:true, default: ''}},
+            issueDate:{value:{ type: String, trim:true, default: ''}},
+            documentTypeCode:{value:{ type: String, trim:true, default: ''}},
+            documentType:{value:{ type: String, trim:true, default: ''}},
+            documentDescription:[{value:{ type: String, trim:true, default: ''}}],
+            attachment: {},
+            validityPeriod: {}
         }],
-        accountingSupplierParty:{},
-        accountingCustomerParty:{},
-        // accountingSupplierParty: {
-        //     party: {type: mongoose.Schema.Types.ObjectId, ref: 'parties' },
-        //     agentParty: {type: mongoose.Schema.Types.ObjectId, ref: 'parties'}
-        // },
-        // accountingCustomerParty: {
-        //     Party: {type: mongoose.Schema.Types.ObjectId, ref: 'parties' },
-        //     AgentParty: {type: mongoose.Schema.Types.ObjectId, ref: 'parties'}
-        // },
+        accountingSupplierParty:{
+            party:{
+                websiteURI:{value:{ type: String, trim:true, default: ''}},
+                partyIdentification:[{
+                    ID:{ 
+                        value:{ type: String, trim:true, default: ''},
+                        schemeId:{ type: String, trim:true, default: 'VKN'}
+                    }
+                }],
+                partyName:{
+                    name:{value:{ type: String, trim:true, default: ''}}
+                },
+                postalAddress:{
+                    room:{ value:{ type: String, trim:true, default: ''}},
+                    streetName:{ value:{ type: String, trim:true, default: ''}},
+                    blockName:{ value:{ type: String, trim:true, default: ''}},
+                    buildingName:{ value:{ type: String, trim:true, default: ''}},
+                    buildingNumber:{ value:{ type: String, trim:true, default: ''}},
+                    citySubdivisionName:{ value:{ type: String, trim:true, default: ''}},
+                    cityName:{ value:{ type: String, trim:true, default: ''}},
+                    postalZone:{ value:{ type: String, trim:true, default: ''}},
+                    postbox:{ value:{ type: String, trim:true, default: ''}},
+                    region:{ value:{ type: String, trim:true, default: ''}},
+                    district:{ value:{ type: String, trim:true, default: ''}},
+                    country:{
+                        identificationCode:{ value:{ type: String, trim:true, default: 'TR'}},
+                        name:{value:{ type: String, trim:true, default: 'Türkiye'}}
+                    }
+                },
+                partyTaxScheme:{
+                    taxScheme:{
+                        name:{ value:{ type: String, trim:true, default: ''}},
+                        taxTypeCode:{ value:{ type: String, trim:true, default: ''}}
+                    }
+                },
+                contact:{
+                    telephone:{ value:{ type: String, trim:true, default: ''}},
+                    telefax:{ value:{ type: String, trim:true, default: ''}},
+                    electronicMail:{ value:{ type: String, trim:true, default: ''}}
+                },
+                person:{
+                    firstName:{ value:{ type: String, trim:true, default: ''}},
+                    middleName:{ value:{ type: String, trim:true, default: ''}},
+                    familyName:{ value:{ type: String, trim:true, default: ''}},
+                    nameSuffix:{ value:{ type: String, trim:true, default: ''}},
+                    title:{ value:{ type: String, trim:true, default: ''}}
+                }
+            }
+        },
+        accountingCustomerParty:{
+            party:{
+                websiteURI:{value:{ type: String, trim:true, default: ''}},
+                partyIdentification:[{
+                    ID:{ 
+                        value:{ type: String, trim:true, default: ''},
+                        schemeId:{ type: String, trim:true, default: 'VKN'}
+                    }
+                }],
+                partyName:{
+                    name:{value:{ type: String, trim:true, default: ''}}
+                },
+                postalAddress:{
+                    room:{ value:{ type: String, trim:true, default: ''}},
+                    streetName:{ value:{ type: String, trim:true, default: ''}},
+                    blockName:{ value:{ type: String, trim:true, default: ''}},
+                    buildingName:{ value:{ type: String, trim:true, default: ''}},
+                    buildingNumber:{ value:{ type: String, trim:true, default: ''}},
+                    citySubdivisionName:{ value:{ type: String, trim:true, default: ''}},
+                    cityName:{ value:{ type: String, trim:true, default: ''}},
+                    postalZone:{ value:{ type: String, trim:true, default: ''}},
+                    postbox:{ value:{ type: String, trim:true, default: ''}},
+                    region:{ value:{ type: String, trim:true, default: ''}},
+                    district:{ value:{ type: String, trim:true, default: ''}},
+                    country:{
+                        identificationCode:{ value:{ type: String, trim:true, default: 'TR'}},
+                        name:{value:{ type: String, trim:true, default: 'Türkiye'}}
+                    }
+                },
+                partyTaxScheme:{
+                    taxScheme:{
+                        name:{ value:{ type: String, trim:true, default: ''}},
+                        taxTypeCode:{ value:{ type: String, trim:true, default: ''}}
+                    }
+                },
+                contact:{
+                    telephone:{ value:{ type: String, trim:true, default: ''}},
+                    telefax:{ value:{ type: String, trim:true, default: ''}},
+                    electronicMail:{ value:{ type: String, trim:true, default: ''}}
+                },
+                person:{
+                    firstName:{ value:{ type: String, trim:true, default: ''}},
+                    middleName:{ value:{ type: String, trim:true, default: ''}},
+                    familyName:{ value:{ type: String, trim:true, default: ''}},
+                    nameSuffix:{ value:{ type: String, trim:true, default: ''}},
+                    title:{ value:{ type: String, trim:true, default: ''}}
+                }
+            }
+        },
+        
         pricingExchangeRate:{ 
-            sourceCurrencyCode  :{ type: String,default: 'TRY'},
-            targetCurrencyCode  :{ type: String,default: 'TRY'},
-            calculationRate   :{ type: Number,default: 0},
-            date   :{ type: String,default: ''}
+            sourceCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
+            targetCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
+            calculationRate   :{value:{ type: Number,default: 0}},
+            date   :{ value:{ type: String, trim:true, default: ''}}
         },
-        taxTotal  : {
-            taxAmount :{ type: Number,default: 0},
+        taxTotal  : [{
+            taxAmount :{value:{ type: Number,default: 0}},
             taxSubtotal:[{
-                taxableAmount:{ type: Number,default: 0},
-                taxAmount :{ type: Number,default: 0},
-                taxCategory :{ 
+                taxableAmount:{value:{ type: Number,default: 0}},
+                taxAmount :{value:{ type: Number,default: 0}},
+                taxCategory :{
+                    name:{ value:{ type: String, trim:true, default: ''}},
                     taxScheme:{
-                        name:{ type: String, trim:true, default: ''},
-                        taxTypeCode:{ type: String, trim:true, default: ''},
-                    }
+                        ID:{ value:{ type: String, trim:true, default: ''}},
+                        name:{ value:{ type: String, trim:true, default: ''}},
+                        taxTypeCode:{ value:{ type: String, trim:true, default: ''}}
+                    },
+                    taxExemptionReason:{ value:{ type: String, trim:true, default: ''}},
+                    taxExemptionReasonCode:{ value:{ type: String, trim:true, default: ''}}
                 }
             }]
-            
-        },
-        withholdingTaxTotal  : {
-            taxAmount :{ type: Number,default: 0},
+        }],
+        withholdingTaxTotal  : [{
+            taxAmount :{value:{ type: Number,default: 0}},
             taxSubtotal:[{
-                taxableAmount:{ type: Number,default: 0},
-                taxAmount :{ type: Number,default: 0},
-                taxCategory :{ 
+                taxableAmount:{ value:{ type: Number,default: 0} },
+                taxAmount :{ value:{ type: Number,default: 0} },
+                taxCategory :{
+                    name:{ value:{ type: String, trim:true, default: ''}},
                     taxScheme:{
-                        name:{ type: String, trim:true, default: ''},
-                        taxTypeCode:{ type: String, trim:true, default: ''},
-                    }
+                        ID:{ value:{ type: String, trim:true, default: ''}},
+                        name:{ value:{ type: String, trim:true, default: ''}},
+                        taxTypeCode:{ value:{ type: String, trim:true, default: ''}}
+                    },
+                    taxExemptionReason:{ value:{ type: String, trim:true, default: ''}},
+                    taxExemptionReasonCode:{ value:{ type: String, trim:true, default: ''}}
                 }
             }]
-            
-        },
+        }],
         legalMonetaryTotal: { 
-            lineExtensionAmount  :{ type: Number,default: 0},
-            taxExclusiveAmount  :{ type: Number,default: 0},
-            taxInclusiveAmount   :{ type: Number,default: 0},
-            allowanceTotalAmount   :{ type: Number,default: 0},
-            chargeTotalAmount   :{ type: Number,default: 0},
-            payableRoundingAmount   :{ type: Number,default: 0},
-            payableAmount    :{ type: Number,default: 0}
+            lineExtensionAmount  :{value:{ type: Number,default: 0}},
+            taxExclusiveAmount  :{value:{ type: Number,default: 0}},
+            taxInclusiveAmount   :{value:{ type: Number,default: 0}},
+            allowanceTotalAmount   :{value:{ type: Number,default: 0}},
+            chargeTotalAmount   :{value:{ type: Number,default: 0}},
+            payableRoundingAmount   :{value:{ type: Number,default: 0}},
+            payableAmount    :{value:{ type: Number,default: 0}}
         },
         invoiceLine:[{
-            id:{type: String, default: ''},
-            note:[{type: String, default: ''}],
-            invoicedQuantity :{ type: Number,default: 0},
-            unitCode:{type: String, default: 'NU'},
-            lineExtensionAmount :{ type: Number,default: 0},
-            currencyID:{type: String, default: 'TRY'},
+            ID:{ value:{ type: String, trim:true, default: ''}},
+            note:[{ value:{ type: String, trim:true, default: ''}}],
+            invoicedQuantity :{
+                unitCode:{type: String, default: 'NU'},
+                value:{ type: Number,default: 0}
+            },
+            lineExtensionAmount :{
+                currencyId:{type: String, default: 'TRY'},
+                value:{ type: Number,default: 0}
+            },
+            orderLineReference:[{
+                lineId:{ value:{ type: String, trim:true, default: ''}},
+                lineStatusCode:{ value:{ type: String, trim:true, default: ''}},
+                salesOrderLineId:{ value:{ type: String, trim:true, default: ''}},
+                uuID:{ value:{ type: String, trim:true, default: ''}},
+                orderReference:{
+                    ID:{ value:{ type: String, trim:true, default: ''}},
+                    documentReference: {}, //qwerty alt nesneler var
+                    issueDate:{ value:{ type: String, trim:true, default: ''}},
+                    orderTypeCode:{ value:{ type: String, trim:true, default: ''}},
+                    salesOrderId:{ value:{ type: String, trim:true, default: ''}}
+                }
+            }],
             item:{
-                name:{type: String, default: ''},
-                additionalItemIdentification:{type: String, default: ''},
-                brandName:{type: String, default: ''},
-                buyersItemIdentification:{id:{type: String, default: ''}},
-                sellersItemIdentification:{id:{type: String, default: ''}},
-                manufacturersItemIdentification:{id:{type: String, default: ''}},
+                additionalItemIdentification:[{ID:{ value:{ type: String, trim:true, default: ''}}}],
+                brandName:{ value:{ type: String, trim:true, default: ''}},
+                buyersItemIdentification:{ID:{ value:{ type: String, trim:true, default: ''}}},
                 commodityClassification:[
                     { 
-                        itemClassificationCode:{type: String, default: ''}
+                        itemClassificationCode:{value:{ type: String, trim:true, default: ''}}
                     }
                 ],
-                modelName:{type: String, default: ''},
-                keyword:{type: String, default: ''},
-                description:{type: String, default: ''},
-                itemInstance:[]
-                // itemInstance:[{
-                //     additionalItemProperty:[{
-                //         id:{type: String, default: ''},
-                //         name:{type: String, default: ''},
-                //         nameCode:{type: String, default: ''},
-                //         testMethod:{type: String, default: ''},
-                //         value:{type: Number, default: 0},
-                //         valueQuantity:{type: Number, default: 0},
-                //         valueQualifier:[],
-                //         importanceCode:{type: String, default: ''},
-                //         listValue:[],
-                //         importanceCode:{type: String, default: ''},
-                //         period:{type: String, default: ''},
-                //         itemPropertyGroup:[],
-                //         dimension:{type: String, default: ''},
-                //         itemPropertyRange:{}
-                //     }]
-                // }]
-                 
+                description:{ value:{ type: String, trim:true, default: ''}},
+                itemInstance:[{}],
+                keyword:{ value:{ type: String, trim:true, default: ''}},
+                manufacturersItemIdentification:{ID:{ value:{ type: String, trim:true, default: ''}}},
+                modelName:{value:{ type: String, trim:true, default: ''}},
+                name:{value:{ type: String, trim:true, default: ''}},
+                sellersItemIdentification:{ID:{ value:{ type: String, trim:true, default: ''}}}
             },
             price : {
-                priceAmount : { type: Number,default: 0}
-            },
-            delivery : [{
-                id : {type: String, default: ''},
-                trackingID : {type: String, default: ''},
-                shipment:{
-                    
+                priceAmount : {
+                    currencyId:{type: String, default: 'TRY'},
+                    value:{ type: Number,default: 0}
                 }
-            }]
+            },
+            receiptLineReference:[{
+                documentReference:{},
+                lineId:{ value:{ type: String, trim:true, default: ''}},
+                lineStatusCode:{ value:{ type: String, trim:true, default: ''}}
+            }],
+            allowanceCharge:[{
+                sequenceNumeric:{value:{ type: Number,default: 0}},
+                allowanceChargeReason:{ value:{ type: String, trim:true, default: ''}},
+                amount: {value:{ type: Number,default: 0}},
+                baseAmount: {value:{ type: Number,default: 0}},
+                chargeIndicator:{value:{ type: Boolean,default: false}},
+                multiplierFactorNumeric:{value:{ type: Number,default: 0}},
+                perUnitAmount:{value:{ type: Number,default: 0}}
+            }],
+            delivery : [{
+                actualDeliveryDate:{ value:{ type: String, trim:true, default: ''}},
+                actualDeliveryTime:{ value:{ type: String, trim:true, default: ''}},
+                alternativeDeliveryLocation:{
+                    ID:{ value:{ type: String, trim:true, default: ''}},
+                    address:{} //qwerty address
+                },
+                carrierParty:{}, //qwerty party
+                deliveryAddress:{}, //qwerty address
+                deliveryParty:{}, //qwerty party
+                deliveryTerms:[{
+                    amount : {
+                        currencyId:{type: String},
+                        value:{ type: Number,default: 0}
+                    },
+                    ID:{ value:{ type: String, trim:true, default: ''}},
+                    specialTerms:{value:{ type: String, trim:true, default: ''}}
+                }],
+                despatch:{
+                    ID:{ value:{ type: String, trim:true, default: ''}},
+                    actualDespatchDate:{ value:{ type: String, trim:true, default: ''}},
+                    actualDespatchTime:{ value:{ type: String, trim:true, default: ''}},
+                    contact:{},//qwerty contact
+                    despatchAddress:{},//qwerty address
+                    despatchParty:{},//qwerty party
+                    estimatedDespatchPeriod:{ 
+                        description:{ value:{ type: String, trim:true, default: ''}},
+                        durationMeasure:{},
+                        startDate: { type: String },
+                        startTime: { type: String },
+                        endDate: { type: String },
+                        endTime: { type: String }
+                    },
+                    instructions:{ value:{ type: String, trim:true, default: ''}}
+                },
+                ID:{ value:{ type: String, trim:true, default: ''}},
+                latestDeliveryDate:{value:{ type: String}},
+                latestDeliveryTime:{value:{ type: String}},
+                quantity:{
+                    unitCode:{type: String, default: 'NU'},
+                    value:{ type: Number,default: 0}
+                },
+                trackingId : { value:{ type: String, trim:true, default: ''}},
+                shipment:{
+                    ID:{ value:{ type: String, trim:true, default: ''}},
+                    consignment:[{
+                        ID:{ value:{ type: String, trim:true, default: ''}},
+                        totalInvoiceAmount : {
+                            currencyId:{type: String },
+                            value:{ type: Number,default: 0}
+                        }
+                    }],
+                    declaredCustomsValueAmount : {
+                        currencyId:{type: String },
+                        value:{ type: Number,default: 0}
+                    },
+                    declaredForCarriageValueAmount : {
+                        currencyId:{type: String },
+                        value:{ type: Number,default: 0}
+                    },
+                    declaredStatisticsValueAmount : {
+                        currencyId:{type: String },
+                        value:{ type: Number,default: 0}
+                    },
+                    delivery:{}, //qwerty
+                    firstArrivalPortLocation:{
+                        ID:{ value:{ type: String, trim:true, default: ''}},
+                        address:{}
+                    },
+                    freeOnBoardValueAmount : {
+                        currencyId:{type: String },
+                        value:{ type: Number,default: 0}
+                    },
+                    goodsItem:[{}], //qwerty alt nesleneler oldukca fazla
+                    grossVolumeMeasure:{
+                        unitCode:{type: String},
+                        value:{ type: Number,default: 0}
+                    },
+                    grossWeightMeasure:{
+                        unitCode:{type: String},
+                        value:{ type: Number,default: 0}
+                    },
+                    handlingCode:{value:{ type: String, trim:true, default: ''}},
+                    handlingInstructions:{value:{ type: String, trim:true, default: ''}},
+                    insuranceValueAmount : {
+                        currencyId:{type: String },
+                        value:{ type: Number,default: 0}
+                    },
+                    lastExitPortLocation:{
+                        ID:{ value:{ type: String, trim:true, default: ''}},
+                        address:{}
+                    },
+                    netVolumeMeasure:{
+                        unitCode:{type: String},
+                        value:{ type: Number,default: 0}
+                    },
+                    netWeightMeasure:{
+                        unitCode:{type: String},
+                        value:{ type: Number,default: 0}
+                    },
+                    returnAddress:{}, //qwerty address
+                    shipmentStage:[{}], //qwerty  detaylar kalin, shipment stage ayri bir cumhuriyet
+                    specialInstructions:[{ value:{ type: String, trim:true, default: ''}}],
+                    totalGoodsItemQuantity:{
+                        unitCode:{type: String},
+                        value:{ type: Number,default: 0}
+                    },
+                    totalTransportHandlingUnitQuantity:{
+                        unitCode:{type: String},
+                        value:{ type: Number,default: 0}
+                    },
+                    transportHandlingUnit:[{}] //qwerty  detaylar kalin
+                }
+            }],
+            despatchLineReference:[{
+                documentReference:{},
+                lineId:{ value:{ type: String, trim:true, default: ''}},
+                lineStatusCode:{ value:{ type: String, trim:true, default: ''}}
+            }],
+            taxTotal:{
+                taxAmount :{value:{ type: Number,default: 0}},
+                taxSubtotal:[{
+                    taxableAmount:{value:{ type: Number,default: 0}},
+                    taxAmount :{value:{ type: Number,default: 0}},
+                    taxCategory :{
+                        name:{ value:{ type: String, trim:true, default: ''}},
+                        taxScheme:{
+                            ID:{ value:{ type: String, trim:true, default: ''}},
+                            name:{ value:{ type: String, trim:true, default: ''}},
+                            taxTypeCode:{ value:{ type: String, trim:true, default: ''}}
+                        },
+                        taxExemptionReason:{ value:{ type: String, trim:true, default: ''}},
+                        taxExemptionReasonCode:{ value:{ type: String, trim:true, default: ''}}
+                    }
+                }]
+            },
+            withholdingTaxTotal:[{
+                taxAmount :{value:{ type: Number,default: 0}},
+                taxSubtotal:[{
+                    taxableAmount:{value:{ type: Number,default: 0}},
+                    taxAmount :{value:{ type: Number,default: 0}},
+                    taxCategory :{
+                        name:{ value:{ type: String, trim:true, default: ''}},
+                        taxScheme:{
+                            ID:{ value:{ type: String, trim:true, default: ''}},
+                            name:{ value:{ type: String, trim:true, default: ''}},
+                            taxTypeCode:{ value:{ type: String, trim:true, default: ''}}
+                        },
+                        taxExemptionReason:{ value:{ type: String, trim:true, default: ''}},
+                        taxExemptionReasonCode:{ value:{ type: String, trim:true, default: ''}}
+                    }
+                }]
+            }],
+            subInvoiceLine:[{}] //qwerty  invoice line nin aynisi detaylarda
         }],
-        invoiceStatus: {type: String, default: '',enum:['Draft','Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
+        invoiceStatus: {type: String, default: 'Draft',enum:['Draft','Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
         invoiceErrors:[{code:'',message:''}],
         localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
         localErrors:[{code:'',message:''}],
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now}
     });
+
+    
 
     schema.pre('save', function(next) {
         next();

@@ -4,8 +4,15 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-//var engine = require('ejs-locals')
-//var Database = require('./persister/database');
+
+require("tls").DEFAULT_MIN_VERSION = 'TLSv1';
+
+// var tls=require("tls");
+// console.log('tls:',tls);
+
+// process.exit(1);
+
+
 global.uuid = require('node-uuid');
 global.path_module = require('path');
 
@@ -149,8 +156,8 @@ function onListening() {
 
 
 
-process.on('uncaughtException', function (err) {
-    mrutil.console('Caught exception: ' + err);
-});
+// process.on('uncaughtException', function (err) {
+//     mrutil.console('Caught exception: ' + err);
+// });
 
 
