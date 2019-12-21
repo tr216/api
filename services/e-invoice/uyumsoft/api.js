@@ -392,7 +392,8 @@ exports.getInboxInvoice = function (options,invoiceId,callback) {
         try{ 
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
-                    jsObject=mrutil.deleteObjectProperty(jsObject,'xmlns*');
+                    //jsObject=mrutil.deleteObjectProperty(jsObject,'xmlns:*');
+                    
                     //jsObject=mrutil.deleteObjectProperty(jsObject,'xmlns');
                     // fs.writeFileSync(fileName + '.xml', response,'utf8');
                     fs.writeFileSync(fileName + '.json', JSON.stringify(jsObject,null,2),'utf8');
@@ -535,7 +536,7 @@ exports.setInvoicesTaken = function (options,invoices,callback) {
             return callback({code:ctx.error['code'],message:ctx.error['code']});
         }
         try{ 
-            mrutil.xml2json2(response,(err,jsObject)=>{
+            mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     // fs.writeFileSync(fileName + '.xml', response,'utf8');
                     fs.writeFileSync(fileName + '.json', JSON.stringify(jsObject,null,2),'utf8');
@@ -632,5 +633,4 @@ exports.GetEInvoiceUsers = function (options,pagination,callback) {
     callback(null);
 }; 
 
- 
 

@@ -71,10 +71,12 @@ function downloadInboxInvoices(dbModel,eIntegratorDoc,callback){
                         if(index>=indirilecekFaturalar.length) return cb(null);
                         api.getInboxInvoice(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,result)=>{
                             if(!err){
-                                var invoice=mrutil.renameObjectProperty(result.doc.invoice,renameKey);
+                                var invoice=prepareInvoiceObject(result.doc.invoice);
                                 invoice['invoiceStatus']=indirilecekFaturalar[index].status;
-                                // var fileName=path.join(__dirname,'../../../../temp',invoice.uuid.value);
-                                // fs.writeFileSync(fileName + '.json', JSON.stringify(invoice,null,2),'utf8');
+                                var fileName=path.join(__dirname,'../../../../temp',invoice.uuid.value);
+                                fs.writeFileSync(fileName + '.json', JSON.stringify(invoice,null,2),'utf8');
+                                // index++;
+                                // setTimeout(faturaIndir,500,cb);
                                 insertInvoice(dbModel, eIntegratorDoc,1, invoice,(err)=>{
                                     if(err){
                                         console.log('insertInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
@@ -183,10 +185,12 @@ function downloadOutboxInvoices(dbModel,eIntegratorDoc,callback){
                         if(index>=indirilecekFaturalar.length) return cb(null);
                         api.getOutboxInvoice(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,result)=>{
                             if(!err){
-                                var invoice=mrutil.renameObjectProperty(result.doc.invoice,renameKey);
+                                var invoice=prepareInvoiceObject(result.doc.invoice);
                                 invoice['invoiceStatus']=indirilecekFaturalar[index].status;
                                 var fileName=path.join(__dirname,'../../../../temp',invoice.uuid.value);
                                 fs.writeFileSync(fileName + '.json', JSON.stringify(invoice,null,2),'utf8');
+                                // index++;
+                                // setTimeout(faturaIndir,500,cb);
                                 insertInvoice(dbModel, eIntegratorDoc,0, invoice,(err)=>{
                                     if(err){
                                         console.log('insertOutboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
@@ -264,15 +268,82 @@ function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,callback){
 
 
 function renameKey(key){
-    if(key.length<2) return key;
     switch(key){
         case 'UUID': return 'uuid';
         case 'ID': return 'ID';
         case 'URI': return 'URI';
+        case '$': return 'attr';
     }
+    if(key.length<2) return key;
     key=key[0].toLowerCase() + key.substr(1,key.length-1);
     if(key.substr(key.length-2,2)=='ID' && key.length>2){
         key=key.substr(0,key.length-2) + 'Id';
     }
     return key;
+}
+
+function renameInvoiceObjects(obj,renameFunction){
+    
+    if(Array.isArray(obj)){
+        var newObj=[];
+        for(var i=0;i<obj.length;i++){
+            newObj.push(renameInvoiceObjects(obj[i],renameFunction));
+        }
+        return newObj;
+    }else if (typeof obj==='object'){
+        var newObj={};
+
+        var keys=Object.keys(obj);
+        keys.forEach((key)=>{
+            var newKey=renameFunction(key);
+            if((Array.isArray(obj[key]) || typeof obj==='object') && (key!='$')){
+                newObj[newKey]=renameInvoiceObjects(obj[key],renameFunction);
+            }else{
+                newObj[newKey]=obj[key];
+            }
+        });
+        return newObj;
+    }else{
+        return obj;
+    }
+}
+
+function deleteEmptyObject(obj,propertyName){
+    
+    if(Array.isArray(obj)){
+        var newObj=[];
+        for(var i=0;i<obj.length;i++){
+            newObj.push(deleteEmptyObject(obj[i],propertyName));
+        }
+        return newObj;
+    }else if (typeof obj==='object'){
+        var newObj={};
+
+        if(obj[propertyName]!=undefined){
+            if(JSON.stringify(obj[propertyName])===JSON.stringify({})){
+                obj[propertyName]=undefined;
+                delete obj[propertyName];
+            }
+        }
+        
+        
+        var keys=Object.keys(obj);
+        keys.forEach((key)=>{
+            if(Array.isArray(obj[key]) || typeof obj==='object'){
+                newObj[key]=deleteEmptyObject(obj[key],propertyName);
+            }else{
+                newObj[key]=obj[key];
+            }
+        })
+        
+        return newObj;
+    }else{
+        return obj;
+    }
+}
+function prepareInvoiceObject(invoice){
+    invoice=mrutil.deleteObjectProperty(invoice,'xmlns*');
+    invoice=deleteEmptyObject(invoice,'$');
+    invoice=renameInvoiceObjects(invoice,renameKey);
+    return invoice;
 }
