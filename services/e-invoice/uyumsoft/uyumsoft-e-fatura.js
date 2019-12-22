@@ -45,7 +45,9 @@ function downloadInboxInvoices(dbModel,eIntegratorDoc,callback){
                         console.log('inbox invoices pageIndex:',(result.page +1) + '/' + result.pageCount);
                         if(result.docs.length>0){
                             for(var i=0;i<result.docs.length;i++){
-                                indirilecekFaturalar.push(result.docs[i]);
+                                if(result.docs[i].uuid!=undefined){
+                                    indirilecekFaturalar.push(result.docs[i]);
+                                }
                             }
                             query.PageIndex++;
                             if(query.PageIndex>=result.pageCount || ( isTestPlatform && query.PageIndex==2)){ 
@@ -69,39 +71,85 @@ function downloadInboxInvoices(dbModel,eIntegratorDoc,callback){
                     var index=0;
                     function faturaIndir(cb){
                         if(index>=indirilecekFaturalar.length) return cb(null);
-                        api.getInboxInvoice(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,result)=>{
+                        dbModel.e_invoices.findOne({ioType:1,'uuid.value':indirilecekFaturalar[index].uuid},(err,doc)=>{
                             if(!err){
-                                var invoice=prepareInvoiceObject(result.doc.invoice);
-                                invoice['invoiceStatus']=indirilecekFaturalar[index].status;
-                                var fileName=path.join(__dirname,'../../../../temp',invoice.uuid.value);
-                                fs.writeFileSync(fileName + '.json', JSON.stringify(invoice,null,2),'utf8');
-                                // index++;
-                                // setTimeout(faturaIndir,500,cb);
-                                insertInvoice(dbModel, eIntegratorDoc,1, invoice,(err)=>{
-                                    if(err){
-                                        console.log('insertInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
-                                        index++;
-                                        setTimeout(faturaIndir,500,cb);
-                                    }else{
-                                        api.setInvoicesTaken(eIntegratorDoc,[invoice.uuid.value],(err)=>{
-                                            if(err){
-                                                console.log('api.setInvoicesTaken error:',err);
-                                            }else{
-                                                console.log(invoice.uuid.value, ' taken');
-                                            }
+                                if(doc!=null){
+                                    if(doc.invoiceStatus!=indirilecekFaturalar[index].status){
+                                        doc.modifiedDate=new Date();
+                                        doc.invoiceStatus=indirilecekFaturalar[index].status;
+                                        doc.save((err,doc2)=>{
+                                            console.log('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
                                             index++;
-                                            setTimeout(faturaIndir,500,cb);
+                                            setTimeout(faturaIndir,0,cb);
+                                            return;
                                         });
+                                    }else{
+                                        console.log('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
+                                        index++;
+                                        setTimeout(faturaIndir,0,cb);
+                                        return;
                                     }
-                                    
-                                });
-                                
-                            }else{
-                                console.log('api.getInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
-                                index++;
-                                setTimeout(faturaIndir,500,cb);
+                                }
                             }
-                        });
+                            api.getInboxInvoice(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,result)=>{
+                                if(!err){
+                                    var invoice=prepareInvoiceObject(result.doc.invoice);
+                                    invoice['invoiceStatus']=indirilecekFaturalar[index].status;
+                                    var fileName=path.join(__dirname,'../../../../temp',invoice.uuid.value);
+                                    // fs.writeFileSync(fileName + '.json', JSON.stringify(invoice,null,2),'utf8');
+                                    var files={html:'',pdf:null};
+
+                                    api.getInboxInvoiceHtml(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
+                                        if(!err){
+                                            // fs.writeFileSync(fileName + '.html', resultHtml.doc.html,'utf8');
+                                            files.html=resultHtml.doc.html;
+                                        }
+                                        api.getInboxInvoicePdf(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
+                                            if(!err){
+                                                files.pdf=resultPdf.doc.pdf
+                                                // var raw = atob(resultPdf.doc.pdf);
+                                                // var rawLength = raw.length;
+                                                // var array = new Uint8Array(new ArrayBuffer(rawLength));
+                                                // for(i = 0; i < rawLength; i++) {
+                                                //     array[i] = raw.charCodeAt(i);
+                                                // }
+                                                // fs.writeFileSync(fileName + '.pdf', array,'utf8');
+                                                // files.pdf=array;
+                                            }else{
+                                                console.log('api.getInboxInvoicePdf Error:',err);
+                                            }
+                                            insertInvoice(dbModel, eIntegratorDoc,1, invoice,files,(err)=>{
+                                                if(err){
+                                                    console.log('insertInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
+                                                    index++;
+                                                    setTimeout(faturaIndir,500,cb);
+                                                }else{
+                                                    index++;
+                                                    setTimeout(faturaIndir,500,cb);
+                                                    // api.setInvoicesTaken(eIntegratorDoc,[invoice.uuid.value],(err)=>{
+                                                    //     if(err){
+                                                    //         console.log('api.setInvoicesTaken error:',err);
+                                                    //     }else{
+                                                    //         console.log(invoice.uuid.value, ' taken');
+                                                    //     }
+                                                    //     index++;
+                                                    //     setTimeout(faturaIndir,500,cb);
+                                                    // });
+                                                }
+                                                
+                                            });
+                                        });
+                                    });
+                                    
+                                    
+                                }else{
+                                    console.log('api.getInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
+                                    index++;
+                                    setTimeout(faturaIndir,500,cb);
+                                }
+                            });
+                        })
+                        
                     }
                     
                     faturaIndir((err)=>{
@@ -146,7 +194,6 @@ function downloadOutboxInvoices(dbModel,eIntegratorDoc,callback){
                 date1=date1.addDays(-10);
                 console.log('Date1:',date1);
                 query.ExecutionStartDate=date1.yyyymmdd() + 'T00:00:00.000Z';
-                // query.ExecutionEndDate=date2.yyyymmdd() + 'T23:59:59.000Z';
             }
             if(isTestPlatform) query.ExecutionStartDate=(new Date()).addDays(-1).yyyymmdd() + 'T00:00:00.000Z';
 
@@ -158,7 +205,9 @@ function downloadOutboxInvoices(dbModel,eIntegratorDoc,callback){
                         console.log('outbox invoices pageIndex:',(result.page +1) + '/' + result.pageCount);
                         if(result.docs.length>0){
                             for(var i=0;i<result.docs.length;i++){
-                                indirilecekFaturalar.push(result.docs[i]);
+                                if(result.docs[i].uuid!=undefined){
+                                    indirilecekFaturalar.push(result.docs[i]);
+                                }
                             }
                             query.PageIndex++;
                             
@@ -183,39 +232,86 @@ function downloadOutboxInvoices(dbModel,eIntegratorDoc,callback){
                     var index=0;
                     function faturaIndir(cb){
                         if(index>=indirilecekFaturalar.length) return cb(null);
-                        api.getOutboxInvoice(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,result)=>{
+                        dbModel.e_invoices.findOne({ioType:0,'uuid.value':indirilecekFaturalar[index].uuid},(err,doc)=>{
                             if(!err){
-                                var invoice=prepareInvoiceObject(result.doc.invoice);
-                                invoice['invoiceStatus']=indirilecekFaturalar[index].status;
-                                var fileName=path.join(__dirname,'../../../../temp',invoice.uuid.value);
-                                fs.writeFileSync(fileName + '.json', JSON.stringify(invoice,null,2),'utf8');
-                                // index++;
-                                // setTimeout(faturaIndir,500,cb);
-                                insertInvoice(dbModel, eIntegratorDoc,0, invoice,(err)=>{
-                                    if(err){
-                                        console.log('insertOutboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
-                                        index++;
-                                        setTimeout(faturaIndir,500,cb);
-                                    }else{
-                                        api.setInvoicesTaken(eIntegratorDoc,[invoice.uuid.value],(err)=>{
-                                            if(err){
-                                                console.log('api.setInvoicesTaken error:',err);
-                                            }else{
-                                                console.log(invoice.uuid.value, ' taken');
-                                            }
+                                if(doc!=null){
+                                    if(doc.invoiceStatus!=indirilecekFaturalar[index].status){
+                                        doc.modifiedDate=new Date();
+                                        doc.invoiceStatus=indirilecekFaturalar[index].status;
+                                        doc.save((err,doc2)=>{
+                                            console.log('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
                                             index++;
-                                            setTimeout(faturaIndir,500,cb);
+                                            setTimeout(faturaIndir,0,cb);
+                                            return;
                                         });
+                                    }else{
+                                        console.log('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
+                                        index++;
+                                        setTimeout(faturaIndir,0,cb);
+                                        return;
                                     }
-                                    
-                                });
-                                
-                            }else{
-                                console.log('api.getOutboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
-                                index++;
-                                setTimeout(faturaIndir,500,cb);
+                                }
                             }
-                        });
+
+                            api.getOutboxInvoice(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,result)=>{
+                                if(!err){
+                                    var invoice=prepareInvoiceObject(result.doc.invoice);
+                                    invoice['invoiceStatus']=indirilecekFaturalar[index].status;
+                                    var fileName=path.join(__dirname,'../../../../temp',invoice.uuid.value);
+                                    // fs.writeFileSync(fileName + '.json', JSON.stringify(invoice,null,2),'utf8');
+                                    var files={html:'',pdf:null};
+
+                                    api.getOutboxInvoiceHtml(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
+                                        if(!err){
+                                            // fs.writeFileSync(fileName + '.html', resultHtml.doc.html,'utf8');
+                                            files.html=resultHtml.doc.html;
+                                        }
+                                        api.getOutboxInvoicePdf(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
+                                            if(!err){
+                                                
+                                                files.pdf=resultPdf.doc.pdf
+                                                // var raw = atob(resultPdf.doc.pdf);
+                                                // var rawLength = raw.length;
+                                                // var array = new Uint8Array(new ArrayBuffer(rawLength));
+                                                // for(i = 0; i < rawLength; i++) {
+                                                //     array[i] = raw.charCodeAt(i);
+                                                // }
+                                                // fs.writeFileSync(fileName + '.pdf', array,'utf8');
+                                                // files.pdf=array;
+                                            }else{
+                                                console.log('api.getOutboxInvoicePdf Error:',err);
+                                            }
+                                            insertInvoice(dbModel, eIntegratorDoc,0, invoice,files,(err)=>{
+                                                if(err){
+                                                    console.log('insertOutboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
+                                                    index++;
+                                                    setTimeout(faturaIndir,500,cb);
+                                                }else{
+                                                    index++;
+                                                    setTimeout(faturaIndir,500,cb);
+                                                    // api.setInvoicesTaken(eIntegratorDoc,[invoice.uuid.value],(err)=>{
+                                                    //     if(err){
+                                                    //         console.log('api.setInvoicesTaken error:',err);
+                                                    //     }else{
+                                                    //         console.log(invoice.uuid.value, ' taken');
+                                                    //     }
+                                                    //     index++;
+                                                    //     setTimeout(faturaIndir,0,cb);
+                                                    // });
+                                                }
+                                                
+                                            });
+                                        });
+                                    });
+                                    
+                                }else{
+                                    console.log('api.getOutboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
+                                    index++;
+                                    setTimeout(faturaIndir,500,cb);
+                                }
+                            });
+                        })
+                        
                     }
                     
                     faturaIndir((err)=>{
@@ -232,7 +328,7 @@ function downloadOutboxInvoices(dbModel,eIntegratorDoc,callback){
     });
 }
 
-function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,callback){
+function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,files,callback){
     try{
         dbModel.e_invoices.findOne({ioType:ioType,'uuid.value':invoice.uuid.value},(err,foundDoc)=>{
             if(!err){
@@ -241,13 +337,19 @@ function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,callback){
                     
                     var data={ioType:ioType,eIntegrator:eIntegratorDoc._id}
                     data=Object.assign(data,invoice);
-                    
-                    var newInvoice=new dbModel.e_invoices(data);
-                    newInvoice.save((err,newDoc)=>{
-                        if(dberr(err,callback)){
-                            callback(null,newDoc);
+                    saveFiles(dbModel,invoice.ID.value, files,(err,resultFiles)=>{
+                        if(!err){
+                            if(resultFiles.html) data['html']=resultFiles.html;
+                            if(resultFiles.pdf) data['pdf']=resultFiles.pdf;
                         }
-                    })
+                        var newInvoice=new dbModel.e_invoices(data);
+                        newInvoice.save((err,newDoc)=>{
+                            if(dberr(err,callback)){
+                                callback(null,newDoc);
+                            }
+                        })
+                    });
+                    
                     
                 }else{
                     console.log('insertInvoice zaten var');
@@ -266,6 +368,57 @@ function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,callback){
     }
 }
 
+function saveFiles(dbModel,fileName,files,cb){
+    var resultFiles={html:'',pdf:''}
+
+    saveFileHtml(dbModel,fileName,files,(err,html)=>{
+        if(!err) resultFiles.html=html;
+        saveFilePdf(dbModel,fileName,files,(err,pdf)=>{
+            if(!err) resultFiles.pdf=pdf;
+            cb(null,resultFiles);
+        })
+    });
+}
+
+function saveFileHtml(dbModel,fileName,files,cb){
+    if(files.html){
+        var newFile=new dbModel.files({
+            name:fileName,
+            type:'text/html',
+            extension:'html',
+            data:files.html
+        });
+        newFile.save((err,doc)=>{
+            if(!err){
+                cb(null,doc._id);
+            }else{
+                cb(err);
+            }
+        })
+    }else{
+        cb(null,null)
+    }
+}
+
+function saveFilePdf(dbModel,fileName,files,cb){
+    if(files.pdf){
+        var newFile=new dbModel.files({
+            name:fileName,
+            type:'application/pdf',
+            extension:'pdf',
+            data:files.pdf
+        });
+        newFile.save((err,doc)=>{
+            if(!err){
+                cb(null,doc._id);
+            }else{
+                cb(err);
+            }
+        })
+    }else{
+        cb(null,null)
+    }
+}
 
 function renameKey(key){
     switch(key){

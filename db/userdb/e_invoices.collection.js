@@ -477,6 +477,8 @@ module.exports=function(conn){
             }],
             subInvoiceLine:[{}] //qwerty  invoice line nin aynisi detaylarda
         }],
+        pdf:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
+        html:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
         invoiceStatus: {type: String, default: 'Draft',enum:['Draft','Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
         invoiceErrors:[{code:'',message:''}],
         localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},

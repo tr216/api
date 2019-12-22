@@ -97,22 +97,28 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
                 if(ioType==0){
                     obj['accountingParty']['title']=e.accountingCustomerParty.party.partyName.name.value;
                     e.accountingCustomerParty.party.partyIdentification.forEach((e2)=>{
-                        var schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
+                        var schemeID='';
+                        if(e2.ID.attr!=undefined){
+                            schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
+                        }
                         if(schemeID.indexOf('vkn')>-1 || schemeID.indexOf('tckn')>-1){
-                            obj['accountingParty']['vknTckn']=schemeID;
+                            obj['accountingParty']['vknTckn']=e2.ID.value || '';
+                            return;
                         }
                     });
                 }else{
                     obj['accountingParty']['title']=e.accountingSupplierParty.party.partyName.name.value;
                     e.accountingSupplierParty.party.partyIdentification.forEach((e2)=>{
-                        var schemeID='vkn';
+                        var schemeID='';
                         if(e2.ID.attr!=undefined){
-                            (e2.ID.attr.schemeID || '').toLowerCase();
+                            schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
                         }
                         
                         if(schemeID.indexOf('vkn')>-1 || schemeID.indexOf('tckn')>-1){
-                            obj['accountingParty']['vknTckn']=schemeID;
+                            obj['accountingParty']['vknTckn']=e2.ID.value || '';
+                            return;
                         }
+
                     });
                 }
                 obj['payableAmount']=e['legalMonetaryTotal'].payableAmount.value;
