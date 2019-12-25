@@ -22,6 +22,12 @@ module.exports = function(activeDb, member, req, res, callback) {
             case 'invoice':
             return getInvoice(activeDb,member,req,res,callback);
             break;
+            case 'invoiceview':
+            return invoiceView(activeDb,member,req,res,callback);
+            break;
+            case 'invoicepdf':
+            return invoicePdf(activeDb,member,req,res,callback);
+            break;
             case 'invoicexmlxslt':
             case 'invoicexml':
             case 'invoicexslt':
@@ -50,11 +56,11 @@ module.exports = function(activeDb, member, req, res, callback) {
 function getInvoiceList(ioType,activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1), 
         populate:[
-        {path:'eIntegrator',select:'_id eIntegrator username'}
+        {path:'eIntegrator',select:'_id eIntegrator name username'}
         ],
         limit:10
         ,
-        select:'_id profileId ID uuid issueDate issueTime invoiceTypeCode documentCurrencyCode lineCountNumeric pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal invoiceStatus invoiceErrors localStatus localErrors'
+        select:'_id eIntegrator profileId ID uuid issueDate issueTime invoiceTypeCode documentCurrencyCode lineCountNumeric pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal invoiceStatus invoiceErrors localStatus localErrors'
     }
 
     if((req.query.pageSize || req.query.limit)){
@@ -66,7 +72,14 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
     if(req.query.eIntegrator){
         filter['eIntegrator']=req.query.eIntegrator;
     }
-    
+    if(req.query.ID){
+        filter['ID.value']={ $regex: '.*' + req.query.ID + '.*' ,$options: 'i' };
+    }
+    if(req.query.invoiceStatus){
+        filter['invoiceStatus']=req.query.invoiceStatus;
+    }
+
+
     if(req.query.date1){
         filter['issueDate.value']={$gte:req.query.date1};
     }
@@ -85,6 +98,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
                 console.log(e['_id']);
                 var obj={}
                 obj['_id']=e['_id'];
+                obj['eIntegrator']=e['eIntegrator'];
                 obj['ioType']=e['ioType'];
                 obj['profileId']=e['profileId'].value;
                 obj['ID']=e['ID'].value;
@@ -190,6 +204,30 @@ function getInvoice(activeDb,member,req,res,callback){
             }
         });
 }
+
+function invoiceView(activeDb,member,req,res,callback){
+    var _id= req.params.param2 || req.query._id || '';
+    if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
+    activeDb.e_invoices.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
+        if(dberr(err,callback))
+            if(dbnull(doc,callback)){
+                callback({file: doc.html});
+            }
+        });
+}
+
+function invoicePdf(activeDb,member,req,res,callback){
+    var _id= req.params.param2 || req.query._id || '';
+    if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
+    activeDb.e_invoices.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
+        if(dberr(err,callback))
+            if(dbnull(doc,callback)){
+                
+                callback({file: doc.pdf});
+            }
+        });
+}
+
 function getInvoiceXmlXslt(activeDb,member,req,res,callback){
     var _id= req.params.param2 || req.query._id || '';
     if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
@@ -204,46 +242,6 @@ function getInvoiceXmlXslt(activeDb,member,req,res,callback){
         });
 }
 
-
-function getInvoices(ioType,activeDb,member,req,res,callback){
-    var options={page: (req.query.page || 1), 
-        populate:[
-        {path:'eIntegrator',select:'_id eIntegrator username'}
-        ],
-        limit:10
-    }
-
-    if((req.query.pageSize || req.query.limit)){
-        options['limit']=req.query.pageSize || req.query.limit;
-    }
-
-    var filter = {};
-    
-    if(req.query.eIntegrator){
-        filter['eIntegrator']=req.query.eIntegrator;
-    }
-    
-    if(req.query.date1){
-        filter['issueDate.value']={$gte:req.query.date1};
-    }
-
-    if(req.query.date2){
-        if(filter['issueDate.value']){
-            filter['issueDate.value']['$lte']=req.query.date2;
-        }else{
-            filter['issueDate.value']={$lte:req.query.date2};
-        }
-    }
-    activeDb.e_invoices.paginate(filter,options,(err, resp)=>{
-        if (dberr(err,callback)) {
-            callback({success: true,data: resp});
-        } else {
-            console.log('error:',err);
-        }
-    });
-
-
-}
 
 
 function isEInvoiceUser(activeDb,member,req,res,callback){

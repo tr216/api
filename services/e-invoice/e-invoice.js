@@ -99,6 +99,6 @@ function scheduler(){
 
 setTimeout(()=>{
 	scheduler();
- // },60000*30);
- },3000*1);
+ },60000*30);
+ // },3000*1);
  

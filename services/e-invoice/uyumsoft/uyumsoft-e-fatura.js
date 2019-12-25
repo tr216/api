@@ -143,7 +143,7 @@ function downloadInboxInvoices(dbModel,eIntegratorDoc,callback){
                                     
                                     
                                 }else{
-                                    console.log('api.getInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
+                                    console.log('api.getInboxInvoice error: ',err);
                                     index++;
                                     setTimeout(faturaIndir,500,cb);
                                 }

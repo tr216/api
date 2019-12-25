@@ -336,9 +336,9 @@ function getList(activeDb,member,req,res,callback){
                     
                     activeDb.pos_device_zreports.paginate(filter,options,(err, resp)=>{
                         if (dberr(err,callback)) {
-                            console.log('resp:',resp);
                             resp.docs.forEach((e)=>{
-
+                                e.zDate=e.zDate.yyyymmdd();
+                                
                                 e.data=services.posDevice.zreportDataToString(e.posDevice.service.serviceType,e.data);
                             });
                             callback({success: true,data: resp});
