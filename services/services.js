@@ -1,4 +1,4 @@
-exports.etuliaConnector=require('./local-connector/local-connector.js');
+exports.tr216LocalConnector=require('./local-connector/local-connector.js');
 
 exports.tasks=require('./tasks/tasks.js');
 exports.posDevice=require('./pos-device/pos-device.js');

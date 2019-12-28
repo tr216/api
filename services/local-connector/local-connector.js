@@ -230,6 +230,7 @@ var tcpserver = net.createServer(function (sc) {
         try {
             
             buffer += data.toString('utf8');
+
             var data2;
             if (buffer.charCodeAt(buffer.length - 1) == 0) {
                 data2= mrutil.socketread(buffer.substring(0, buffer.length - 1)); 

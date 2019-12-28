@@ -1,57 +1,136 @@
 module.exports = function(activeDb, member, req, res, callback) {
 
     if(req.params.param1==undefined) return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    //if(req.params.param2==undefined) return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-
-    // activeDb.e_integrators.findOne({_id:req.params.param1},(err,eIntegratorDoc)=>{
-    //     if(dberr(err,callback)){
-    //         if(dbnull(eIntegratorDoc,callback)){
-    //             if(eIntegratorDoc.passive)  return callback({success:false,error:{code:'PASSIVE',message:'Entegrator tanimi pasif durumdadir.'}});
+   
     switch(req.method){
         case 'GET':
-        switch(req.params.param1.lcaseeng()){
-            case 'iseinvoiceuser':
-            return isEInvoiceUser(activeDb,member,req,res,callback);
-            break;
-            case 'inboxinvoicelist':
-            return getInvoiceList(1,activeDb,member,req,res,callback);
-            break;
-            case 'outboxinvoicelist':
-            return getInvoiceList(0,activeDb,member,req,res,callback);
-            break;
-            case 'invoice':
-            return getInvoice(activeDb,member,req,res,callback);
-            break;
-            case 'invoiceview':
-            return invoiceView(activeDb,member,req,res,callback);
-            break;
-            case 'invoicepdf':
-            return invoicePdf(activeDb,member,req,res,callback);
-            break;
-            case 'invoicexmlxslt':
-            case 'invoicexml':
-            case 'invoicexslt':
-            case 'invoicexsltxml':
-            return getInvoiceXmlXslt(activeDb,member,req,res,callback);
-            break;
-            default:
-            return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
-            break;
-        }
+            switch(req.params.param1.lcaseeng()){
+                case 'iseinvoiceuser':
+                return isEInvoiceUser(activeDb,member,req,res,callback);
+                break;
+                case 'inboxinvoicelist':
+                return getInvoiceList(1,activeDb,member,req,res,callback);
+                break;
+                case 'outboxinvoicelist':
+                return getInvoiceList(0,activeDb,member,req,res,callback);
+                break;
+                case 'invoice':
+                return getInvoice(activeDb,member,req,res,callback);
+                break;
+                case 'invoiceview':
+                return invoiceView(activeDb,member,req,res,callback);
+                break;
+                case 'invoicepdf':
+                return invoicePdf(activeDb,member,req,res,callback);
+                break;
+                case 'invoicexmlxslt':
+                case 'invoicexml':
+                case 'invoicexslt':
+                case 'invoicexsltxml':
+                return getInvoiceXmlXslt(activeDb,member,req,res,callback);
+                break;
+                default:
+                return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
+                break;
+            }
+        break;
+        case 'POST':
+            switch(req.params.param1.lcaseeng()){
+                case 'transfer':
+                    if(req.params.param2.lcaseeng()=='import'){
+                        transferImport(activeDb,member,req,res,callback)
+                    }else if(req.params.param2.lcaseeng()=='export'){
+                        return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
+                    }else{
+                        return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
+                    }
+                break;
+                default:
+                return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
+                break;
+            }
 
         break;
         default:
         return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
         break;
     }
-
-            // }
-    //     }
-    // });
-
-
 }
 
+
+function transferImport(activeDb,member,req,res,callback){
+    
+    activeDb.e_integrators.find({passive:false,'localConnectorImportInvoice.localConnector':{$ne:null}}).populate(['localConnectorImportInvoice.localConnector']).exec((err,docs)=>{
+        if (dberr(err,callback)) {
+            var index=0;
+            function pushTask(cb){
+                if(index>=docs.length){
+                    cb(null);
+                }else{
+                    db.tasks.findOne({userDb:req.params.dbId,taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
+                        if (dberr(err,callback)) {
+                            if(doc==null){
+                                var taskdata={userDb:req.params.dbId,taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id,document:docs[index]}
+                                taskHelper.newTask(taskdata,(err,taskDoc)=>{
+                                    if(!err){
+                                        switch(taskDoc.status){
+                                            case 'running':
+                                                docs[index].localConnectorImportInvoice['status']='transferring';
+                                                break;
+                                            case 'pending':
+                                                docs[index].localConnectorImportInvoice['status']='pending';
+                                                break;
+                                            case 'completed':
+                                                docs[index].localConnectorImportInvoice['status']='transferred';
+                                                break;
+                                            case 'error':
+                                                docs[index].localConnectorImportInvoice['status']='error';
+                                                break;
+                                            default:
+                                                 docs[index].localConnectorImportInvoice['status']='';
+                                                 break;
+                                        }
+                                        docs[index].save((err,newDoc)=>{
+                                            if(!err){
+                                                index++;
+                                                setTimeout(pushTask,0,cb);
+                                            }else{
+                                                cb(err);
+                                                // index++;
+                                                // setTimeout(pushTask,0,cb);
+                                            }
+                                        });
+                                    }else{
+                                        cb(err);
+                                        // index++;
+                                        // setTimeout(pushTask,0,cb);
+                                    }
+                                });
+                            }else{
+                                index++;
+                                setTimeout(pushTask,0,cb);
+                            }
+                        }
+                    });
+                    
+                }
+            }
+            pushTask((err)=>{
+                if(dberr(err,callback)){
+                    var resp=[]
+                    // for(var i=0;i<docs.length;i++){
+                    //     resp.push(docs[i]._id.toString());
+                    // }
+                    docs.forEach((e)=>{
+                        resp.push(e._id.toString());
+                    });
+                    callback({success: true,data:resp});
+                }
+            });
+        }
+    })
+    
+}
 
 function getInvoiceList(ioType,activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1), 
@@ -60,7 +139,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
         ],
         limit:10
         ,
-        select:'_id eIntegrator profileId ID uuid issueDate issueTime invoiceTypeCode documentCurrencyCode lineCountNumeric pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal invoiceStatus invoiceErrors localStatus localErrors'
+        select:'_id eIntegrator profileId ID uuid issueDate issueTime invoiceTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal invoiceStatus invoiceErrors localStatus localErrors'
     }
 
     if((req.query.pageSize || req.query.limit)){
@@ -72,13 +151,27 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
     if(req.query.eIntegrator){
         filter['eIntegrator']=req.query.eIntegrator;
     }
-    if(req.query.ID){
+    if((req.query.ID || '')!=''){
         filter['ID.value']={ $regex: '.*' + req.query.ID + '.*' ,$options: 'i' };
+    }
+    if((req.query.invoiceNo || '')!=''){
+        if(filter['$or']==undefined) filter['$or']=[];
+        filter['$or'].push({'ID.value':{ '$regex': '.*' + req.query.invoiceNo + '.*' , '$options': 'i' }})
+        filter['$or'].push({'localDocumentId':{ '$regex': '.*' + req.query.invoiceNo + '.*' ,'$options': 'i' }})
     }
     if(req.query.invoiceStatus){
         filter['invoiceStatus']=req.query.invoiceStatus;
     }
+    if((req.query.profileId || '')!=''){
+        filter['profileId.value']=req.query.profileId;
+    }
+    if((req.query.invoiceTypeCode || '')!=''){
+        filter['invoiceTypeCode.value']=req.query.invoiceTypeCode;
+    }
 
+    if((req.query.documentCurrencyCode || '')!=''){
+        filter['documentCurrencyCode.value']=req.query.documentCurrencyCode;
+    }
 
     if(req.query.date1){
         filter['issueDate.value']={$gte:req.query.date1};
@@ -91,11 +184,11 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
             filter['issueDate.value']={$lte:req.query.date2};
         }
     }
+    
     activeDb.e_invoices.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             var liste=[]
             resp.docs.forEach((e,index)=>{
-                console.log(e['_id']);
                 var obj={}
                 obj['_id']=e['_id'];
                 obj['eIntegrator']=e['eIntegrator'];
@@ -176,6 +269,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
                 obj['exchangeRate']=e['pricingExchangeRate'].calculationRate.value;
 
                 obj['lineCountNumeric']=e['lineCountNumeric'].value;
+                obj['localDocumentId']=e['localDocumentId'];
                 obj['invoiceStatus']=e['invoiceStatus'];
                 obj['invoiceErrors']=e['invoiceErrors'];
                 obj['localStatus']=e['localStatus'];

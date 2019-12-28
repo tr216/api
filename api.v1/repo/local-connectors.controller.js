@@ -373,7 +373,7 @@ function runCode(activeDb,member,req,res,callback){
                     var sampleData={};
 
                     if(data.sampleData!=undefined) sampleData=data.sampleData;
-                    services.etuliaConnector.run(doc,sampleData,(err,resp)=>{
+                    services.tr216LocalConnector.run(doc,sampleData,(err,resp)=>{
                         if(!err){
                             callback({success:true,data:(resp || '')});
                         }else{
@@ -398,19 +398,19 @@ function test(activeDb,member,req,res,callback){
     switch(data.connectionType){
         case 'mssql':
 
-            services.etuliaConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
+            services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
                 ,'MSSQL_CONNECTION_TEST',{connection:data.connection,query:''},(result)=>{
                 callback(result);
             });
             break;
         case 'mysql':
-            services.etuliaConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
+            services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
                 ,'MYSQL_CONNECTION_TEST',{connection:data.connection,query:''},(result)=>{
                 callback(result);
             });
             break;
         default:
-            services.etuliaConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
+            services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
                 ,'TIME',{},(result)=>{
                 callback(result);
             });

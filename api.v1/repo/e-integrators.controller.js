@@ -25,7 +25,12 @@ module.exports = function(activeDb, member, req, res, callback) {
 }
 
 function getList(activeDb,member,req,res,callback){
-    var options={page: (req.query.page || 1)
+    var options={page: (req.query.page || 1),
+        populate:[
+            {path:'localConnectorImportInvoice.localConnector'},
+            {path:'localConnectorExportInvoice.localConnector'},
+            {path:'localConnectorImportELedger.localConnector'}
+        ]
         
     }
 

@@ -13,6 +13,21 @@ module.exports=function(conn){
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},
         isDefault: {type: Boolean, default: false},
+        localConnectorImportInvoice:{ //sqlserver to tr216
+            localConnector:{type: mongoose.Schema.Types.ObjectId, ref: 'local_connectors' , default:null}, 
+            status: {type: String, trim:true, default: ''},
+            error:{code:'',message:''}
+        },
+        localConnectorExportInvoice:{ //tr216 to sqlserver
+            localConnector:{type: mongoose.Schema.Types.ObjectId, ref: 'local_connectors' , default:null}, 
+            status: {type: String, trim:true, default: ''},
+            error:{code:'',message:''}
+        },
+        localConnectorImportELedger:{ //sqlserver to tr216
+            localConnector:{type: mongoose.Schema.Types.ObjectId, ref: 'local_connectors' , default:null}, 
+            status: {type: String, trim:true, default: ''},
+            error:{code:'',message:''}
+        },
         passive: {type: Boolean, default: false}
     });
 

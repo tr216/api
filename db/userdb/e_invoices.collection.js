@@ -186,12 +186,19 @@ module.exports=function(conn){
             calculationRate   :{value:{ type: Number,default: 0}},
             date   :{ value:{ type: String, trim:true, default: ''}}
         },
+        paymentExchangeRate:{ 
+            sourceCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
+            targetCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
+            calculationRate   :{value:{ type: Number,default: 0}},
+            date   :{ value:{ type: String, trim:true, default: ''}}
+        },
         taxTotal  : [{
             taxAmount :{value:{ type: Number,default: 0}},
             taxSubtotal:[{
                 taxableAmount:{value:{ type: Number,default: 0}},
                 taxAmount :{value:{ type: Number,default: 0}},
                 percent :{value:{ type: Number,default: 0}},
+                calculationSequenceNumeric :{value:{ type: Number,default: 0}},
                 taxCategory :{
                     name:{ value:{ type: String, trim:true, default: ''}},
                     taxScheme:{
@@ -210,6 +217,7 @@ module.exports=function(conn){
                 taxableAmount:{ value:{ type: Number,default: 0} },
                 taxAmount :{ value:{ type: Number,default: 0} },
                 percent :{value:{ type: Number,default: 0}},
+                calculationSequenceNumeric :{value:{ type: Number,default: 0}},
                 taxCategory :{
                     name:{ value:{ type: String, trim:true, default: ''}},
                     taxScheme:{
@@ -221,6 +229,15 @@ module.exports=function(conn){
                     taxExemptionReasonCode:{ value:{ type: String, trim:true, default: ''}}
                 }
             }]
+        }],
+        allowanceCharge:[{
+            sequenceNumeric:{value:{ type: Number,default: 0}},
+            allowanceChargeReason:{ value:{ type: String, trim:true, default: ''}},
+            amount: {value:{ type: Number,default: 0}},
+            baseAmount: {value:{ type: Number,default: 0}},
+            chargeIndicator:{value:{ type: Boolean,default: false}},
+            multiplierFactorNumeric:{value:{ type: Number,default: 0}},
+            perUnitAmount:{value:{ type: Number,default: 0}}
         }],
         legalMonetaryTotal: { 
             lineExtensionAmount  :{value:{ type: Number,default: 0}},
@@ -479,6 +496,7 @@ module.exports=function(conn){
         }],
         pdf:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
         html:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
+        localDocumentId: {type: String, default: ''},
         invoiceStatus: {type: String, default: 'Draft',enum:['Draft','Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
         invoiceErrors:[{code:'',message:''}],
         localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
@@ -490,6 +508,8 @@ module.exports=function(conn){
     
 
     schema.pre('save', function(next) {
+        this.lineCountNumeric.value=this.invoiceLine.length;
+        
         next();
         //bir seyler ters giderse 
         // next(new Error('ters giden birseyler var'));

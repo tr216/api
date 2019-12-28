@@ -86,10 +86,12 @@ function runRendered(localConnectorDoc,data,cb){
 					}
 
 					console.log('js comut gonderildi.')
-					services.etuliaConnector.sendCommand({id:localConnectorDoc.connectorId,password:localConnectorDoc.connectorPass}
+					services.tr216LocalConnector.sendCommand({id:localConnectorDoc.connectorId,password:localConnectorDoc.connectorPass}
 						,command, params,(result)=>{
-						console.log('js comut cevap geldi:',result);
+						console.log('js comut cevap geldi success:',result.success);
 						if(result.success){
+							fs.writeFileSync('F:\\temp\\reynaers\\lconn.json',result.data,'UTF-8');
+							console.log('dosyaya yazildi');
 							cb(null,result);
 						}else{
 							cb(result.error,result);
@@ -153,7 +155,7 @@ function render(localConnectorDoc,data,cb){
 		
 		cb(null,renderedCode);
 	}catch(err){
-		
+		console.log(err);
 		
 		cb({name:'EJS_RENDER_ERROR',message: err.toString()});
 	}
