@@ -259,15 +259,18 @@ function insertEInvoice(dbModel,eIntegratorDoc,connectorResult,callback){
 				if(!err){
 					if(doc==null){
 						var newEInvoice=new dbModel.e_invoices(invoices[index]);
-						newEInvoice.save((err,newDoc)=>{
-							if(err){
-								console.log('tasks.js insertEInvoice newEInvoice.save Error:',err);
-							}else{
-								console.log('tasks.js insertEInvoice newEInvoice.save OK _id:',newDoc._id);
-							}
-							index++;
-							setTimeout(kaydet,0,cb);
-						})
+						yeniFaturaNumarasi(dbModel,eIntegratorDoc,newEInvoice,(err,newEInvoice2)=>{
+							newEInvoice2.save((err,newDoc)=>{
+								if(err){
+									console.log('tasks.js insertEInvoice newEInvoice.save Error:',err);
+								}else{
+									console.log('tasks.js insertEInvoice newEInvoice.save OK _id:',newDoc._id);
+								}
+								index++;
+								setTimeout(kaydet,0,cb);
+							})
+						});
+						
 					}else{
 						console.log('localDocumentId zaten var:',invoices[index].localDocumentId);
 						index++;
@@ -294,4 +297,33 @@ function insertEInvoice(dbModel,eIntegratorDoc,connectorResult,callback){
 		console.log('insertEInvoice tryErr:',tryErr);
 		callback({code:tryErr.name,message:tryErr.message});
 	}
+}
+
+function yeniFaturaNumarasi(dbModel,eIntegratorDoc,newInvoice,cb){
+	if(newInvoice.ID.value!='') return cb(null,newInvoice);
+	if(newInvoice.issueDate.value.length!=10) return cb(null,newInvoice);
+	if(eIntegratorDoc.invoicePrefix.length!=3) return cb(null,newInvoice);
+	var yil = newInvoice.issueDate.value.substr(0,4);
+
+	dbModel.e_invoices.find({ioType:0, 'ID.value':{'$regex': eIntegratorDoc.invoicePrefix + yil + '.*','$options':'i'} }).sort({'ID.value':-1}).limit(1).exec((err,docs)=>{
+		if(!err){
+			var yeniNo=0;
+			var invoiceNum=eIntegratorDoc.invoicePrefix + yil;
+			if(docs.length>0){
+				var s=docs[0].ID.value.substr(7);
+				if(!isNaN(s)) yeniNo=Number(s);
+			}
+			yeniNo++;
+			if(yeniNo.toString().length<9){
+				for(var i=0;i<(9-yeniNo.toString().length);i++){
+					invoiceNum +='0';
+				}
+			}
+			invoiceNum +=yeniNo.toString();
+			newInvoice.ID.value=invoiceNum;
+			return cb(null,newInvoice)
+		}else{
+			return cb(null,newInvoice);
+		}
+	});
 }
