@@ -82,23 +82,45 @@ function downloadInvoices(dbModel,eIntegratorDoc,cb){
 	}
 }
 //
-
-function scheduler(){
-	mrutil.console(('E-Invoice Service Scheduled Task').green + ' started');
-	start((err)=>{
-		console.log('start err:',err);
-		// setTimeout(scheduler,60000*30); //30 dakika arayla check et.
-		setTimeout(()=>{
-			scheduler();
-		},60000*30); //30 dakika arayla check et.
-		// },4000*30); //30 dakika arayla check et.
-	});
-}
-
-
-
 setTimeout(()=>{
+	function scheduler(){
+		mrutil.console(('E-Invoice Service Scheduled Task').green + ' started');
+		start((err)=>{
+			if(err){
+				mrutil.console(('E-Invoice Service Scheduled Task Error:') + JSON.stringify(err));
+			}else{
+				mrutil.console(('E-Invoice Service Scheduled Task').blue + ' completed');
+			}
+			setTimeout(scheduler,60000*30); //30 dakika arayla check et.
+		});
+	}
 	scheduler();
  },60000*30);
  // },3000*1);
  
+// setTimeout(()=>{
+// 	var api=require('./uyumsoft/api.js');
+// 	api.getEInvoiceUsers({url:'https://efatura.uyumsoft.com.tr/Services/Integration',username:'Alitek_WebServis',password:'AyXEZR%k'},{pagination:{pageIndex:1, pageSize:10}},(err,result)=>{
+// 		if(!err){
+// 			console.log('einvoice user download:',result);
+// 		}else{
+// 			console.log('einvoice user error:',err);
+// 		}
+// 	});
+//  },100*30);
+
+setTimeout(()=>{
+	function downloadEInvoiceUsers(){
+		mrutil.console(('E-InvoiceUsers Download Scheduled Task').green + ' started');
+		var uyumsoft=require('./uyumsoft/uyumsoft-e-fatura.js');
+		uyumsoft.downloadEInvoiceUsers((err)=>{
+			if(err){
+				mrutil.console(('E-InvoiceUsers Download Scheduled Task Error:') + JSON.stringify(err));
+			}else{
+				mrutil.console(('E-InvoiceUsers Download Scheduled Task').blue + ' completed');
+			}
+			setTimeout(downloadEInvoiceUsers,3600*1000*12);
+		});
+	}
+	downloadEInvoiceUsers();
+},3600*1000*12)

@@ -25,8 +25,14 @@ function generateRequestMessage(funcName,query,isQuery=true){
         }
         message +='</s:query>';
     }else{
+
         for(let k in query){
-            message +="<s:" + k + ">" + query[k].toString() + "</s:" + k +">";
+            if(Object.keys(query[k]).indexOf('pageIndex')>-1 || Object.keys(query[k]).indexOf('pageSize')>-1 || Object.keys(query[k]).indexOf('PageIndex')>-1 || Object.keys(query[k]).indexOf('PageSize')>-1){
+                message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 20) + '">' + query[k].toString() + '</s:' + k +'>';
+            }else{
+                message +='<s:' + k + '>' + query[k].toString() + '</s:' + k +'>';
+            }
+            
         }
     }
     message +='</s:' + funcName + '>';
@@ -832,11 +838,97 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
 
 
 
+
 /**
 * @pagination :{pageIndex:Number, pageSize:Number}
+* @query :{pageIndex:Number, pageSize:Number}
 */
-exports.GetEInvoiceUsers = function (options,pagination,callback) {
-    callback(null);
-}; 
 
 
+exports.getEInvoiceUsers = function (options,query,callback) {
+    var binding = new BasicHttpBinding(
+        { SecurityMode: "TransportWithMessageCredential"
+        , MessageClientCredentialType: "UserName"
+    })
+    var proxy = new Proxy(binding, options.url);
+    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+    proxy.ClientCredentials.Username.Username =options.username;
+    proxy.ClientCredentials.Username.Password =options.password ;
+
+    var message=generateRequestMessage('GetEInvoiceUsers',query,false);
+    
+    
+    proxy.send(message, "http://tempuri.org/IIntegration/GetEInvoiceUsers", function(response, ctx) {
+        var fileName=path.join(__dirname,'../../../../temp','GetEInvoiceUsers');
+
+        fs.writeFileSync(fileName + '.xml', response,'utf8');
+        
+
+        if(ctx.error!=undefined){
+            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+
+            return callback({code:ctx.error['code'],message:ctx.error['code']});
+        }
+        try{ 
+            mrutil.xml2json(response,(err,jsObject)=>{
+                if(!err){
+                    fs.writeFileSync(fileName+'.json', JSON.stringify(jsObject,null,2),'utf8');
+                    if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
+
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+                    if(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['$'].IsSucceded=='true'){
+                        var result={
+                            page:0,
+                            pageSize:0,
+                            recordCount: 0,
+                            pageCount: 0,
+                            docs:[]
+                        }
+
+                        console.log('PageIndexXML:',jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].PageIndex);
+                        console.log('PageSizeXML:',jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].PageSize);
+                        // result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].PageIndex);
+                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].PageIndex || query.pagination.pageIndex);
+                        // result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].PageSize);
+                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].PageSize || query.pagination.pageSize);
+                        result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].TotalCount);
+                        result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].TotalPages);
+                        console.log('result.page:',result.page);
+                        console.log('result.pageSize:',result.pageSize);
+                        console.log('result.recordCount:',result.recordCount);
+                        console.log('result.pageCount:',result.pageCount);
+                        var items=jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['Items'];
+                        console.log('items.length:',items.length);
+                        items.forEach((item)=>{
+                            var obj={
+                        		identifier:item['$'].Identifier.trim(),
+                        		postboxAlias:item['$'].PostboxAlias.trim(),
+                        		title:item['$'].Title.trim(),
+                        		type:item['$'].Type.trim(),
+                        		systemCreateDate:new Date(item['$'].SystemCreateDate + '.000+0300'),
+                        		firstCreateDate:new Date(item['$'].FirstCreateDate + '.000+0300'),
+                        		enabled:Boolean(item['$'].Enabled)
+
+                        	}
+                            result.docs.push(obj);
+                        });
+
+                        callback(null,result);
+                    }else{
+                        callback({code:'UNSUCCESSFUL',message:'Uyumsoft getEInvoiceUsers Basarisiz'});
+                    }
+                                       
+                    
+                }else{
+                    callback({code:'XML2JSON_ERROR',message:(err.name || err.message || err.toString())});
+                }
+            });
+
+        }catch(err){
+            callback({code:'CATCHED_ERROR',message:err});
+        }
+    });
+    
+};
