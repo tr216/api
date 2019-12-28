@@ -5,8 +5,6 @@ var schema = mongoose.Schema({
     type: {type: String, trim:true, default:""},
     systemCreateDate: { type: Date,default: Date.now},
     firstCreateDate: { type: Date,default: Date.now},
-    identifier: {type: String, trim:true, default:""},
-    identifier: {type: String, trim:true, default:""},
     enabled: {type: Boolean, default: false}
 });
 
@@ -26,12 +24,14 @@ schema.pre('remove', true, function(next, done) {
     // next(new Error('ters giden birseyler var'));
 });
 
+schema.plugin(mongoosePaginate);
 
 
 
 schema.on('init', function(model) {
  
 });
+
 
 
 module.exports = dbconn.model('einvoice_users', schema);

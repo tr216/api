@@ -29,6 +29,9 @@ module.exports = function(activeDb, member, req, res, callback) {
                 case 'invoicexsltxml':
                 return getInvoiceXmlXslt(activeDb,member,req,res,callback);
                 break;
+                case 'einvoiceuserlist':
+                return getEInvoiceUserList(activeDb,member,req,res,callback);
+                break;
                 default:
                 return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
                 break;
@@ -62,7 +65,14 @@ function transferImport(activeDb,member,req,res,callback){
     
     activeDb.e_integrators.find({passive:false,'localConnectorImportInvoice.localConnector':{$ne:null}}).populate(['localConnectorImportInvoice.localConnector']).exec((err,docs)=>{
         if (dberr(err,callback)) {
+            if(docs.length==0){
+                return callback({success:false,error:{code:'NOT_DEFINED',message:'Local connectoru tanimlanmis aktif bir entegrator bulunmamaktadir.'}})
+            }
             var index=0;
+            var kuyrugaAlinan=0;
+            var zatenKuyrukta=0;
+            
+
             function pushTask(cb){
                 if(index>=docs.length){
                     cb(null);
@@ -92,6 +102,7 @@ function transferImport(activeDb,member,req,res,callback){
                                         }
                                         docs[index].save((err,newDoc)=>{
                                             if(!err){
+                                                kuyrugaAlinan++;
                                                 index++;
                                                 setTimeout(pushTask,0,cb);
                                             }else{
@@ -107,6 +118,7 @@ function transferImport(activeDb,member,req,res,callback){
                                     }
                                 });
                             }else{
+                                zatenKuyrukta++;
                                 index++;
                                 setTimeout(pushTask,0,cb);
                             }
@@ -117,14 +129,12 @@ function transferImport(activeDb,member,req,res,callback){
             }
             pushTask((err)=>{
                 if(dberr(err,callback)){
-                    var resp=[]
-                    // for(var i=0;i<docs.length;i++){
-                    //     resp.push(docs[i]._id.toString());
-                    // }
-                    docs.forEach((e)=>{
-                        resp.push(e._id.toString());
-                    });
-                    callback({success: true,data:resp});
+                    if(kuyrugaAlinan==0 && zatenKuyrukta>0){
+                        callback({success:false,error:{code:'ALREADY_IN_PROCESSING',message:'Islem gorev yoneticisine alinmis. Birazdan tamamlanir.'}})
+                    }else{
+                        callback({success: true,data:'Gorev yoneticisine ' + kuyrugaAlinan.toString() + ' adet gorev alindi'});
+                    }
+                    
                 }
             });
         }
@@ -284,9 +294,8 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
             console.log('error:',err);
         }
     });
-
-
 }
+
 function getInvoice(activeDb,member,req,res,callback){
     var _id= req.params.param2 || req.query._id || '';
     if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
@@ -336,6 +345,39 @@ function getInvoiceXmlXslt(activeDb,member,req,res,callback){
         });
 }
 
+function getEInvoiceUserList(activeDb,member,req,res,callback){
+    var options={page: (req.query.page || 1), 
+        limit:10
+    }
+
+    if((req.query.pageSize || req.query.limit)){
+        options['limit']=req.query.pageSize || req.query.limit;
+    }
+
+    var filter = {}
+    
+    var vkn=req.query.vkn || req.query.tckn || req.query.vknTckn || req.query.taxNumber || req.query.identifier || '';
+
+    if(vkn!=''){
+        filter['identifier']={ '$regex': '.*' + vkn + '.*' ,'$options': 'i' };
+    }
+    if((req.query.title || '')!=''){
+        filter['title']={ '$regex': '.*' + req.query.title + '.*' ,'$options': 'i' };
+    }
+    if(req.query.enabled){
+        filter['enabled']=Boolean(req.query.enabled);
+    }
+    if((req.query.postboxAlias || '')!=''){
+        filter['postboxAlias']={ $regex: '.*' + req.query.postboxAlias + '.*' ,$options: 'i' };
+    }
+    
+    
+    db.einvoice_users.paginate(filter,options,(err, resp)=>{
+        if (dberr(err,callback)) {
+            callback({success: true,data: resp});
+        } 
+    });
+}
 
 
 function isEInvoiceUser(activeDb,member,req,res,callback){
