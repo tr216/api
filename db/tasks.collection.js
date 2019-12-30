@@ -2,7 +2,7 @@
     var schema = mongoose.Schema({
         userDb: {type: mongoose.Schema.Types.ObjectId, ref: 'dbdefines', default: null},
         taskType: {type: String, required: true, enum:['connector_transfer_zreport','send_email','send_sms',
-        'connector_import_einvoice','connector_export_einvoice','connector_import_eledger']},
+        'connector_import_einvoice','connector_export_einvoice','connector_import_eledger','einvoice_send_to_gib']},
         collectionName:{type: String, default:''},
         documentId: {type: mongoose.Schema.Types.ObjectId, default: null},
         document:{type: Object, default:null},

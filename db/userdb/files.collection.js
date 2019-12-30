@@ -2,7 +2,7 @@ module.exports=function(conn){
     var schema = mongoose.Schema({
         name: {type :String, required:[true,'Dosya ismi gereklidir.']},
         extension: {type :String, required:[true,'Dosya uzantisi gereklidir.'], default: 'ejs',
-            enum:['ejs','json','xml','xslt','xls','xlsx','doc','docx','txt','pdf','html','js','sh','bat','cmd','jpg','jpeg','csv','sql']
+            enum:['ejs','json','xml','xslt','xls','xlsx','doc','docx','txt','pdf','html','js','sh','bat','cmd','jpg','jpeg','csv','sql','xsl','png']
         },
         fileName: {type :String, default:''},
         type: {type :String, default:'text/plain'},

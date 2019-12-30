@@ -74,6 +74,7 @@ require('./lib/loader_db.js')((err)=>{
     require('./lib/loader_api_v1.js')(app,(err)=>{
       if(!err){
         global.services=require('./services/services.js');
+        
       }else{
         console.log('loader_api_v1.js ERROR:',err);
       }
@@ -156,8 +157,8 @@ function onListening() {
 
 
 
-// process.on('uncaughtException', function (err) {
-//     mrutil.console('Caught exception: ' + err);
-// });
+process.on('uncaughtException', function (err) {
+    mrutil.console('Caught exception: ' + err);
+});
 
 

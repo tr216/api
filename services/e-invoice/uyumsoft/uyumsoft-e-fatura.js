@@ -9,6 +9,7 @@ exports.downloadInvoices = function (dbModel,eIntegratorDoc,callback) {
 	
 }
 
+
 function downloadInboxInvoices(dbModel,eIntegratorDoc,callback){
 	var isTestPlatform=eIntegratorDoc.url.indexOf('test')>-1?true:false;
 	if(isTestPlatform) console.log('uyumsoft test platform');
@@ -78,13 +79,13 @@ function downloadInboxInvoices(dbModel,eIntegratorDoc,callback){
 										doc.modifiedDate=new Date();
 										doc.invoiceStatus=indirilecekFaturalar[index].status;
 										doc.save((err,doc2)=>{
-											console.log('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
+											//console.log('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
 											index++;
 											setTimeout(faturaIndir,0,cb);
 											return;
 										});
 									}else{
-										console.log('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
+										//console.log('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
 										index++;
 										setTimeout(faturaIndir,0,cb);
 										return;
@@ -239,13 +240,13 @@ function downloadOutboxInvoices(dbModel,eIntegratorDoc,callback){
 										doc.modifiedDate=new Date();
 										doc.invoiceStatus=indirilecekFaturalar[index].status;
 										doc.save((err,doc2)=>{
-											console.log('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
+											//console.log('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
 											index++;
 											setTimeout(faturaIndir,0,cb);
 											return;
 										});
 									}else{
-										console.log('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
+										//console.log('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
 										index++;
 										setTimeout(faturaIndir,0,cb);
 										return;
@@ -494,6 +495,7 @@ function deleteEmptyObject(obj,propertyName){
 		return obj;
 	}
 }
+
 function prepareInvoiceObject(invoice){
 	invoice=mrutil.deleteObjectProperty(invoice,'xmlns*');
 	invoice=deleteEmptyObject(invoice,'$');
@@ -602,3 +604,43 @@ function insertEInvoiceUsers(docs,callback){
 		callback(err);
 	});
 }
+
+exports.sendToGib=function(dbModel,eInvoice,callback){
+	
+	var options=JSON.parse(JSON.stringify(eInvoice.eIntegrator));
+	//eInvoice['senderParty']=JSON.parse(JSON.stringify(eInvoice['accountingSupplierParty']))
+	var invoiceXml=mrutil.e_invoice2xml(eInvoice,'Invoice');
+	//invoiceXml=fs.readFileSync('C:\\arge\\tr216\\temp\\ornek.xml','UTF-8');
+	fs.writeFileSync('C:\\arge\\tr216\\temp\\invoiceXml.xml','<?xml version="1.0" encoding="UTF-8"?>\n' + invoiceXml,'UTF-8');
+	//invoiceXml=invoiceXml.replaceAll('<?xml version="1.0"?>','');
+	invoiceXml=invoiceXml.replace('<Invoice','<s:Invoice');
+	invoiceXml=invoiceXml.replace('</Invoice','</s:Invoice');
+	var xml='<s:invoices>';
+	xml +='<s:InvoiceInfo LocalDocumentId="555">';
+	// xml +'<s:Scenario>eInvoice</s:Scenario>';
+	xml +'<s:Scenario>1</s:Scenario>';
+	xml +='<s:TargetCustomer Title="TR216 Business solutions" VknTckn="9000068418" Alias="defaultpk" />';
+	// xml +='<s:Invoice>' + invoiceXml + '</s:Invoice>';
+	xml +='' + invoiceXml + '';
+	xml +='<s:EArchiveInvoiceInfo DeliveryType="Electronic" />';
+	xml +='</s:InvoiceInfo>';
+	xml +='</s:invoices>';
+//Scenario
+	api.sendInvoice(options,xml,(err,result)=>{
+		if(!err){
+
+			console.log('sendToGib result:',result);
+			callback(null,eInvoice);
+		}else{
+			console.log('sendToGib error:',err);
+			callback(err);
+		}
+
+	});
+}
+
+
+// xml +='<s:Title></s:Title>';
+// 	xml +='<s:VknTckn>9000068418</s:VknTckn>';
+// 	xml +='<s:Alias>defaultpk</s:Alias>';
+// 	xml +='</s:TargetCustomer>';

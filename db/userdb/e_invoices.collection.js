@@ -52,7 +52,7 @@ module.exports=function(conn){
         additionalDocumentReference:[{ 
             ID:{value:{ type: String, trim:true, default: ''}},
             issueDate:{value:{ type: String, trim:true, default: ''}},
-            documentTypeCode:{value:{ type: String, trim:true, default: ''}},
+            documentTypeCode:{value:{ type: String, trim:true, default: 'XSLT'}},
             documentType:{value:{ type: String, trim:true, default: ''}},
             documentDescription:[{value:{ type: String, trim:true, default: ''}}],
             attachment: {
@@ -63,7 +63,7 @@ module.exports=function(conn){
                         mimeCode:{ type: String, trim:true, default: 'application/xml'},
                         encodingCode: { type: String, trim:true, default: 'Base64'},
                         characterSetCode:{ type: String, trim:true, default: 'UTF-8'},
-                        filename: { type: String}
+                        filename: { type: String, default:'xslt_sablon.xslt'}
                     }
                 }
             },
@@ -193,10 +193,25 @@ module.exports=function(conn){
             date   :{ value:{ type: String, trim:true, default: ''}}
         },
         taxTotal  : [{
-            taxAmount :{value:{ type: Number,default: 0}},
+            taxAmount :{
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
             taxSubtotal:[{
-                taxableAmount:{value:{ type: Number,default: 0}},
-                taxAmount :{value:{ type: Number,default: 0}},
+                taxableAmount:{
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
+                taxAmount :{
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
                 percent :{value:{ type: Number,default: 0}},
                 calculationSequenceNumeric :{value:{ type: Number,default: 0}},
                 taxCategory :{
@@ -212,10 +227,25 @@ module.exports=function(conn){
             }]
         }],
         withholdingTaxTotal  : [{
-            taxAmount :{value:{ type: Number,default: 0}},
+            taxAmount :{
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
             taxSubtotal:[{
-                taxableAmount:{ value:{ type: Number,default: 0} },
-                taxAmount :{ value:{ type: Number,default: 0} },
+                taxableAmount:{
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
+                taxAmount :{
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
                 percent :{value:{ type: Number,default: 0}},
                 calculationSequenceNumeric :{value:{ type: Number,default: 0}},
                 taxCategory :{
@@ -233,20 +263,70 @@ module.exports=function(conn){
         allowanceCharge:[{
             sequenceNumeric:{value:{ type: Number,default: 0}},
             allowanceChargeReason:{ value:{ type: String, trim:true, default: ''}},
-            amount: {value:{ type: Number,default: 0}},
-            baseAmount: {value:{ type: Number,default: 0}},
+            amount: {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
+            baseAmount:  {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
             chargeIndicator:{value:{ type: Boolean,default: false}},
             multiplierFactorNumeric:{value:{ type: Number,default: 0}},
-            perUnitAmount:{value:{ type: Number,default: 0}}
+            perUnitAmount: {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            }
         }],
         legalMonetaryTotal: { 
-            lineExtensionAmount  :{value:{ type: Number,default: 0}},
-            taxExclusiveAmount  :{value:{ type: Number,default: 0}},
-            taxInclusiveAmount   :{value:{ type: Number,default: 0}},
-            allowanceTotalAmount   :{value:{ type: Number,default: 0}},
-            chargeTotalAmount   :{value:{ type: Number,default: 0}},
-            payableRoundingAmount   :{value:{ type: Number,default: 0}},
-            payableAmount    :{value:{ type: Number,default: 0}}
+            lineExtensionAmount  : {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
+            taxExclusiveAmount  : {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
+            taxInclusiveAmount   : {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
+            allowanceTotalAmount   : {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
+            chargeTotalAmount   : {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
+            payableRoundingAmount   : {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            },
+            payableAmount    : {
+                value:{ type: Number,default: 0},
+                attr:{
+                    currencyID:{ type: String, default:'' }
+                }
+            }
         },
         invoiceLine:[{
             ID:{ value:{ type: String, trim:true, default: ''}},
@@ -257,10 +337,10 @@ module.exports=function(conn){
                     unitCode: { type: String }
                 }
             },
-            lineExtensionAmount :{
+            lineExtensionAmount : {
                 value:{ type: Number,default: 0},
                 attr:{
-                    currencyID:{ type: String }
+                    currencyID:{ type: String, default:'' }
                 }
             },
             orderLineReference:[{
@@ -294,10 +374,10 @@ module.exports=function(conn){
                 sellersItemIdentification:{ID:{ value:{ type: String, trim:true, default: ''}}}
             },
             price : {
-                priceAmount : {
-                    value:{ type: Number,default: 0},
+                priceAmount :  {
+                value:{ type: Number,default: 0},
                     attr:{
-                        currencyID:{ type: String }
+                        currencyID:{ type: String, default:'' }
                     }
                 }
             },
@@ -309,11 +389,26 @@ module.exports=function(conn){
             allowanceCharge:[{
                 sequenceNumeric:{value:{ type: Number,default: 0}},
                 allowanceChargeReason:{ value:{ type: String, trim:true, default: ''}},
-                amount: {value:{ type: Number,default: 0}},
-                baseAmount: {value:{ type: Number,default: 0}},
+                amount:  {
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
+                baseAmount: {
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
                 chargeIndicator:{value:{ type: Boolean,default: false}},
                 multiplierFactorNumeric:{value:{ type: Number,default: 0}},
-                perUnitAmount:{value:{ type: Number,default: 0}}
+                perUnitAmount:{
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
             }],
             delivery : [{
                 actualDeliveryDate:{ value:{ type: String, trim:true, default: ''}},
@@ -329,7 +424,7 @@ module.exports=function(conn){
                     amount : {
                         value:{ type: Number,default: 0},
                         attr:{
-                            currencyID:{ type: String }
+                            currencyID:{ type: String, default:''}
                         }
                     },
                     ID:{ value:{ type: String, trim:true, default: ''}},
@@ -369,26 +464,26 @@ module.exports=function(conn){
                         totalInvoiceAmount : {
                             value:{ type: Number,default: 0},
                             attr:{
-                                currencyID:{ type: String }
+                                currencyID:{ type: String, default:'' }
                             }
                         }
                     }],
                     declaredCustomsValueAmount : {
                         value:{ type: Number,default: 0},
                         attr:{
-                            currencyID:{ type: String },
+                            currencyID:{ type: String, default:'' },
                         }
                     },
                     declaredForCarriageValueAmount : {
                         value:{ type: Number,default: 0},
                         attr:{
-                            currencyID:{ type: String }
+                            currencyID:{ type: String, default:'' }
                         }
                     },
                     declaredStatisticsValueAmount : {
                         value:{ type: Number,default: 0},
                         attr:{
-                            currencyID:{ type: String }
+                            currencyID:{ type: String, default:'' }
                         }
                     },
                     delivery:{}, //qwerty
@@ -399,7 +494,7 @@ module.exports=function(conn){
                     freeOnBoardValueAmount : {
                         value:{ type: Number,default: 0},
                         attr:{
-                            currencyID:{ type: String }
+                            currencyID:{ type: String, default:'' }
                         }
                     },
                     goodsItem:[{}], //qwerty alt nesleneler oldukca fazla
@@ -416,7 +511,7 @@ module.exports=function(conn){
                     insuranceValueAmount : {
                         value:{ type: Number,default: 0},
                         attr:{
-                            currencyID:{ type: String }
+                            currencyID:{ type: String, default:'' }
                         }
                     },
                     lastExitPortLocation:{
@@ -459,10 +554,27 @@ module.exports=function(conn){
                 lineStatusCode:{ value:{ type: String, trim:true, default: ''}}
             }],
             taxTotal:{
-                taxAmount :{value:{ type: Number,default: 0}},
+                taxAmount :{
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
                 taxSubtotal:[{
-                    taxableAmount:{value:{ type: Number,default: 0}},
-                    taxAmount :{value:{ type: Number,default: 0}},
+                    taxableAmount:{
+                        value:{ type: Number,default: 0},
+                        attr:{
+                            currencyID:{ type: String, default:'' }
+                        }
+                    },
+                    taxAmount :{
+                        value:{ type: Number,default: 0},
+                        attr:{
+                            currencyID:{ type: String, default:'' }
+                        }
+                    },
+                    percent :{value:{ type: Number,default: 0}},
+                    calculationSequenceNumeric :{value:{ type: Number,default: 0}},
                     taxCategory :{
                         name:{ value:{ type: String, trim:true, default: ''}},
                         taxScheme:{
@@ -476,10 +588,27 @@ module.exports=function(conn){
                 }]
             },
             withholdingTaxTotal:[{
-                taxAmount :{value:{ type: Number,default: 0}},
+                taxAmount :{
+                    value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                },
                 taxSubtotal:[{
-                    taxableAmount:{value:{ type: Number,default: 0}},
-                    taxAmount :{value:{ type: Number,default: 0}},
+                    taxableAmount:{
+                        value:{ type: Number,default: 0},
+                        attr:{
+                            currencyID:{ type: String, default:'' }
+                        }
+                    },
+                    taxAmount :{
+                        value:{ type: Number,default: 0},
+                        attr:{
+                            currencyID:{ type: String, default:'' }
+                        }
+                    },
+                    percent :{value:{ type: Number,default: 0}},
+                    calculationSequenceNumeric :{value:{ type: Number,default: 0}},
                     taxCategory :{
                         name:{ value:{ type: String, trim:true, default: ''}},
                         taxScheme:{
@@ -497,7 +626,7 @@ module.exports=function(conn){
         pdf:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
         html:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
         localDocumentId: {type: String, default: ''},
-        invoiceStatus: {type: String, default: 'Draft',enum:['Draft','Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
+        invoiceStatus: {type: String, default: 'Draft',enum:['Draft','Pending', 'Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
         invoiceErrors:[{code:'',message:''}],
         localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
         localErrors:[{code:'',message:''}],

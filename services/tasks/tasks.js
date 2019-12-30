@@ -23,6 +23,12 @@ function start(cb){
 							setTimeout(taskCalistir,0,cb);
 						});
 						break;
+					case 'einvoice_send_to_gib':
+						einvoice_send_to_gib(taskDoc,(err)=>{
+							index++;
+							setTimeout(taskCalistir,0,cb);
+						});
+						break;
 					default:
 						taskHelper.setCancelled(taskDoc,(err)=>{
 							index++;
@@ -55,6 +61,42 @@ setTimeout(()=>{
 	basla();
 },5000)
 
+
+function einvoice_send_to_gib(taskDoc,cb){
+	if(!taskDoc['document']){
+		return taskHelper.setCancelled(taskDoc,cb);
+	}
+	if(taskDoc['document']['eIntegrator'] && repoDb[taskDoc.userDb]){
+		var yeniUUID=uuid.v4();
+		taskDoc['document'].uuid.value=yeniUUID;
+		services.eInvoice.sendToGib(repoDb[taskDoc.userDb],taskDoc['document'],(err)=>{
+			if(!err){
+				repoDb[taskDoc.userDb].e_invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
+					taskHelper.setCompleted(taskDoc,cb);
+				});
+			}else{
+				repoDb[taskDoc.userDb].e_invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
+					if(!err33){
+						if(doc!=null){
+							doc.invoiceErrors.push({code:(err.name || err.code || 'SEND_TO_GIB'),message:(err.message || 'Gib e gonderimde hata olustu')});
+							doc.invoiceStatus='Error';
+							doc.uuid.value=yeniUUID;
+							doc.save((err44,doc2)=>{
+								taskHelper.setError(taskDoc,err,cb);
+							});
+						}else{
+							taskHelper.setError(taskDoc,err,cb);
+						}
+					}else{
+						taskHelper.setError(taskDoc,err,cb);
+					}
+				})
+			}
+		})
+	}else{
+		taskHelper.setCancelled(taskDoc,cb);
+	}
+}
 
 function connector_transfer_zreport(taskDoc,cb){
 	
@@ -258,7 +300,20 @@ function insertEInvoice(dbModel,eIntegratorDoc,connectorResult,callback){
 			dbModel.e_invoices.findOne({ioType:0, localDocumentId:{$ne:''},localDocumentId:invoices[index].localDocumentId},(err,doc)=>{
 				if(!err){
 					if(doc==null){
-						var newEInvoice=new dbModel.e_invoices(invoices[index]);
+						var tempInvoice=(new dbModel.e_invoices(invoices[index])).toJSON();
+						tempInvoice=mrutil.deleteObjectFields(tempInvoice,["_id","__v","createdDate","modifiedDate",'eIntegrator', "pdf", "html"]);
+						tempInvoice=mrutil.deleteObjectProperty(tempInvoice,'_id');
+
+						var data1=mrutil.eInvoiceSetCurrencyIDs(tempInvoice,tempInvoice.documentCurrencyCode.value);
+						data1['eIntegrator']=eIntegratorDoc._id;
+						var newEInvoice=new dbModel.e_invoices(data1);
+						
+
+						// var tempInvoice=new dbModel.e_invoices(invoices[index]);
+						// console.log('typeOf _id:', (typeof tempInvoice._id));
+
+						// var newEInvoice=mrutil.eInvoiceSetCurrencyIDs(tempInvoice,tempInvoice.documentCurrencyCode.value);
+
 						yeniFaturaNumarasi(dbModel,eIntegratorDoc,newEInvoice,(err,newEInvoice2)=>{
 							newEInvoice2.save((err,newDoc)=>{
 								if(err){

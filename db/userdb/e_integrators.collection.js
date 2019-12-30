@@ -28,6 +28,8 @@ module.exports=function(conn){
             status: {type: String, trim:true, default: ''},
             error:{code:'',message:''}
         },
+        invoiceXslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
+        invoiceXsltFiles:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
         passive: {type: Boolean, default: false}
     });
 

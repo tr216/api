@@ -9,13 +9,38 @@ module.exports = function(activeDb, member, req, res, callback) {
         }
         break;
         case 'POST':
-        post(activeDb,member,req,res,callback);
+        	if(req.params.param2!=undefined){
+        		if(req.params.param2=='file'){
+                	saveFile(activeDb,member,req,res,callback);
+	            }else if(req.params.param2.toLowerCase()=='setdefaultinvoicexslt'){
+	                setDefaultInvoiceXslt(activeDb,member,req,res,callback);
+	            }else{
+	                post(activeDb,member,req,res,callback);
+	            }
+        	}else{
+        		post(activeDb,member,req,res,callback);
+        	}
+            
         break;
         case 'PUT':
-        put(activeDb,member,req,res,callback);
+        	if(req.params.param2!=undefined){
+	        	if(req.params.param2=='file'){
+	                saveFile(activeDb,member,req,res,callback);
+	            }else if(req.params.param2.toLowerCase()=='setdefaultinvoicexslt'){
+	                setDefaultInvoiceXslt(activeDb,member,req,res,callback);
+	            }else{
+	                put(activeDb,member,req,res,callback);
+	            }
+	        }else{
+                put(activeDb,member,req,res,callback);
+            }
         break;
         case 'DELETE':
-        deleteItem(activeDb,member,req,res,callback);
+        	if(req.params.param2=='file'){
+                deleteFile(activeDb,member,req,res,callback);
+            }else{
+                deleteItem(activeDb,member,req,res,callback);
+            }
         break;
         default:
         callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
@@ -41,25 +66,7 @@ function getList(activeDb,member,req,res,callback){
     }
 
     var filter = {};
-    // if(req.query.deviceSerialNo){
-    //     filter['deviceSerialNo']={ $regex: '.*' + req.query.deviceSerialNo + '.*' ,$options: 'i' };
-    // }
-    // if(req.query.deviceModel){
-    //     filter['deviceModel']={ $regex: '.*' + req.query.deviceModel + '.*' ,$options: 'i' };
-    // }
-    // if(req.query.location){
-    //     filter['location']=req.query.location;
-    // }
-    // if(req.query.service){
-    //     filter['service']=req.query.service;
-    // }
-    // if(req.query.localConnector){
-    //     filter['localConnector']=req.query.localConnector;
-    // }
-    // if(req.query.passive){
-    //     filter['passive']=req.query.passive;
-    // }
-
+  
     activeDb.e_integrators.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
@@ -70,14 +77,64 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.e_integrators.findOne({_id:req.params.param1},(err,doc)=>{
-        if (!err) {
-            callback({success: true,data: doc});
-        } else {
-            callback({success: false, error: {code: err.name, message: err.message}});
-        }
+    var populate=[{path:'invoiceXsltFiles',select:'_id name extension fileName type size createdDate modifiedDate'}];
+    var fileId=req.query.fileId || req.query.fileid || '';
+    
+    activeDb.e_integrators.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
+        if (dberr(err,callback)) {
+            if(doc==null){
+                return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+            }
+            if(doc.invoiceXslt!=undefined){
+                doc=doc.toJSON();
+                doc.invoiceXsltFiles.forEach((e)=>{
+                	console.log('e._id:',e._id)
+                	console.log('doc.invoiceXslt:',doc.invoiceXslt.toString())
+                    if(e._id.toString()==doc.invoiceXslt.toString()){
+                        e['isDefault']=true;
+                    }else{
+                        e['isDefault']=false;
+                    }
+                    
+                });
+               
+            }
+            if(fileId!=''){
+                var bFound=false;
+                doc.invoiceXsltFiles.forEach((e)=>{
+                    if(e._id==fileId){
+                        bFound=true;
+                        return;
+                    }
+                });
+                if(!bFound){
+                    callback({success: false,error: {code: 'FILE_NOT_FOUND', message: 'Dosya bulunamadi'}});
+                }else{
+                    activeDb.files.findOne({_id:fileId},(err,fileDoc)=>{
+                        if(dberr(err,callback)){
+
+                                if(fileDoc){
+                                    doc.invoiceXsltFiles.forEach((e)=>{
+                                        if(e._id==fileId){
+                                            e['data']=fileDoc.data;
+                                            return;
+                                        }
+                                    });
+                                }
+                            callback({success: true,data: doc});
+                        }
+                    });
+                }
+               
+            }else{
+               
+                callback({success: true,data: doc});
+            }
+            
+        } 
     });
 }
+
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
@@ -144,6 +201,152 @@ function deleteItem(activeDb,member,req,res,callback){
                 callback({success: true});
             }else{
                 callback({success: false, error: {code: err.name, message: err.message}});
+            }
+        });
+    }
+}
+
+
+function saveFile(activeDb,member,req,res,callback){
+    if(req.params.param1==undefined || req.params.param2==undefined){
+        callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    }else{
+        var data = req.body || {};
+        var populate=[{path:'invoiceXsltFiles',select:'_id name extension size type fileName '}];
+
+        if(req.body._id!=undefined){
+            data['_id']=req.body._id;
+        }else{
+             data['_id']=req.query.fileId || req.query.fileid
+        }
+        console.log('fileID:',data['_id']);
+
+        activeDb.e_integrators.findOne({ _id: req.params.param1}).populate(populate).exec((err,doc)=>{
+            if (dberr(err,callback)) {
+                if(doc==null){
+                    callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+                }else{
+
+                    if(data._id==undefined){
+                        var newfileDoc = new activeDb.files(data);
+                        var err=epValidateSync(newfileDoc);
+                        if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+                        newfileDoc.save(function(err, newfileDoc2) {
+                            if(dberr(err,callback)){
+                                doc.invoiceXsltFiles.push(newfileDoc2._id);
+                                doc.modifiedDate=new Date();
+                                doc.save((err)=>{
+                                    if(dberr(err,callback)){
+                                        callback({success: true,data: ''});
+                                    }
+                                });
+                            }
+                        });
+                    }else{
+                        var bFound=false;
+                        doc.invoiceXsltFiles.forEach((f)=>{
+                            if(f._id != undefined){
+                                if(f.name==data['name'] && f.extension==data['extension'] && f._id != data._id){
+                                    bFound=true;
+                                    return;
+                                }
+                            }
+                        });
+                        if(bFound){
+                            return callback({success: false,error: {code: 'ALREADY_EXISTS', message: 'Ayni dosya isminden baska bir kayit daha var!'}});
+                        }
+
+                        activeDb.files.findOne({_id:data._id},(err,fileDoc)=>{
+                            if(dberr(err,callback)){
+                                if(fileDoc==null) return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+                                fileDoc.name=data.name;
+                                fileDoc.extension=data.extension;
+                                //fileDoc.modifiedDate=new Date();
+                                fileDoc.data=data.data;
+                                fileDoc.type=data.type;
+                                fileDoc.size=data.size;
+
+                                //console.log('fileDoc:',fileDoc);
+                                var err=epValidateSync(fileDoc);
+                                if(dberr(err,callback)){
+                                    fileDoc.save((err)=>{
+                                        if(dberr(err,callback)){
+                                            doc.modifiedDate=new Date();
+                                            doc.save((err)=>{
+                                                if(dberr(err,callback)){
+                                                    callback({success: true,data: ''});
+                                                }
+                                            });
+                                        }
+                                    });
+                                    
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+}
+
+function setDefaultInvoiceXslt(activeDb,member,req,res,callback){
+    if(req.params.param1==undefined || req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '') {
+        callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    }else{
+        var fileId=req.query.fileId || req.query.fileid || '';
+        activeDb.e_integrators.findOne({ _id: req.params.param1,invoiceXsltFiles:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
+            if (dberr(err,callback)) {
+                if(doc==null){
+                    callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+                }else{
+                    doc.invoiceXsltFiles.forEach((e,index)=>{
+                        if(e==req.query.fileId){
+                            doc.invoiceXslt=e._id;
+                            return;
+                        }
+                    });
+                    doc.save((err,doc2)=>{
+                        if (dberr(err,callback)) {
+                            callback({success: true,data:''});
+                        }
+                    });
+                    
+                }
+            }
+        });
+    }
+}
+
+function deleteFile(activeDb,member,req,res,callback){
+    if(req.params.param1==undefined || req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '') {
+        callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    }else{
+        var fileId=req.query.fileId || req.query.fileid || '';
+        activeDb.e_integrators.findOne({ _id: req.params.param1,invoiceXsltFiles:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
+            if (dberr(err,callback)) {
+                if(doc==null){
+                    callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+                }else{
+                    doc.invoiceXsltFiles.forEach((e,index)=>{
+                        if(e==req.query.fileId){
+                            doc.invoiceXsltFiles.splice(index,1);
+                            return;
+                        }
+                    });
+                    doc.save((err,doc2)=>{
+                        if (dberr(err,callback)) {
+                            activeDb.files.removeOne(member,{ _id: req.query.fileId },(err)=>{
+                                if (!err) {
+                                    callback({success: true,data:doc2});
+                                }else{
+                                    callback({success: false, error: {code: err.name, message: err.message}});
+                                }
+                            });
+                        }
+                    });
+                    
+                }
             }
         });
     }

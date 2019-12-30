@@ -112,7 +112,7 @@ setTimeout(()=>{
 setTimeout(()=>{
 	function downloadEInvoiceUsers(){
 		mrutil.console(('E-InvoiceUsers Download Scheduled Task').green + ' started');
-		var uyumsoft=require('./uyumsoft/uyumsoft-e-fatura.js');
+		//var uyumsoft=require('./uyumsoft/uyumsoft-e-fatura.js');
 		uyumsoft.downloadEInvoiceUsers((err)=>{
 			if(err){
 				mrutil.console(('E-InvoiceUsers Download Scheduled Task Error:') + JSON.stringify(err));
@@ -123,4 +123,57 @@ setTimeout(()=>{
 		});
 	}
 	downloadEInvoiceUsers();
-},3600*1000*12)
+},3600*1000*12);
+
+
+exports.sendToGib=function(dbModel,eInvoice,cb){
+	try{
+		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).populate('invoiceXslt').exec((err,eIntegratorDoc)=>{
+			if(!err){
+				var xsltEkle=false;
+				if(eIntegratorDoc.invoiceXslt)
+					if(eIntegratorDoc.invoiceXslt.data){
+						xsltEkle=true;
+						if(eInvoice.additionalDocumentReference.length>0){
+							if(eInvoice.additionalDocumentReference[0].attachment)
+								if(eInvoice.additionalDocumentReference[0].attachment.embeddedDocumentBinaryObject)
+									if(eInvoice.additionalDocumentReference[0].attachment.value){
+										xsltEkle=false;
+									}
+						}
+					}
+				if(xsltEkle){
+					eInvoice.additionalDocumentReference=[{
+						ID:{value:'1'},
+						issueDate:{ value:eInvoice.issueDate.value},
+						documentTypeCode:{ value:'XSLT'},
+						documentType:{ value:'XSLT'},
+						attachment:{
+							embeddedDocumentBinaryObject:{
+								attr : {
+			                        mimeCode : 'application/xml',
+			                        encodingCode : 'Base64',
+			                        characterSetCode : 'UTF-8',
+			                        filename : eInvoice.ID.value + '.xslt'
+			                    },
+			                    value :eIntegratorDoc.invoiceXslt.data.split('base64,')[1]
+							}
+						}
+					}];
+				}	
+			}
+			switch(eInvoice.eIntegrator.eIntegrator){
+				case 'uyumsoft':
+					uyumsoft.sendToGib(dbModel,eInvoice,cb);
+				break;
+				default:
+					cb(null);
+				break;
+			}
+		});
+		
+	}catch(tryErr){
+		cb(tryErr)
+	}
+	
+}

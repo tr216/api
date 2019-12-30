@@ -25,15 +25,24 @@ function generateRequestMessage(funcName,query,isQuery=true){
         }
         message +='</s:query>';
     }else{
-
-        for(let k in query){
-            if(Object.keys(query[k]).indexOf('pageIndex')>-1 || Object.keys(query[k]).indexOf('pageSize')>-1 || Object.keys(query[k]).indexOf('PageIndex')>-1 || Object.keys(query[k]).indexOf('PageSize')>-1){
-                message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 20) + '">' + query[k].toString() + '</s:' + k +'>';
-            }else{
-                message +='<s:' + k + '>' + query[k].toString() + '</s:' + k +'>';
-            }
+        if(Array.isArray(query)){
+            query.forEach((e)=>{
+                for(let k in e){
+                    message +='<s:' + k + '>' + e[k].toString() + '</s:' + k +'>';
+                }
+            });
             
+        }else{
+            for(let k in query){
+                if(Object.keys(query[k]).indexOf('pageIndex')>-1 || Object.keys(query[k]).indexOf('pageSize')>-1 || Object.keys(query[k]).indexOf('PageIndex')>-1 || Object.keys(query[k]).indexOf('PageSize')>-1){
+                    message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 20) + '">' + query[k].toString() + '</s:' + k +'>';
+                }else{
+                    message +='<s:' + k + '>' + query[k].toString() + '</s:' + k +'>';
+                }
+                
+            }
         }
+        
     }
     message +='</s:' + funcName + '>';
     message +='</s:Body>' +
@@ -840,8 +849,7 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
 
 
 /**
-* @pagination :{pageIndex:Number, pageSize:Number}
-* @query :{pageIndex:Number, pageSize:Number}
+* @query :{ pagination: {pageIndex:Number, pageSize:Number} }
 */
 
 
@@ -932,3 +940,87 @@ exports.getEInvoiceUsers = function (options,query,callback) {
     });
     
 };
+
+/**
+* @invoice: {object}
+*/
+exports.sendInvoice = function (options,ssss,callback) {
+    var binding = new BasicHttpBinding(
+        { SecurityMode: "TransportWithMessageCredential"
+        , MessageClientCredentialType: "UserName"
+    })
+    var proxy = new Proxy(binding, options.url);
+    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+    proxy.ClientCredentials.Username.Username =options.username;
+    proxy.ClientCredentials.Username.Password =options.password ;
+    var fileName=path.join(__dirname,'../../../../temp','sendInvoice');
+
+    
+    var msj ='<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header /><s:Body>';
+    msj +='<s:SendInvoice xmlns:s="http://tempuri.org/">';
+    msj += ssss
+    msj +='</s:SendInvoice></s:Body></s:Envelope>';
+    
+
+    fs.writeFileSync(fileName + '_message.xml', msj,'utf8');
+
+    proxy.send(msj, "http://tempuri.org/IIntegration/SendInvoice", function(response, ctx) {
+        
+        
+        fs.writeFileSync(fileName + '.xml', response,'utf8');
+        // fs.writeFileSync(fileName+'-ctx', JSON.stringify(ctx,null,2),'utf8');
+        
+        if(ctx.error!=undefined){
+            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+
+            return callback({code:ctx.error['code'],message:ctx.error['code']});
+        }
+        try{ 
+            mrutil.xml2json3(response,(err,jsObject)=>{
+                if(!err){
+                    //jsObject=mrutil.deleteObjectProperty(jsObject,'xmlns:*');
+                    
+                    //jsObject=mrutil.deleteObjectProperty(jsObject,'xmlns');
+                    // fs.writeFileSync(fileName + '.xml', response,'utf8');
+                    fs.writeFileSync(fileName + '.json', JSON.stringify(jsObject,null,2),'utf8');
+                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
+
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+
+                    if(jsObject['s:Envelope']['s:Body']['SendInvoiceResponse']['SendInvoiceResult']['$'].IsSucceded=='false'){
+                        return callback({code:'UYUMSOFT_SEND_INVOICE',message:jsObject['s:Envelope']['s:Body']['SendInvoiceResponse']['SendInvoiceResult']['$'].Message});
+                    }
+                    var result={
+                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceResponse'][0]['GetInboxInvoiceResult'][0]['$'].IsSucceded=='true',
+                        doc:{} // {invoice:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['Value']['Invoice']}
+                    }
+                    // if(!result.IsSucceded){
+                    //     return callback({code:'Basarisiz',message:'Uyumsoft getInboxInvoice Basarisiz'});
+                    // }
+                    
+                    // if(result.doc.invoice.UBLExtensions!=undefined){
+                    //     result.doc.invoice.UBLExtensions=undefined;
+                    //     delete result.doc.invoice.UBLExtensions;
+                    // }
+                    // if(result.doc.invoice.AdditionalDocumentReference!=undefined){
+
+                    // }
+                    callback(null,result);
+                    
+                    
+                }else{
+                    callback(err);
+                }
+            });
+
+        }catch(err){
+            callback(err);
+        }
+
+        
+        
+    });
+    
+}; 

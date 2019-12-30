@@ -31,7 +31,7 @@ module.exports = function(activeDb, member, req, res, callback) {
                 break;
                 case 'einvoiceuserlist':
                 return getEInvoiceUserList(activeDb,member,req,res,callback);
-                break;
+                
                 default:
                 return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
                 break;
@@ -47,6 +47,9 @@ module.exports = function(activeDb, member, req, res, callback) {
                     }else{
                         return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
                     }
+                break;
+                case 'sendtogib':
+                return sendToGib(activeDb,member,req,res,callback);
                 break;
                 default:
                 return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
@@ -394,3 +397,90 @@ function isEInvoiceUser(activeDb,member,req,res,callback){
   // }
 }
 
+
+
+function sendToGib(activeDb,member,req,res,callback){
+    var data = req.body || {};
+    if(data.list==undefined){
+        return callback({success: false, error: {code: 'ERROR', message: 'list is required.'}});
+    }
+    var populate={
+        path:'eIntegrator'
+        //select:'_id eIntegrator name url username password firmNo invoicePrefix dispatchPrefix postboxAlias senderboxAlias passive'
+    }
+
+    var idList=[];
+    data.list.forEach((e)=>{
+        if(e && typeof e === 'object' && e.constructor === Object){
+            if(e._id!=undefined){
+                idList.push(e._id);
+            }else if(e.id!=undefined){
+                idList.push(e.id);
+            }else{
+                return callback({success: false, error: {code: 'ERROR', message: 'list is wrong.'}});
+            }
+        }else{
+            idList.push(e);
+        }
+    });
+    var filter={invoiceStatus:{$in:['Draft','Error']},_id:{$in:idList}};
+
+    activeDb.e_invoices.find(filter).populate(populate).exec((err,docs)=>{
+        if (dberr(err,callback)) {
+            var index=0;
+
+            function pushTask(cb){
+                if(index>=docs.length){
+                    cb(null);
+                }else{
+                    
+                    var taskdata={userDb:req.params.dbId,taskType:'einvoice_send_to_gib',collectionName:'e_invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
+                    taskHelper.newTask(taskdata,(err,taskDoc)=>{
+                        if(!err){
+                            switch(taskDoc.status){
+                                case 'running':
+                                    docs[index].status='Processing';
+                                    break;
+                                case 'pending':
+                                    docs[index].invoiceStatus='Pending';
+                                    break;
+                                case 'completed':
+                                    docs[index].invoiceStatus='Processing';
+                                    break;
+                                case 'error':
+                                    docs[index].invoiceStatus='Error';
+                                    break;
+                                default:
+                                     //docs[index].invoiceStatus='';
+                                     break;
+                            }
+                            docs[index].save((err,newDoc)=>{
+                                if(!err){
+                                    index++;
+                                    setTimeout(pushTask,0,cb);
+                                }else{
+                                    cb(err);
+                                }
+                            });
+                        }else{
+                            cb(err);
+                        }
+                    });
+                }
+            }
+            pushTask((err)=>{
+                if(dberr(err,callback)){
+                    var resp=[]
+                    // for(var i=0;i<docs.length;i++){
+                    //     resp.push(docs[i]._id.toString());
+                    // }
+                    docs.forEach((e)=>{
+                        resp.push(e._id.toString());
+                    });
+                    callback({success: true,data:resp});
+                }
+            });
+        }
+    })
+    
+}
