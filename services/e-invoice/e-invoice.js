@@ -2,6 +2,23 @@
 
 var uyumsoft=require('./uyumsoft/uyumsoft-e-fatura.js');
 
+
+setTimeout(()=>{
+	function scheduler(){
+		mrutil.console(('E-Invoice Service Scheduled Task').green + ' started');
+		start((err)=>{
+			if(err){
+				mrutil.console(('E-Invoice Service Scheduled Task Error:') + JSON.stringify(err));
+			}else{
+				mrutil.console(('E-Invoice Service Scheduled Task').blue + ' completed');
+			}
+			setTimeout(scheduler,60000*5); //30 dakika arayla check et.
+		});
+	}
+	scheduler();
+ //},60000*30);
+  },1000*8);
+
 function start(callback){
 
 	var dbIds=[];
@@ -20,26 +37,13 @@ function start(callback){
 		checkDbAndDownloadInvoices(dbIds[index],(err)=>{
 			
 			index++;
-			setTimeout(indir,10000,cb);
+			setTimeout(indir,3000,cb);
 		});
 	}
 	indir((err)=>{
 		callback(err);
 	});
 }
-
-// function checkAllTasksCompleted(tasks){
-// 	var completed=true;
-// 	tasks.forEach((e)=>{
-// 		if(!e.completed){
-// 			completed=false;
-// 			return;
-// 		}
-// 	});
-// 	return completed;
-// }
-
-
 
 function checkDbAndDownloadInvoices(dbId,callback){
 	repoDb[dbId].e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
@@ -49,6 +53,7 @@ function checkDbAndDownloadInvoices(dbId,callback){
 				if(index>=eIntegratorDocs.length){
 					cb(null);
 				}else{
+					console.log('checkDbAndDownloadInvoices downloadInvoices dbId:',dbId);
 					downloadInvoices(repoDb[dbId],eIntegratorDocs[index],(err)=>{
 						if(err){
 							console.log('E-Invoice Service Download error:',err);
@@ -81,33 +86,6 @@ function downloadInvoices(dbModel,eIntegratorDoc,cb){
 		break;
 	}
 }
-//
-setTimeout(()=>{
-	function scheduler(){
-		mrutil.console(('E-Invoice Service Scheduled Task').green + ' started');
-		start((err)=>{
-			if(err){
-				mrutil.console(('E-Invoice Service Scheduled Task Error:') + JSON.stringify(err));
-			}else{
-				mrutil.console(('E-Invoice Service Scheduled Task').blue + ' completed');
-			}
-			setTimeout(scheduler,60000*30); //30 dakika arayla check et.
-		});
-	}
-	scheduler();
- },60000*30);
- // },3000*1);
- 
-// setTimeout(()=>{
-// 	var api=require('./uyumsoft/api.js');
-// 	api.getEInvoiceUsers({url:'https://efatura.uyumsoft.com.tr/Services/Integration',username:'Alitek_WebServis',password:'AyXEZR%k'},{pagination:{pageIndex:1, pageSize:10}},(err,result)=>{
-// 		if(!err){
-// 			console.log('einvoice user download:',result);
-// 		}else{
-// 			console.log('einvoice user error:',err);
-// 		}
-// 	});
-//  },100*30);
 
 setTimeout(()=>{
 	function downloadEInvoiceUsers(){
@@ -119,11 +97,12 @@ setTimeout(()=>{
 			}else{
 				mrutil.console(('E-InvoiceUsers Download Scheduled Task').blue + ' completed');
 			}
-			setTimeout(downloadEInvoiceUsers,3600*1000*12);
+			setTimeout(downloadEInvoiceUsers,3600*1000*1);
 		});
 	}
 	downloadEInvoiceUsers();
-},3600*1000*12);
+// },3600*1000*12);
+},1000*12);
 
 
 exports.sendToGib=function(dbModel,eInvoice,cb){
@@ -143,6 +122,12 @@ exports.sendToGib=function(dbModel,eInvoice,cb){
 						}
 					}
 				if(xsltEkle){
+					var value='';
+					if(eIntegratorDoc.invoiceXslt.data.indexOf('base64,')>-1){
+						value=eIntegratorDoc.invoiceXslt.data.split('base64,')[1];
+					}else{
+						value=eIntegratorDoc.invoiceXslt.data;
+					}
 					eInvoice.additionalDocumentReference=[{
 						ID:{value:'1'},
 						issueDate:{ value:eInvoice.issueDate.value},
@@ -156,7 +141,7 @@ exports.sendToGib=function(dbModel,eInvoice,cb){
 			                        characterSetCode : 'UTF-8',
 			                        filename : eInvoice.ID.value + '.xslt'
 			                    },
-			                    value :eIntegratorDoc.invoiceXslt.data.split('base64,')[1]
+			                    value :value
 							}
 						}
 					}];

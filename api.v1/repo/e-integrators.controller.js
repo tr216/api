@@ -138,7 +138,24 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
-   
+    if(data['localConnectorImportInvoice']){
+        if(data['localConnectorImportInvoice'].localConnector==''){
+            data['localConnectorImportInvoice'].localConnector=undefined;
+            delete data['localConnectorImportInvoice'].localConnector;
+        }
+    }
+    if(data['localConnectorExportInvoice']){
+        if(data['localConnectorExportInvoice'].localConnector==''){
+            data['localConnectorExportInvoice'].localConnector=undefined;
+            delete data['localConnectorExportInvoice'].localConnector;
+        }
+    }
+    if(data['localConnectorImportELedger']){
+        if(data['localConnectorImportELedger'].localConnector==''){
+            data['localConnectorImportELedger'].localConnector=undefined;
+            delete data['localConnectorImportELedger'].localConnector;
+        }
+    }
     var newdoc = new activeDb.e_integrators(data);
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
@@ -168,7 +185,24 @@ function put(activeDb,member,req,res,callback){
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
-                  
+                    if(data['localConnectorImportInvoice']){
+                        if(data['localConnectorImportInvoice'].localConnector==''){
+                            data['localConnectorImportInvoice'].localConnector=undefined;
+                            delete data['localConnectorImportInvoice'].localConnector;
+                        }
+                    }
+                    if(data['localConnectorExportInvoice']){
+                        if(data['localConnectorExportInvoice'].localConnector==''){
+                            data['localConnectorExportInvoice'].localConnector=undefined;
+                            delete data['localConnectorExportInvoice'].localConnector;
+                        }
+                    }
+                    if(data['localConnectorImportELedger']){
+                        if(data['localConnectorImportELedger'].localConnector==''){
+                            data['localConnectorImportELedger'].localConnector=undefined;
+                            delete data['localConnectorImportELedger'].localConnector;
+                        }
+                    }
                     var doc2 = Object.assign(doc, data);
                     var newdoc = new activeDb.e_integrators(doc2);
                     var err=epValidateSync(newdoc);
