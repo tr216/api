@@ -1,6 +1,5 @@
-
+module.exports=function(conn){
     var schema = mongoose.Schema({
-        userDb: {type: mongoose.Schema.Types.ObjectId, ref: 'dbdefines', default: null},
         taskType: {type: String, required: true, enum:['connector_transfer_zreport','send_email','send_sms',
         'connector_import_einvoice','connector_export_einvoice','connector_import_eledger','einvoice_send_to_gib']},
         collectionName:{type: String, default:''},
@@ -32,12 +31,14 @@
 
     });
     schema.plugin(mongoosePaginate);
- 
+    
 
     var collectionName='tasks';
-    // var model=conn.model(collectionName, schema);
+    var model=conn.model(collectionName, schema);
     
-    // model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
-    // model.removeMany=(member, filter,cb)=>{ sendToTrashMany(conn,collectionName,member,filter,cb); }
-    //model.relations={pos_devices:'location'}
-   module.exports = dbconn.model(collectionName, schema);
+    model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
+    
+    //model.relations={pos_device_zreports:'posDevice'}
+
+    return model;
+}

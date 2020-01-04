@@ -7,21 +7,21 @@ exports.scheduler=require('./scheduler/scheduler.js');
 exports.eInvoice=require('./e-invoice/e-invoice.js');
 exports.eLedger=require('./e-ledger/e-ledger.js');
 
-exports.start=()=>{
-	console.log('Main Service started.');
+exports.runUserDbServices=function(){
+    exports.tasks.run(this);
+    exports.eInvoice.run(this);
+    exports.posDevice.run(this);
 }
 
+exports.start=function(){
+    console.log('Main Service started.');
+    Object.keys(repoDb).forEach((dbId)=>{
+        if(repoDb[dbId]['runUserDbServices']==undefined){
+            repoDb[dbId]['runUserDbServices']=exports.runUserDbServices;
+            repoDb[dbId].runUserDbServices();
+        }
+   });
+}
+
+
 exports.start();
-
-
-// var ejs = require('ejs');
-// var people = ['geddy', 'neil', 'alex'];
-// var str='<% people.forEach((e)=>{>%><p>merhaba:<%=e%></p><%}); %><hr>';
-// var html='';
-// try{
-// 	html=ejs.render(str, {people: people});
-// 	console.log(html);
-// }catch(e){
-// 	console.log('render hatasi:',e.name);
-// }
-

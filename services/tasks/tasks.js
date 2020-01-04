@@ -1,81 +1,77 @@
 global.taskHelper = require('./taskhelper.js');
 
-function start(cb){
-	console.log('Task service started.');
+exports.run=function(dbModel){
+	
+	function calistir(callback){
 
-	db.tasks.find({status:'pending'},(err,taskDocs)=>{
-		if(!err){
-			console.log('Calistirilacak gorev sayisi:',taskDocs.length);
-			var index=0;
-			function taskCalistir(cb){
-				if(index>=taskDocs.length) return cb(null);
-				var taskDoc=taskDocs[index];
-				switch(taskDoc.taskType){
-					case 'connector_transfer_zreport':
-						connector_transfer_zreport(taskDoc,(err)=>{
-							index++;
-							setTimeout(taskCalistir,0,cb);
-						});
-						break;
-					case 'connector_import_einvoice':
-						connector_import_einvoice(taskDoc,(err)=>{
-							index++;
-							setTimeout(taskCalistir,0,cb);
-						});
-						break;
-					case 'einvoice_send_to_gib':
-						einvoice_send_to_gib(taskDoc,(err)=>{
-							index++;
-							setTimeout(taskCalistir,0,cb);
-						});
-						break;
-					default:
-						taskHelper.setCancelled(taskDoc,(err)=>{
-							index++;
-							setTimeout(taskCalistir,0,cb);
-						});
-						break;
+		console.log('Task service started: ',dbModel.dbName);
+		dbModel.tasks.find({status:'pending'},(err,taskDocs)=>{
+			if(!err){
+				console.log('(' + dbModel.dbName.green + ') Calistirilacak gorev sayisi:',taskDocs.length);
+				var index=0;
+				function taskCalistir(cb){
+					if(index>=taskDocs.length) return cb(null);
+					var taskDoc=taskDocs[index];
+					switch(taskDoc.taskType){
+						case 'connector_transfer_zreport':
+							connector_transfer_zreport(dbModel,taskDoc,(err)=>{
+								index++;
+								setTimeout(taskCalistir,0,cb);
+							});
+							break;
+						case 'connector_import_einvoice':
+							connector_import_einvoice(dbModel,taskDoc,(err)=>{
+								index++;
+								setTimeout(taskCalistir,0,cb);
+							});
+							break;
+						case 'einvoice_send_to_gib':
+							einvoice_send_to_gib(dbModel,taskDoc,(err)=>{
+								index++;
+								setTimeout(taskCalistir,0,cb);
+							});
+							break;
+						default:
+							taskHelper.setCancelled(taskDoc,(err)=>{
+								index++;
+								setTimeout(taskCalistir,0,cb);
+							});
+							break;
+					}
 				}
+							
+				taskCalistir((err)=>{
+					setTimeout(calistir,20000,callback);
+				})
+							
+			}else{
+				setTimeout(calistir,20000,callback);
 			}
-						
-			taskCalistir((err)=>{
-				cb(err);
-			})
-						
-		}else{
-			cb(err);
-		}
-	});
-}
-
-setTimeout(()=>{
-	function basla(cb){
-		start((err)=>{
-			if(err){
-				console.log('Task service error:',err);
-			}
-			setTimeout(basla,20000,cb)
 		});
 	}
+	setTimeout(()=>{
+		calistir((err)=>{
+
+		});
+	},5000)
 	
-	basla();
-},5000)
+}
 
 
-function einvoice_send_to_gib(taskDoc,cb){
+function einvoice_send_to_gib(dbModel,taskDoc,cb){
 	if(!taskDoc['document']){
 		return taskHelper.setCancelled(taskDoc,cb);
 	}
-	if(taskDoc['document']['eIntegrator'] && repoDb[taskDoc.userDb]){
+	if(taskDoc['document']['eIntegrator'] && dbModel){
 		var yeniUUID=uuid.v4();
 		taskDoc['document'].uuid.value=yeniUUID;
-		services.eInvoice.sendToGib(repoDb[taskDoc.userDb],taskDoc['document'],(err)=>{
+		services.eInvoice.sendToGib(dbModel,taskDoc['document'],(err)=>{
 			if(!err){
-				repoDb[taskDoc.userDb].e_invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
+				dbModel.e_invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
 					taskHelper.setCompleted(taskDoc,cb);
 				});
 			}else{
-				repoDb[taskDoc.userDb].e_invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
+				dbModel.e_invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
 					if(!err33){
 						if(doc!=null){
 							doc.invoiceErrors.push({code:(err.name || err.code || 'SEND_TO_GIB'),message:(err.message || 'Gib e gonderimde hata olustu')});
@@ -98,11 +94,11 @@ function einvoice_send_to_gib(taskDoc,cb){
 	}
 }
 
-function connector_transfer_zreport(taskDoc,cb){
+function connector_transfer_zreport(dbModel,taskDoc,cb){
 	
 	taskHelper.setRunning(taskDoc,(err)=>{
 		if(!err){
-			connector_transfer_zreport_calistir(taskDoc,(err)=>{
+			connector_transfer_zreport_calistir(dbModel,taskDoc,(err)=>{
 				if(cb) cb(err);
 			});
 
@@ -115,11 +111,11 @@ function connector_transfer_zreport(taskDoc,cb){
 }
 
 
-function connector_transfer_zreport_calistir(taskDoc,cb){
+function connector_transfer_zreport_calistir(dbModel,taskDoc,cb){
 	if(!taskDoc['document']){
 		return taskHelper.setCancelled(taskDoc,cb);
 	}
-	if(taskDoc['document']['data'] && taskDoc['document']['posDevice'] && repoDb[taskDoc.userDb]){
+	if(taskDoc['document']['data'] && taskDoc['document']['posDevice'] && dbModel){
 		var populate=[
             {path:'posDevice', populate:[
             	{path:'location',select:'_id locationName'},
@@ -131,7 +127,7 @@ function connector_transfer_zreport_calistir(taskDoc,cb){
             ]}
         ]
        
-		repoDb[taskDoc.userDb].pos_device_zreports.findOne({_id:taskDoc.documentId}).populate(populate).exec((err,zreportDoc)=>{
+		dbModel.pos_device_zreports.findOne({_id:taskDoc.documentId}).populate(populate).exec((err,zreportDoc)=>{
 			if(!err){
 				console.log('Cihaz seri No:',zreportDoc.posDevice.deviceSerialNo);
 				console.log('Lokasyon:',zreportDoc.posDevice.location.locationName);
@@ -142,7 +138,7 @@ function connector_transfer_zreport_calistir(taskDoc,cb){
 				services.tr216LocalConnector.run(zreportDoc.posDevice.localConnector,zreportDoc,(err,result)=>{
 					if(!err){
 						console.log('result:',result);
-						repoDb[taskDoc.userDb].pos_device_zreports.updateOne({_id:taskDoc.documentId} , {$set:{status:'transferred',error:null}},(err)=>{
+						dbModel.pos_device_zreports.updateOne({_id:taskDoc.documentId} , {$set:{status:'transferred',error:null}},(err)=>{
 							taskHelper.setCompleted(taskDoc,cb);
 							
 						});
@@ -154,7 +150,7 @@ function connector_transfer_zreport_calistir(taskDoc,cb){
 								taskHelper.setPending(taskDoc,cb);
 							}else{
 
-								repoDb[taskDoc.userDb].pos_device_zreports.updateOne({_id:taskDoc.documentId} , {$set:{status:'error',error:err}},(err2)=>{
+								dbModel.pos_device_zreports.updateOne({_id:taskDoc.documentId} , {$set:{status:'error',error:err}},(err2)=>{
 									
 									taskHelper.setError(taskDoc,err,cb);
 									
@@ -162,7 +158,7 @@ function connector_transfer_zreport_calistir(taskDoc,cb){
 							}
 						}else{
 							
-							repoDb[taskDoc.userDb].pos_device_zreports.updateOne({_id:taskDoc.documentId} , {$set:{status:'error',error:err}},(err2)=>{
+							dbModel.pos_device_zreports.updateOne({_id:taskDoc.documentId} , {$set:{status:'error',error:err}},(err2)=>{
 								
 								taskHelper.setError(taskDoc,err,cb);
 								
@@ -182,11 +178,11 @@ function connector_transfer_zreport_calistir(taskDoc,cb){
 		
 }
 
-function connector_import_einvoice(taskDoc,cb){
+function connector_import_einvoice(dbModel,taskDoc,cb){
 	
 	taskHelper.setRunning(taskDoc,(err)=>{
 		if(!err){
-			connector_import_einvoice_calistir(taskDoc,(err)=>{
+			connector_import_einvoice_calistir(dbModel,taskDoc,(err)=>{
 				if(cb) cb(err);
 			});
 
@@ -198,18 +194,18 @@ function connector_import_einvoice(taskDoc,cb){
 	
 }
 
-function connector_import_einvoice_calistir(taskDoc,cb){
+function connector_import_einvoice_calistir(dbModel,taskDoc,cb){
 	if(!taskDoc['document']){
 		return taskHelper.setCancelled(taskDoc,cb);
 	}
-	if(taskDoc['document']['localConnectorExportInvoice']['localConnector'] && repoDb[taskDoc.userDb]){
+	if(taskDoc['document']['localConnectorExportInvoice']['localConnector'] && dbModel){
 		var populate=[
         	{path:'localConnectorExportInvoice.localConnector',
         		populate:['startFile','files']
         	}
         ]
        
-		repoDb[taskDoc.userDb].e_integrators.findOne({_id:taskDoc.documentId}).populate(populate).exec((err,eIntegratorDoc)=>{
+		dbModel.e_integrators.findOne({_id:taskDoc.documentId}).populate(populate).exec((err,eIntegratorDoc)=>{
 			if(!err){
 				console.log('eIntegrator:',eIntegratorDoc.eIntegrator);
 				console.log('name:',eIntegratorDoc.name);
@@ -218,13 +214,13 @@ function connector_import_einvoice_calistir(taskDoc,cb){
 
 				services.tr216LocalConnector.run(eIntegratorDoc.localConnectorExportInvoice.localConnector,eIntegratorDoc,(err,result)=>{
 					if(!err){
-						insertEInvoice(repoDb[taskDoc.userDb],eIntegratorDoc,result,(err,docs)=>{
+						insertEInvoice(dbModel,eIntegratorDoc,result,(err,docs)=>{
 							if(!err){
-								repoDb[taskDoc.userDb].e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'transferred','localConnectorExportInvoice.error':null}},(err)=>{
+								dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'transferred','localConnectorExportInvoice.error':null}},(err)=>{
 									taskHelper.setCompleted(taskDoc,cb);
 								});
 							}else{
-								repoDb[taskDoc.userDb].e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error','localConnectorExportInvoice.error':err}},(err2)=>{
+								dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error','localConnectorExportInvoice.error':err}},(err2)=>{
 									
 									taskHelper.setError(taskDoc,err,cb);
 									
@@ -240,7 +236,7 @@ function connector_import_einvoice_calistir(taskDoc,cb){
 								taskHelper.setPending(taskDoc,cb);
 							}else{
 
-								repoDb[taskDoc.userDb].e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error', 'localConnectorExportInvoice.error':err}},(err2)=>{
+								dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error', 'localConnectorExportInvoice.error':err}},(err2)=>{
 									
 									taskHelper.setError(taskDoc,err,cb);
 									
@@ -248,7 +244,7 @@ function connector_import_einvoice_calistir(taskDoc,cb){
 							}
 						}else{
 							
-							repoDb[taskDoc.userDb].e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error','localConnectorExportInvoice.error':err}},(err2)=>{
+							dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error','localConnectorExportInvoice.error':err}},(err2)=>{
 								
 								taskHelper.setError(taskDoc,err,cb);
 								

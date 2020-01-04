@@ -14,7 +14,7 @@ exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
 				if(posDeviceDocs[index].deviceSerialNo!=''){
 					generateReqOption(dbModel,posDeviceDocs[index],(err,reqOpt)=>{
 						if(!err){
-							console.log('reqOpt:',reqOpt);
+							//console.log('reqOpt:',reqOpt);
 							api.getZReport(serviceDoc,reqOpt,(err,resp)=>{
 								if(!err){
 									mrutil.log('resp.ZReportItems.length:',resp.ZReportItems.length.toString());
@@ -25,32 +25,31 @@ exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
 									insertZReports(dbModel,posDeviceDocs[index],resp.ZReportItems,(err)=>{
 										if(!err){
 											index++;
-											console.log('index++;')
+											
 											setTimeout(zRaporIndir,1000,cb);
 										}else{
 											
-											mrutil.errorLog('insertZReports Error:' ,err);
+											console.log('insertZReports Error:' ,err);
 											index++;
-											console.log('index++ error;')
 											setTimeout(zRaporIndir,1000,cb);
 										}
 									});
 								}else{
 									
-									mrutil.errorLog('download getZReport Error:' , err);
+									console.log('download getZReport Error:' , err);
 									if(err.errno!=undefined){
 										if(err.errno=='ETIMEDOUT'){
-											mrutil.errorLog('download getZReport Error: 30sn sonra yeniden deniyoruz' , {});
+											console.log('download getZReport Error: 30sn sonra yeniden deniyoruz' , {});
 											setTimeout(zRaporIndir,30000,cb);
 										}else{
 											index++;
-											mrutil.errorLog('getZReport Error:' ,err);
+											console.log('getZReport Error:' ,err);
 											setTimeout(zRaporIndir,1000,cb);
 											//cb(err);
 										}
 									}else{
 										index++;
-										mrutil.errorLog('getZReport Error:' ,err);
+										console.log('getZReport Error:' ,err);
 										setTimeout(zRaporIndir,1000,cb);
 										//cb(err);
 									}
@@ -59,7 +58,7 @@ exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
 							});
 						}else{
 							index++;
-							mrutil.errorLog('generateReqOption Error:' , err);
+							console.log('generateReqOption Error:' , err);
 							setTimeout(zRaporIndir,1000,cb);
 							//cb(err);
 						}
@@ -76,7 +75,7 @@ exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
 			if(!err){
 				console.log('ingenico pos device service download completed:',serviceDoc.name,' total device:',posDeviceDocs.length);
 			}else{
-				mrutil.errorLog('ingenico pos device service download error:' , err);
+				console.log('ingenico pos device service download error:' , err);
 			}
 			callback(err);
 		});
@@ -107,7 +106,7 @@ function insertZReports(dbModel,posDeviceDoc,ZReportItems,callback){
 					setTimeout(dahaOncedenKaydedilmisMi,0,cb);
 				}
 			}else{
-				mrutil.errorLog('dbModel.pos_device_zreports.countDocuments error:' , err);
+				console.log('dbModel.pos_device_zreports.countDocuments error:' , err);
 				cb(err);
 			}
 		});
@@ -136,12 +135,12 @@ function insertZReports(dbModel,posDeviceDoc,ZReportItems,callback){
 
 			dbModel.pos_device_zreports.insertMany(data,{ordered:true},(err,docs)=>{
 				if(err){
-					mrutil.errorLog('dbModel.pos_device_zreports.insertMany  error:' , err);
+					console.log('dbModel.pos_device_zreports.insertMany  error:' , err);
 				}
 				callback(err);
 			});
 		}else{
-			mrutil.errorLog('dahaOncedenKaydedilmisMi error:' , err);
+			console.log('dahaOncedenKaydedilmisMi error:' , err);
 			callback(err);
 		}
 	});

@@ -1,11 +1,11 @@
 
-exports.newTask=(taskdata,cb)=>{
-	baskaCalisanTaskVarmi(taskdata,(err,bFound,doc)=>{
+exports.newTask=(dbModel,taskdata,cb)=>{
+	baskaCalisanTaskVarmi(dbModel,taskdata,(err,bFound,doc)=>{
 		if(!err){
 			if(bFound){
 				cb(null,doc);
 			}else{
-				var newDoc=new db.tasks(taskdata);
+				var newDoc=new dbModel.tasks(taskdata);
 				newDoc.status='pending';
 				newDoc.save((err,newDoc2)=>{
 					cb(err,newDoc2);
@@ -72,14 +72,14 @@ exports.setError=(taskDoc,error,cb)=>{
 	});
 }
 
-function baskaCalisanTaskVarmi(taskdata,cb){
+function baskaCalisanTaskVarmi(dbModel,taskdata,cb){
 	var filter={status:{$in:['running','pending']}};
 	if(taskdata.documentId!=undefined){
 		filter['documentId']=taskdata.documentId;
 		if(taskdata.collectionName!=undefined){
 			filter['collectionName']=taskdata.collectionName;
 			filter['taskType']=taskdata.taskType;
-			db.tasks.findOne(filter,(err,doc)=>{
+			dbModel.tasks.findOne(filter,(err,doc)=>{
 				if(!err){
 					if(doc!=null){
 						cb(null,true,doc);
@@ -100,13 +100,3 @@ function baskaCalisanTaskVarmi(taskdata,cb){
 }
 
 
-
-// askDoc.bulkWrite([
-// 		{
-// 			updateOne:{
-// 				filter:{_id:_id},
-// 				update: { $set:{status:'cancelled'}} 
-// 			}
-// 		}
-// 	],(err,n)=>{ if(cb) cb(err); });
-// 	

@@ -45,7 +45,7 @@ function ingenicoWebService(serviceUrl,username,password,endPoint,reqOptions,cb)
 				return cb({code:'INGENICO_API_ERROR',message:'INGENICO_API_ERROR | ' + url});
 			}
 		}
-		console.log('body type:',(typeof body));
+		//console.log('body type:',(typeof body));
 		
 		if(body){
 			if(body.ErrCode!='0' && body.ErrCode!=''){

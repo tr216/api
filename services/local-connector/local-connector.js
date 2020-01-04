@@ -41,7 +41,7 @@ function request_CONNECT(sc,data){
                     
                     tcpConnectorClients[i].lastcheck=new Date();
                     mrutil.socketwrite(tcpConnectorClients[i],mrutil.resPackage(data.connectinfo,'CONNECT',{success:true,data:'CONNECTED'},data.requestid))
-                    //mrutil.console('[local-connector] request_CONNECT_r:' + mrutil.resPackage(data.connectinfo,'CONNECT',{success:true,data:'CONNECTED'},data.requestid));
+                    //console.log('[local-connector] request_CONNECT_r:' + mrutil.resPackage(data.connectinfo,'CONNECT',{success:true,data:'CONNECTED'},data.requestid));
                     break;
                 }
             }
@@ -53,7 +53,7 @@ function request_CONNECT(sc,data){
                 sc.lastcheck=new Date();
                 sc.version=data.params.version || '';
                 mrutil.socketwrite(sc,mrutil.resPackage(data.connectinfo,'CONNECT',{success:true,data:'CONNECTED'},data.requestid))
-                //mrutil.console('[local-connector] request_CONNECT:' + mrutil.resPackage(data.connectinfo,'CONNECT',{success:true,data:'CONNECTED'},data.requestid));
+                //console.log('[local-connector] request_CONNECT:' + mrutil.resPackage(data.connectinfo,'CONNECT',{success:true,data:'CONNECTED'},data.requestid));
             }
             doc.lastOnline=new Date();
             doc.version=data.params.version || '';
@@ -190,28 +190,28 @@ var tcpserver = net.createServer(function (sc) {
     tcpConnectorClients.push(sc);
     sc.clientid = uuid.v4();// tcpConnectorClients.length;
     
-    mrutil.console('[local-connector] client connected  ' + sc.remoteAddress + ',' + sc.remotePort);
-    mrutil.console('[local-connector] client id :  ' + sc.clientid);
-    mrutil.console('[local-connector] Total connections :  ' + tcpConnectorClients.length);
+    console.log('[local-connector] client connected  ' + sc.remoteAddress + ',' + sc.remotePort);
+    console.log('[local-connector] client id :  ' + sc.clientid);
+    console.log('[local-connector] Total connections :  ' + tcpConnectorClients.length);
     var beep = require('beepbeep');
     //beep(1);
-    //mrutil.console(JSON.stringify(mrconn.mrpackage('accept', 'whoareyou')));
+    //console.log(JSON.stringify(mrconn.mrpackage('accept', 'whoareyou')));
     //sc.write("who are you");
 
     //mrutil.sendadminmail('Deneme', util.inspect(sc, { showHidden: false, depth: null }));
 
     sc.on('end', function () {
-        mrutil.console('[local-connector] client disconnected .' + sc.clientid);
+        console.log('[local-connector] client disconnected .' + sc.clientid);
         destroyClient(sc);
-        mrutil.console('[local-connector] Total connections :  ' + tcpConnectorClients.length);
+        console.log('[local-connector] Total connections :  ' + tcpConnectorClients.length);
     });
     // sc.on('connect', function () {
-    //    mrutil.console('event:connect');
+    //    console.log('event:connect');
     // });
 
     sc.on('error', function (err) {
        
-        mrutil.console('[local-connector] event:error ClientID:' + sc.clientid + '  Error:' + err.code + ' - ' + err.message);
+        console.log('[local-connector] event:error ClientID:' + sc.clientid + '  Error:' + err.code + ' - ' + err.message);
         if(err.code=='ERR_STREAM_DESTROYED' || err.code=='ECONNRESET'){
             destroyClient(sc);
         }
@@ -272,7 +272,7 @@ var tcpserver = net.createServer(function (sc) {
                 }
 
             }else{
-                mrutil.console('[local-connector] Error data is :', data2);
+                console.log('[local-connector] Error data is :', data2);
             }
             
         } catch ( err ) {
@@ -285,16 +285,16 @@ var tcpserver = net.createServer(function (sc) {
 
 tcpserver.listen(tcpPORT, function (err) {
     if (err) {
-        mrutil.console('[local-connector] Error:' + err.code);
+        console.log('[local-connector] Error:' + err.code);
         if (err.code == 'EADDRINUSE') {
-            mrutil.console('[local-connector] Address in use, retrying...');
+            console.log('[local-connector] Address in use, retrying...');
             setTimeout(function () {
                 tcpserver.close();
                 tcpserver.listen(tcpPORT);
             }, 3000);
         }
     } else {
-        mrutil.console('[local-connector] Resonance service running on ' + tcpPORT + ' TCP port.');
+        console.log('[local-connector] Resonance service running on ' + tcpPORT + ' TCP port.');
     }
 
     
@@ -308,7 +308,7 @@ setInterval(function () {
     
     Cleaner_connectorClientRequestQueue();
     Cleaner_resonanceClient();
-    mrutil.console('[local-connector] Cleaner tasks worked.');
+    console.log('[local-connector] Cleaner tasks worked.');
 }, 15000);
 
 

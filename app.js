@@ -4,6 +4,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+global.colors = require('colors');
 
 require("tls").DEFAULT_MIN_VERSION = 'TLSv1';
 
@@ -27,6 +28,7 @@ if(process.argv.length>=3){
 global.fs=require('fs');
 
 global.mrutil = require('./lib/mrutil.js');
+
 global.ttext = require('./lib/language.js');
 global.passport = require('./lib/passport.js');
 global.passportRepo = require('./lib/passport_repo.js');
@@ -158,7 +160,7 @@ function onListening() {
 
 
 process.on('uncaughtException', function (err) {
-    mrutil.console('Caught exception: ' + err);
+    console.log('Caught exception: ', err);
 });
 
 

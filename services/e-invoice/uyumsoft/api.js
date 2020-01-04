@@ -10,7 +10,7 @@ function generateRequestMessage(funcName,query,isQuery=true){
                        '<s:Body>' +
                          '<s:' + funcName + ' xmlns:s="http://tempuri.org/">'
     if(isQuery){
-        message +='<s:query PageIndex="' + (query.pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 20) + '">';
+        message +='<s:query PageIndex="' + (query.pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 10) + '">';
         for(let k in query){
             if(k!='pageIndex' && k!='PageIndex' && k!='pageSize' && k!='PageSize'){
                 message +="<s:" + k + ">" + query[k].toString() + "</s:" + k +">";
@@ -18,23 +18,15 @@ function generateRequestMessage(funcName,query,isQuery=true){
         }
         message +='</s:query>';
     }else{
-        if(Array.isArray(query)){
-            query.forEach((e)=>{
-                for(let k in e){
-                    message +='<s:' + k + '>' + e[k].toString() + '</s:' + k +'>';
-                }
-            });
-            
-        }else{
+        
             for(let k in query){
                 if(Object.keys(query[k]).indexOf('pageIndex')>-1 || Object.keys(query[k]).indexOf('pageSize')>-1 || Object.keys(query[k]).indexOf('PageIndex')>-1 || Object.keys(query[k]).indexOf('PageSize')>-1){
-                    message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 20) + '">' + query[k].toString() + '</s:' + k +'>';
+                    message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 10) + '">' + query[k].toString() + '</s:' + k +'>';
                 }else{
                     message +='<s:' + k + '>' + query[k].toString() + '</s:' + k +'>';
                 }
                 
             }
-        }
         
     }
     message +='</s:' + funcName + '>';
@@ -152,7 +144,7 @@ exports.getInboxInvoiceList = function (options,query,callback) {
     })
 
     var proxy = new Proxy(binding, options.url);
-    console.log('options:',options);
+    
     // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
     proxy.ClientCredentials.Username.Username =options.username;
     proxy.ClientCredentials.Username.Password =options.password ;
@@ -186,48 +178,53 @@ exports.getInboxInvoiceList = function (options,query,callback) {
                             docs:[]
                         }
 
-                        result.page= query.PageIndex;
-                        result.pageSize=query.PageSize;
+                        // result.page= query.PageIndex;
+                        // result.pageSize=query.PageSize;
+                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['$'].PageIndex);
+                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['$'].PageSize);
                         result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['$'].TotalCount);
                         result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['$'].TotalPages);
                         
                         var items=jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['Items'];
-                        console.log('items.length:',items.length);
-                        for(var i=0;i<items.length;i++){
-                            
-                            var obj={
-                                ioType:1,
-                                profileId:uyumsoftInvoiceProfileID(items[i]['Type'][0]),
-                                id:items[i]['InvoiceId'][0],
-                                uuid:items[i]['DocumentId'][0],
-                                issueDate:items[i]['ExecutionDate'][0].toString().substr(0,10),
-                                issueTime:items[i]['ExecutionDate'][0].toString().substr(11,8),
-                                invoiceType:'SATIS',
-                                accountingParty:{
-                                    tcknVkn:items[i]['TargetTcknVkn']!=undefined?(items[i]['TargetTcknVkn'][0]) || '':'',
-                                    title:items[i]['TargetTitle']!=undefined?(items[i]['TargetTitle'][0]|| ''):''
-                                },
-                                payableAmount:Number(items[i]['PayableAmount'][0]),
-                                taxExclusiveAmount:Number(items[i]['TaxExclusiveAmount'][0]),
-                                taxTotal:Number(items[i]['TaxTotal'][0]),
-                                taxSummary :{
-                                    vat1:Number(items[i]['Vat1'][0]),
-                                    vat8:Number(items[i]['Vat8'][0]),
-                                    vat18:Number(items[i]['Vat18'][0]),
-                                    vat0TaxableAmount:Number(items[i]['Vat0TaxableAmount'][0]),
-                                    vat1TaxableAmount:Number(items[i]['Vat1TaxableAmount'][0]),
-                                    vat8TaxableAmount:Number(items[i]['Vat8TaxableAmount'][0]),
-                                    vat18TaxableAmount:Number(items[i]['Vat18TaxableAmount'][0])
-                                },
-                                withHoldingTaxTotal:0,
-                                documentCurrencyCode:items[i]['DocumentCurrencyCode'][0],
-                                exchangeRate:Number(items[i]['ExchangeRate'][0]),
+                        if(items){
+                            for(var i=0;i<items.length;i++){
                                 
-                                status:uyumsoftInvoiceStatus(items[i]['Status'][0])
+                                var obj={
+                                    ioType:1,
+                                    profileId:uyumsoftInvoiceProfileID(items[i]['Type'][0]),
+                                    id:items[i]['InvoiceId'][0],
+                                    uuid:items[i]['DocumentId'][0],
+                                    issueDate:items[i]['ExecutionDate'][0].toString().substr(0,10),
+                                    issueTime:items[i]['ExecutionDate'][0].toString().substr(11,8),
+                                    invoiceType:'SATIS',
+                                    accountingParty:{
+                                        tcknVkn:items[i]['TargetTcknVkn']!=undefined?(items[i]['TargetTcknVkn'][0]) || '':'',
+                                        title:items[i]['TargetTitle']!=undefined?(items[i]['TargetTitle'][0]|| ''):''
+                                    },
+                                    payableAmount:Number(items[i]['PayableAmount'][0]),
+                                    taxExclusiveAmount:Number(items[i]['TaxExclusiveAmount'][0]),
+                                    taxTotal:Number(items[i]['TaxTotal'][0]),
+                                    taxSummary :{
+                                        vat1:Number(items[i]['Vat1'][0]),
+                                        vat8:Number(items[i]['Vat8'][0]),
+                                        vat18:Number(items[i]['Vat18'][0]),
+                                        vat0TaxableAmount:Number(items[i]['Vat0TaxableAmount'][0]),
+                                        vat1TaxableAmount:Number(items[i]['Vat1TaxableAmount'][0]),
+                                        vat8TaxableAmount:Number(items[i]['Vat8TaxableAmount'][0]),
+                                        vat18TaxableAmount:Number(items[i]['Vat18TaxableAmount'][0])
+                                    },
+                                    withHoldingTaxTotal:0,
+                                    documentCurrencyCode:items[i]['DocumentCurrencyCode'][0],
+                                    exchangeRate:Number(items[i]['ExchangeRate'][0]),
+                                    
+                                    status:uyumsoftInvoiceStatus(items[i]['Status'][0])
+                                }
+                                result.docs.push(obj);
                             }
-                            result.docs.push(obj);
+                            callback(null,result);
+                        }else{
+                            callback(null,result);
                         }
-                        callback(null,result);
                     }else{
                         callback({code:'UNSUCCESSFUL',message:'Uyumsoft E-InvoiceDownload Basarisiz'});
                     }
@@ -239,6 +236,7 @@ exports.getInboxInvoiceList = function (options,query,callback) {
             });
 
         }catch(err){
+            
             callback({code:'CATCHED_ERROR',message:err});
         }
     });
@@ -291,48 +289,53 @@ exports.getOutboxInvoiceList = function (options,query,callback) {
                             docs:[]
                         }
 
-                        result.page= query.PageIndex;
-                        result.pageSize=query.PageSize;
+                        // result.page= query.PageIndex;
+                        // result.pageSize=query.PageSize;
+                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].PageIndex);
+                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].PageSize);
                         result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].TotalCount);
                         result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].TotalPages);
                        
                         var items=jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['Items'];
-                        
-                        for(var i=0;i<items.length;i++){
-                            
-                            var obj={
-                                ioType:1,
-                                profileId:uyumsoftInvoiceProfileID(items[i]['Type'][0]),
-                                id:items[i]['InvoiceId'][0],
-                                uuid:items[i]['DocumentId'][0],
-                                issueDate:items[i]['ExecutionDate'][0].toString().substr(0,10),
-                                issueTime:items[i]['ExecutionDate'][0].toString().substr(11,8),
-                                invoiceType:'SATIS',
-                                accountingParty:{
-                                    tcknVkn:items[i]['TargetTcknVkn']!=undefined?(items[i]['TargetTcknVkn'][0]) || '':'',
-                                    title:items[i]['TargetTitle']!=undefined?(items[i]['TargetTitle'][0]|| ''):''
-                                },
-                                payableAmount:Number(items[i]['PayableAmount'][0]),
-                                taxExclusiveAmount:Number(items[i]['TaxExclusiveAmount'][0]),
-                                taxTotal:Number(items[i]['TaxTotal'][0]),
-                                taxSummary :{
-                                    vat1:Number(items[i]['Vat1'][0]),
-                                    vat8:Number(items[i]['Vat8'][0]),
-                                    vat18:Number(items[i]['Vat18'][0]),
-                                    vat0TaxableAmount:Number(items[i]['Vat0TaxableAmount'][0]),
-                                    vat1TaxableAmount:Number(items[i]['Vat1TaxableAmount'][0]),
-                                    vat8TaxableAmount:Number(items[i]['Vat8TaxableAmount'][0]),
-                                    vat18TaxableAmount:Number(items[i]['Vat18TaxableAmount'][0])
-                                },
-                                withHoldingTaxTotal:0,
-                                documentCurrencyCode:items[i]['DocumentCurrencyCode'][0],
-                                exchangeRate:Number(items[i]['ExchangeRate'][0]),
+                        if(items){
+                            for(var i=0;i<items.length;i++){
                                 
-                                status:uyumsoftInvoiceStatus(items[i]['Status'][0])
+                                var obj={
+                                    ioType:1,
+                                    profileId:uyumsoftInvoiceProfileID(items[i]['Type'][0]),
+                                    id:items[i]['InvoiceId'][0],
+                                    uuid:items[i]['DocumentId'][0],
+                                    issueDate:items[i]['ExecutionDate'][0].toString().substr(0,10),
+                                    issueTime:items[i]['ExecutionDate'][0].toString().substr(11,8),
+                                    invoiceType:'SATIS',
+                                    accountingParty:{
+                                        tcknVkn:items[i]['TargetTcknVkn']!=undefined?(items[i]['TargetTcknVkn'][0]) || '':'',
+                                        title:items[i]['TargetTitle']!=undefined?(items[i]['TargetTitle'][0]|| ''):''
+                                    },
+                                    payableAmount:Number(items[i]['PayableAmount'][0]),
+                                    taxExclusiveAmount:Number(items[i]['TaxExclusiveAmount'][0]),
+                                    taxTotal:Number(items[i]['TaxTotal'][0]),
+                                    taxSummary :{
+                                        vat1:Number(items[i]['Vat1'][0]),
+                                        vat8:Number(items[i]['Vat8'][0]),
+                                        vat18:Number(items[i]['Vat18'][0]),
+                                        vat0TaxableAmount:Number(items[i]['Vat0TaxableAmount'][0]),
+                                        vat1TaxableAmount:Number(items[i]['Vat1TaxableAmount'][0]),
+                                        vat8TaxableAmount:Number(items[i]['Vat8TaxableAmount'][0]),
+                                        vat18TaxableAmount:Number(items[i]['Vat18TaxableAmount'][0])
+                                    },
+                                    withHoldingTaxTotal:0,
+                                    documentCurrencyCode:items[i]['DocumentCurrencyCode'][0],
+                                    exchangeRate:Number(items[i]['ExchangeRate'][0]),
+                                    
+                                    status:uyumsoftInvoiceStatus(items[i]['Status'][0])
+                                }
+                                result.docs.push(obj);
                             }
-                            result.docs.push(obj);
+                            callback(null,result);
+                        }else{
+                            callback(null,result);
                         }
-                        callback(null,result);
                     }else{
                         callback({code:'UNSUCCESSFUL',message:'Uyumsoft E-InvoiceDownload Basarisiz'});
                     }
@@ -798,15 +801,15 @@ exports.getEInvoiceUsers = function (options,query,callback) {
                         
                         items.forEach((item)=>{
                             var obj={
-                        		identifier:item['$'].Identifier.trim(),
-                        		postboxAlias:item['$'].PostboxAlias.trim(),
-                        		title:item['$'].Title.trim(),
-                        		type:item['$'].Type.trim(),
-                        		systemCreateDate:new Date(item['$'].SystemCreateDate + '.000+0300'),
-                        		firstCreateDate:new Date(item['$'].FirstCreateDate + '.000+0300'),
-                        		enabled:Boolean(item['$'].Enabled)
+                                identifier:item['$'].Identifier.trim(),
+                                postboxAlias:item['$'].PostboxAlias.trim(),
+                                title:item['$'].Title.trim(),
+                                type:item['$'].Type.trim(),
+                                systemCreateDate:new Date(item['$'].SystemCreateDate + '.000+0300'),
+                                firstCreateDate:new Date(item['$'].FirstCreateDate + '.000+0300'),
+                                enabled:Boolean(item['$'].Enabled)
 
-                        	}
+                            }
                             result.docs.push(obj);
                         });
 

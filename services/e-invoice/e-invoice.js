@@ -2,70 +2,84 @@
 
 var uyumsoft=require('./uyumsoft/uyumsoft-e-fatura.js');
 
-
-setTimeout(()=>{
-	function scheduler(){
-		mrutil.console(('E-Invoice Service Scheduled Task').green + ' started');
-		start((err)=>{
+exports.run=function(dbModel){
+	
+	function calistir(cb){
+		console.log('eInvoice_checkDbAndDownloadInvoices started.',dbModel.dbName);
+		checkDbAndDownloadInvoices(dbModel,(err)=>{
 			if(err){
-				mrutil.console(('E-Invoice Service Scheduled Task Error:') + JSON.stringify(err));
-			}else{
-				mrutil.console(('E-Invoice Service Scheduled Task').blue + ' completed');
+				console.error('eInvoice_checkDbAndDownloadInvoices',err);
 			}
-			setTimeout(scheduler,60000*5); //30 dakika arayla check et.
+			console.log('eInvoice_checkDbAndDownloadInvoices ended.',dbModel.dbName);
+			setTimeout(calistir,60000,cb);
 		});
-	}
-	scheduler();
- //},60000*30);
-  },1000*8);
-
-function start(callback){
-
-	var dbIds=[];
-	Object.keys(repoDb).forEach((e)=>{
-		// dbIds.push({dbId:e,completed:false});
-		dbIds.push(e);
-	});
-
-	console.log('dbIds.length:',dbIds.length);
-	var index=0;
-	function indir(cb){
-		if(index>=dbIds.length){
-			return cb(null);
-		}
 		
-		checkDbAndDownloadInvoices(dbIds[index],(err)=>{
-			
-			index++;
-			setTimeout(indir,3000,cb);
-		});
 	}
-	indir((err)=>{
-		callback(err);
-	});
+	setTimeout(()=>{
+		console.log('E-Invoice service started: ',dbModel.dbName);
+		calistir((err)=>{});
+	},12000);
 }
 
-function checkDbAndDownloadInvoices(dbId,callback){
-	repoDb[dbId].e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
+// setTimeout(()=>{
+// 	console.log(('E-Invoice Service Scheduled Task').green + ' started');
+// 	Object.keys(repoDb).forEach((e)=>{
+// 		repoDb[e].eInvoice_checkDbAndDownloadInvoices=function(){
+// 			console.log('eInvoice_checkDbAndDownloadInvoices started.',e);
+// 			checkDbAndDownloadInvoices(this,(err)=>{
+// 				console.log('eInvoice_checkDbAndDownloadInvoices ended.',e);
+// 				setTimeout(repoDb[e].eInvoice_checkDbAndDownloadInvoices,60000);
+// 			});
+// 		}
+// 		repoDb[e].eInvoice_checkDbAndDownloadInvoices();
+// 	});
+
+// },10000*1);
+
+
+setTimeout(()=>{
+	console.log('E-InvoiceUsers download service started');
+
+	function downloadEInvoiceUsers(){
+		console.log('downloadEInvoiceUsers started');
+		uyumsoft.downloadEInvoiceUsers((err)=>{
+			if(err){
+				console.error('downloadEInvoiceUsers:',  err);
+			}
+			console.log('downloadEInvoiceUsers completed');
+			setTimeout(downloadEInvoiceUsers,3600*1000*1);
+		});
+	}
+	downloadEInvoiceUsers();
+// },3600*1000*12);
+},1000*120);
+
+
+
+
+function checkDbAndDownloadInvoices(dbModel,callback){
+	if(dbModel.e_integrators==undefined) return callback(null);
+	console.log('checkDbAndDownloadInvoices dbId:',dbModel._id);
+	dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
 		if(!err){
 			var index=0;
-			function runService(cb){
+			function calistir(cb){
 				if(index>=eIntegratorDocs.length){
 					cb(null);
 				}else{
-					console.log('checkDbAndDownloadInvoices downloadInvoices dbId:',dbId);
-					downloadInvoices(repoDb[dbId],eIntegratorDocs[index],(err)=>{
+					
+					downloadInvoices(dbModel,eIntegratorDocs[index],(err)=>{
 						if(err){
-							console.log('E-Invoice Service Download error:',err);
+							console.log('E-Invoice Service Download error: dbId:', dbModel._id,err);
 							console.log('E-Invoice Service Download error service:',eIntegratorDocs[index]);
 						}
 						index++;
-						setTimeout(runService,3000,cb);
+						setTimeout(calistir,3000,cb);
 					});
 				}
 			}
 
-			runService((err)=>{
+			calistir((err)=>{
 				callback(err);
 			});
 
@@ -86,23 +100,6 @@ function downloadInvoices(dbModel,eIntegratorDoc,cb){
 		break;
 	}
 }
-
-setTimeout(()=>{
-	function downloadEInvoiceUsers(){
-		mrutil.console(('E-InvoiceUsers Download Scheduled Task').green + ' started');
-		//var uyumsoft=require('./uyumsoft/uyumsoft-e-fatura.js');
-		uyumsoft.downloadEInvoiceUsers((err)=>{
-			if(err){
-				mrutil.console(('E-InvoiceUsers Download Scheduled Task Error:') + JSON.stringify(err));
-			}else{
-				mrutil.console(('E-InvoiceUsers Download Scheduled Task').blue + ' completed');
-			}
-			setTimeout(downloadEInvoiceUsers,3600*1000*1);
-		});
-	}
-	downloadEInvoiceUsers();
-// },3600*1000*12);
-},1000*12);
 
 
 exports.sendToGib=function(dbModel,eInvoice,cb){

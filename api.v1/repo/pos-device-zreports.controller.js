@@ -79,9 +79,9 @@ function rapor1(activeDb,member,req,res,callback){
 
     if(req.query.date2){
         if(filter['zDate']){
-            filter['zDate']['$lte']=(new Date(req.query.date2));
+            filter['zDate']['$lte']=(new Date(req.query.date2+ 'T23:59:59+0300'));
         }else{
-            filter['zDate']={$lte:(new Date(req.query.date2))};
+            filter['zDate']={$lte:(new Date(req.query.date2+ 'T23:59:59+0300'))};
         }
     }
 
@@ -537,8 +537,8 @@ function transfer(activeDb,member,req,res,callback){
                 if(index>=docs.length){
                     cb(null);
                 }else{
-                    var taskdata={userDb:req.params.dbId,taskType:'connector_transfer_zreport',collectionName:'pos_device_zreports',documentId:docs[index]._id,document:docs[index]}
-                    taskHelper.newTask(taskdata,(err,taskDoc)=>{
+                    var taskdata={taskType:'connector_transfer_zreport',collectionName:'pos_device_zreports',documentId:docs[index]._id,document:docs[index]}
+                    taskHelper.newTask(activeDb,taskdata,(err,taskDoc)=>{
                         if(!err){
                             switch(taskDoc.status){
                                 case 'running':

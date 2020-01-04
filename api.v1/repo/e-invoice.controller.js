@@ -80,11 +80,11 @@ function transferImport(activeDb,member,req,res,callback){
                 if(index>=docs.length){
                     cb(null);
                 }else{
-                    db.tasks.findOne({userDb:req.params.dbId,taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
+                    activeDb.tasks.findOne({taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
                         if (dberr(err,callback)) {
                             if(doc==null){
-                                var taskdata={userDb:req.params.dbId,taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id,document:docs[index]}
-                                taskHelper.newTask(taskdata,(err,taskDoc)=>{
+                                var taskdata={taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id,document:docs[index]}
+                                taskHelper.newTask(activeDb,taskdata,(err,taskDoc)=>{
                                     if(!err){
                                         switch(taskDoc.status){
                                             case 'running':
@@ -152,7 +152,8 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
         ],
         limit:10
         ,
-        select:'_id eIntegrator profileId ID uuid issueDate issueTime invoiceTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal invoiceStatus invoiceErrors localStatus localErrors'
+        select:'_id eIntegrator profileId ID uuid issueDate issueTime invoiceTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal invoiceStatus invoiceErrors localStatus localErrors',
+        sort:{'issueDate.value':'desc'}
     }
 
     if((req.query.pageSize || req.query.limit)){
@@ -186,11 +187,11 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
         filter['documentCurrencyCode.value']=req.query.documentCurrencyCode;
     }
 
-    if(req.query.date1){
+    if((req.query.date1 || '')!=''){
         filter['issueDate.value']={$gte:req.query.date1};
     }
 
-    if(req.query.date2){
+    if((req.query.date2 || '')!=''){
         if(filter['issueDate.value']){
             filter['issueDate.value']['$lte']=req.query.date2;
         }else{

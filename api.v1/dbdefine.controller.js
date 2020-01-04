@@ -108,7 +108,8 @@ function post(member,req,res,callback){
                     if (!err) {
                         var userDb="userdb-" + newdoc2._id;
                         var userDbHost=config.mongodb.userAddress;
-                        newUserDb(newdoc2._id,userDb,userDbHost,function(result){
+                        var dbName=newdoc2.dbName;
+                        newUserDb(newdoc2._id,userDb,userDbHost,dbName,function(result){
                             if(result.success){
                                 newdoc2.userDb = userDb;
                                 newdoc2.userDbHost = userDbHost;
@@ -137,9 +138,9 @@ function post(member,req,res,callback){
 }
 
 
-function newUserDb(_id,userDb,userDbHost,callback){
+function newUserDb(_id,userDb,userDbHost,dbName,callback){
     
-    loadUserDb(_id,userDb,userDbHost,(err)=>{
+    loadUserDb(_id,userDb,userDbHost,dbName,(err)=>{
         if(!err){
             callback({success:true});
         }else{
