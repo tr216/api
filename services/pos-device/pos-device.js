@@ -5,13 +5,17 @@ var ingenico=require('./ingenico/ingenico.js');
 exports.run=function(dbModel){
 	function calistir(cb){
 		console.log('posDevice_checkDbAndDownload started.',dbModel.dbName);
-		checkDbAndDownload(dbModel,(err)=>{
-			if(err){
-				console.error('posDevice_checkDbAndDownload',err);
-			}
-			console.log('posDevice_checkDbAndDownload ended.',dbModel.dbName);
+		try{
+			checkDbAndDownload(dbModel,(err)=>{
+				if(err){
+					console.error('posDevice_checkDbAndDownload',err);
+				}
+				console.log('posDevice_checkDbAndDownload ended.',dbModel.dbName);
+				setTimeout(calistir,60000,cb);
+			});
+		}catch(tryErr){
 			setTimeout(calistir,60000,cb);
-		});
+		}
 	}
 
 	setTimeout(()=>{

@@ -435,8 +435,8 @@ function sendToGib(activeDb,member,req,res,callback){
                     cb(null);
                 }else{
                     
-                    var taskdata={userDb:req.params.dbId,taskType:'einvoice_send_to_gib',collectionName:'e_invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
-                    taskHelper.newTask(taskdata,(err,taskDoc)=>{
+                    var taskdata={taskType:'einvoice_send_to_gib',collectionName:'e_invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
+                    taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
                         if(!err){
                             switch(taskDoc.status){
                                 case 'running':

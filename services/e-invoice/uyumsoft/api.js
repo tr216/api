@@ -138,29 +138,30 @@ function uyumsoftInvoiceProfileID(typeCode){
 */
 
 exports.getInboxInvoiceList = function (options,query,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
+    try{ 
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
 
-    var proxy = new Proxy(binding, options.url);
-    
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+        var proxy = new Proxy(binding, options.url);
+        
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('GetInboxInvoiceList',query);
-    
-    
-    proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {
+        var message=generateRequestMessage('GetInboxInvoiceList',query);
+        
+        
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {
 
 
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+        
             mrutil.xml2json(response,(err,jsObject)=>{
                 if(!err){
                     
@@ -235,13 +236,13 @@ exports.getInboxInvoiceList = function (options,query,callback) {
                 }
             });
 
-        }catch(err){
-            
-            callback({code:'CATCHED_ERROR',message:err});
-        }
-    });
-    
-}; 
+        
+        });
+
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
 
 /**
 * @query :{CreateStartDate:Date, CreateEndDate:Date, ExecutionStartDate:Date, ExecutionEndDate:Date, PageIndex:Number, PageSize:Number
@@ -251,6 +252,7 @@ exports.getInboxInvoiceList = function (options,query,callback) {
 */
 
 exports.getOutboxInvoiceList = function (options,query,callback) {
+    try{ 
     var binding = new BasicHttpBinding(
         { SecurityMode: "TransportWithMessageCredential"
         , MessageClientCredentialType: "UserName"
@@ -271,7 +273,7 @@ exports.getOutboxInvoiceList = function (options,query,callback) {
 
             return callback({code:ctx.error['code'],message:ctx.error['code']});
         }
-        try{ 
+        
             mrutil.xml2json(response,(err,jsObject)=>{
                 if(!err){
                     
@@ -346,35 +348,36 @@ exports.getOutboxInvoiceList = function (options,query,callback) {
                 }
             });
 
-        }catch(err){
-            callback({code:'CATCHED_ERROR',message:err});
-        }
-    });
-    
-}; 
+        
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }   
+}
 
 /**
 * @query :{ invoiceId: String}
 */
 exports.getInboxInvoice = function (options,invoiceId,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('GetInboxInvoice',{invoiceId:invoiceId},false);
+        var message=generateRequestMessage('GetInboxInvoice',{invoiceId:invoiceId},false);
 
-    proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
@@ -393,39 +396,36 @@ exports.getInboxInvoice = function (options,invoiceId,callback) {
                     callback(err);
                 }
             });
-
-        }catch(err){
-            callback(err);
-        }
-
         
-        
-    });
-    
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
 }; 
 
 /**
 * @query :{ invoiceId: String}
 */
 exports.getOutboxInvoice = function (options,invoiceId,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
 
-    var message=generateRequestMessage('GetOutboxInvoice',{invoiceId:invoiceId},false);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        var message=generateRequestMessage('GetOutboxInvoice',{invoiceId:invoiceId},false);
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+        
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     jsObject=mrutil.deleteObjectProperty(jsObject,'xmlns*');
@@ -448,40 +448,35 @@ exports.getOutboxInvoice = function (options,invoiceId,callback) {
                     callback(err);
                 }
             });
-
-        }catch(err){
-            callback(err);
-        }
-
-        
-        
-    });
-    
-}; 
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
 
 /**
 * @query :{ invoiceId: String}
 */
 exports.getInboxInvoiceHtml = function (options,invoiceId,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('GetInboxInvoiceView',{invoiceId:invoiceId},false);
+        var message=generateRequestMessage('GetInboxInvoiceView',{invoiceId:invoiceId},false);
 
-    proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {
-        
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {
+            
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     
@@ -500,41 +495,38 @@ exports.getInboxInvoiceHtml = function (options,invoiceId,callback) {
                     callback(err);
                 }
             });
-
-        }catch(err){
-            callback(err);
-        }
-
         
-        
-    });
-    
-}; 
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
 
 
 /**
 * @query :{ invoiceId: String}
 */
 exports.getInboxInvoicePdf = function (options,invoiceId,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('GetInboxInvoicePdf',{invoiceId:invoiceId},false);
+        var message=generateRequestMessage('GetInboxInvoicePdf',{invoiceId:invoiceId},false);
 
-    proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {
-        
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {
+            
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     
@@ -553,38 +545,34 @@ exports.getInboxInvoicePdf = function (options,invoiceId,callback) {
                     callback(err);
                 }
             });
-
-        }catch(err){
-            callback(err);
-        }
-
         
-        
-    });
-    
-};
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
 
 /**
 * @query :{ invoiceId: String}
 */
 exports.getOutboxInvoiceHtml = function (options,invoiceId,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('GetOutboxInvoiceView',{invoiceId:invoiceId},false);
+        var message=generateRequestMessage('GetOutboxInvoiceView',{invoiceId:invoiceId},false);
 
-    proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceView", function(response, ctx) {
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceView", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
@@ -603,38 +591,34 @@ exports.getOutboxInvoiceHtml = function (options,invoiceId,callback) {
                 }
             });
 
-        }catch(err){
-            callback(err);
-        }
-
-        
-        
-    });
-    
-}; 
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
 
 
 /**
 * @query :{ invoiceId: String}
 */
 exports.getOutboxInvoicePdf = function (options,invoiceId,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('GetOutboxInvoicePdf',{invoiceId:invoiceId},false);
+        var message=generateRequestMessage('GetOutboxInvoicePdf',{invoiceId:invoiceId},false);
 
-    proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoicePdf", function(response, ctx) {
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoicePdf", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
@@ -653,36 +637,31 @@ exports.getOutboxInvoicePdf = function (options,invoiceId,callback) {
                 }
             });
 
-        }catch(err){
-            callback(err);
-        }
-
-        
-        
-    });
-    
-};
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
 /**
 * @query :{ invoices: String[]}
 */
 exports.setInvoicesTaken = function (options,invoices,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('SetInvoicesTaken',{invoices:invoices},false);
+        var message=generateRequestMessage('SetInvoicesTaken',{invoices:invoices},false);
 
-    proxy.send(message, "http://tempuri.org/IIntegration/SetInvoicesTaken", function(response, ctx) {
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+        proxy.send(message, "http://tempuri.org/IIntegration/SetInvoicesTaken", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
@@ -696,11 +675,10 @@ exports.setInvoicesTaken = function (options,invoices,callback) {
                 }
             });
 
-        }catch(err){
-            callback(err);
-        }
-    });
-    
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
 }
 
 
@@ -709,23 +687,24 @@ exports.setInvoicesTaken = function (options,invoices,callback) {
 */
 
 exports.isEInvoiceUser = function (options,vknTckn,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('IsEInvoiceUser',{vknTckn:vknTckn,alias:''});
-    
-    proxy.send(message, "http://tempuri.org/IIntegration/IsEInvoiceUser", function(response, ctx) {
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        var message=generateRequestMessage('IsEInvoiceUser',{vknTckn:vknTckn,alias:''});
+        
+        proxy.send(message, "http://tempuri.org/IIntegration/IsEInvoiceUser", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+
             mrutil.xml2json(response,(err,jsObject)=>{
                 if(!err){
                     if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
@@ -739,11 +718,10 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
                     callback({code:'XML2JSON_ERROR',message:(err.name || err.message || err.toString())});
                 }
             });
-
-        }catch(err){
-            callback({code:'CATCHED_ERROR',message:err});
-        }
-    });
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
 }
 
 
@@ -757,25 +735,25 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
 
 
 exports.getEInvoiceUsers = function (options,query,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('GetEInvoiceUsers',query,false);
-    
-    
-    proxy.send(message, "http://tempuri.org/IIntegration/GetEInvoiceUsers", function(response, ctx) {
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        var message=generateRequestMessage('GetEInvoiceUsers',query,false);
+        
+        
+        proxy.send(message, "http://tempuri.org/IIntegration/GetEInvoiceUsers", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
             mrutil.xml2json(response,(err,jsObject)=>{
                 if(!err){
                     if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
@@ -821,39 +799,36 @@ exports.getEInvoiceUsers = function (options,query,callback) {
                     callback({code:'XML2JSON_ERROR',message:(err.name || err.message || err.toString())});
                 }
             });
-
-        }catch(err){
-            callback({code:'CATCHED_ERROR',message:err});
-        }
-    });
-    
-};
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
 
 /**
 * @invoice: {object}
 */
 exports.sendInvoice = function (options,ssss,callback) {
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
-    
-    var msj ='<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header /><s:Body>';
-    msj +='<s:SendInvoice xmlns:s="http://tempuri.org/">';
-    msj += ssss
-    msj +='</s:SendInvoice></s:Body></s:Envelope>';
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
+        
+        var msj ='<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header /><s:Body>';
+        msj +='<s:SendInvoice xmlns:s="http://tempuri.org/">';
+        msj += ssss
+        msj +='</s:SendInvoice></s:Body></s:Envelope>';
 
-    proxy.send(msj, "http://tempuri.org/IIntegration/SendInvoice", function(response, ctx) {
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+        proxy.send(msj, "http://tempuri.org/IIntegration/SendInvoice", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
-        try{ 
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
             mrutil.xml2json3(response,(err,jsObject)=>{
                 if(!err){
                     if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
@@ -877,13 +852,10 @@ exports.sendInvoice = function (options,ssss,callback) {
                     callback(err);
                 }
             });
-
-        }catch(err){
-            callback(err);
-        }
-
-        
-        
-    });
+       
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
     
 }

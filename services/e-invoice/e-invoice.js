@@ -1,24 +1,48 @@
-/* Pos Device Service | etulia/portal */
+/* E Invoice Service | etulia/portal */
 
 var uyumsoft=require('./uyumsoft/uyumsoft-e-fatura.js');
 
 exports.run=function(dbModel){
 	
-	function calistir(cb){
-		console.log('eInvoice_checkDbAndDownloadInvoices started.',dbModel.dbName);
-		checkDbAndDownloadInvoices(dbModel,(err)=>{
-			if(err){
-				console.error('eInvoice_checkDbAndDownloadInvoices',err);
-			}
-			console.log('eInvoice_checkDbAndDownloadInvoices ended.',dbModel.dbName);
-			setTimeout(calistir,60000,cb);
-		});
+	function calistirInbox(){
+		console.log('checkDbAndDownloadInboxInvoices started.',dbModel.dbName);
+		try{
+			checkDbAndDownloadInboxInvoices(dbModel,(err)=>{
+				if(err){
+					console.error('checkDbAndDownloadInboxInvoices',err);
+				}
+				console.log('checkDbAndDownloadInboxInvoices ended.',dbModel.dbName);
+				setTimeout(calistirInbox,60000);
+			});
+		}catch(tryErr){
+			setTimeout(calistirInbox,60000);
+		}
 		
 	}
+	function calistirOutbox(){
+		console.log('checkDbAndDownloadOutboxInvoices started.',dbModel.dbName);
+		try{
+			checkDbAndDownloadOutboxInvoices(dbModel,(err)=>{
+				if(err){
+					console.error('checkDbAndDownloadOutboxInvoices',err);
+				}
+				console.log('checkDbAndDownloadOutboxInvoices ended.',dbModel.dbName);
+				setTimeout(calistirOutbox,60000);
+			});
+		}catch(tryErr){
+			setTimeout(calistirOutbox,60000);
+		}
+		
+	}
+
+	console.log('E-Invoice service started: ',dbModel.dbName);
 	setTimeout(()=>{
-		console.log('E-Invoice service started: ',dbModel.dbName);
-		calistir((err)=>{});
+		calistirInbox();
 	},12000);
+
+	setTimeout(()=>{
+		calistirOutbox();
+	},16000);
 }
 
 // setTimeout(()=>{
@@ -42,13 +66,17 @@ setTimeout(()=>{
 
 	function downloadEInvoiceUsers(){
 		console.log('downloadEInvoiceUsers started');
-		uyumsoft.downloadEInvoiceUsers((err)=>{
-			if(err){
-				console.error('downloadEInvoiceUsers:',  err);
-			}
-			console.log('downloadEInvoiceUsers completed');
-			setTimeout(downloadEInvoiceUsers,3600*1000*1);
-		});
+		try{
+			uyumsoft.downloadEInvoiceUsers((err)=>{
+				if(err){
+					console.error('downloadEInvoiceUsers:',  err);
+				}
+				console.log('downloadEInvoiceUsers completed');
+				setTimeout(downloadEInvoiceUsers,3600*1000*1);
+			});
+		}catch(tryErr){
+			setTimeout(downloadEInvoiceUsers,120*1000);
+		}
 	}
 	downloadEInvoiceUsers();
 // },3600*1000*12);
@@ -57,9 +85,9 @@ setTimeout(()=>{
 
 
 
-function checkDbAndDownloadInvoices(dbModel,callback){
+function checkDbAndDownloadInboxInvoices(dbModel,callback){
 	if(dbModel.e_integrators==undefined) return callback(null);
-	console.log('checkDbAndDownloadInvoices dbId:',dbModel._id);
+	console.log('checkDbAndDownloadInboxInvoices :',dbModel.dbName);
 	dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
 		if(!err){
 			var index=0;
@@ -68,10 +96,10 @@ function checkDbAndDownloadInvoices(dbModel,callback){
 					cb(null);
 				}else{
 					
-					downloadInvoices(dbModel,eIntegratorDocs[index],(err)=>{
+					downloadInboxInvoices(dbModel,eIntegratorDocs[index],(err)=>{
 						if(err){
-							console.log('E-Invoice Service Download error: dbId:', dbModel._id,err);
-							console.log('E-Invoice Service Download error service:',eIntegratorDocs[index]);
+							console.error('E-Invoice Service downloadInboxInvoices error:', dbModel.dbName ,err);
+							console.error('E-Invoice Service downloadInboxInvoices error service:',eIntegratorDocs[index]);
 						}
 						index++;
 						setTimeout(calistir,3000,cb);
@@ -89,11 +117,59 @@ function checkDbAndDownloadInvoices(dbModel,callback){
 	});
 }
 
-function downloadInvoices(dbModel,eIntegratorDoc,cb){
+function checkDbAndDownloadOutboxInvoices(dbModel,callback){
+	try{
+		if(dbModel.e_integrators==undefined) return callback(null);
+		console.log('checkDbAndDownloadInboxInvoices :',dbModel.dbName);
+		dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
+			if(!err){
+				var index=0;
+				function calistir(cb){
+					if(index>=eIntegratorDocs.length){
+						cb(null);
+					}else{
+						
+						downloadOutboxInvoices(dbModel,eIntegratorDocs[index],(err)=>{
+							if(err){
+								console.error('E-Invoice Service downloadOutboxInvoices error:', dbModel.dbName ,err);
+								console.error('E-Invoice Service downloadOutboxInvoices error service:',eIntegratorDocs[index]);
+							}
+							index++;
+							setTimeout(calistir,3000,cb);
+						});
+					}
+				}
+
+				calistir((err)=>{
+					callback(err);
+				});
+
+			}else{
+				callback(err);
+			}
+		});
+	}catch(tryErr){
+		callback(err);
+	}
+}
+
+function downloadInboxInvoices(dbModel,eIntegratorDoc,cb){
 	
 	switch(eIntegratorDoc.eIntegrator){
 		case 'uyumsoft':
-			uyumsoft.downloadInvoices(dbModel,eIntegratorDoc,cb);
+			uyumsoft.downloadInboxInvoices(dbModel,eIntegratorDoc,cb);
+		break;
+		default:
+			cb(null);
+		break;
+	}
+}
+
+function downloadOutboxInvoices(dbModel,eIntegratorDoc,cb){
+	
+	switch(eIntegratorDoc.eIntegrator){
+		case 'uyumsoft':
+			uyumsoft.downloadOutboxInvoices(dbModel,eIntegratorDoc,cb);
 		break;
 		default:
 			cb(null);

@@ -88,10 +88,9 @@ function runRendered(localConnectorDoc,data,cb){
 					console.log('js comut gonderildi.')
 					services.tr216LocalConnector.sendCommand({id:localConnectorDoc.connectorId,password:localConnectorDoc.connectorPass}
 						,command, params,(result)=>{
-						console.log('js comut cevap geldi success:',result.success);
+						
 						if(result.success){
-							fs.writeFileSync('F:\\temp\\reynaers\\lconn.json',result.data,'UTF-8');
-							console.log('dosyaya yazildi');
+							
 							cb(null,result);
 						}else{
 							cb(result.error,result);
@@ -148,8 +147,7 @@ function render(localConnectorDoc,data,cb){
 		includeCode +=" }\n";
 		includeCode +="} %> \n";
 		code=includeCode + code;
-		// var fileName=path.join(path.join(rootPath,'log'),'ejs_render_'+ (new Date()).yyyymmdd() + '_' + uuid.v4() + '.txt');
-		// fs.writeFileSync(fileName, code,'utf8');
+		
 
 		renderedCode=ejs.render(code,data);
 		
