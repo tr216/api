@@ -9,7 +9,7 @@ exports.eLedger=require('./e-ledger/e-ledger.js');
 
 exports.runUserDbServices=function(){
     exports.tasks.run(this);
-    // exports.eInvoice.run(this);
+    // exports.eInvoice.run(this); qwerty tekrar acilacak
     // exports.posDevice.run(this);
 }
 

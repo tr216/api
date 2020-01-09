@@ -155,7 +155,7 @@ function render(localConnectorDoc,data,cb){
 	}catch(err){
 		console.log(err);
 		
-		cb({name:'EJS_RENDER_ERROR',message: err.toString()});
+		cb({code:err.name || 'EJS_RENDER_ERROR' ,name:err.name || 'EJS_RENDER_ERROR',message: err.message || err.toString()});
 	}
 	
 }

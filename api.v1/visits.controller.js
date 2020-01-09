@@ -184,7 +184,7 @@ module.exports = function(req, res, callback) {
 							multi: true
 						}, function(err, docs) { //okunmamislari read=true yapalim
 							if (err) {
-								console.log('error:' + err.name + ' - ' + err.message);
+								console.error(__filename,err);
 							}
 							socket.senddata(authinfo._id, {
 								type: 'visitors',

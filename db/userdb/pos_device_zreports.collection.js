@@ -31,10 +31,18 @@ module.exports=function(conn){
     });
     
 
+    
+
     schema.plugin(mongoosePaginate);
     schema.plugin(mongooseAggregatePaginate);
     
-
+    schema.index({
+        "zNo":1,
+        "zDate":1,
+        "status":1,
+        "posDevice":1
+    });
+    
     var collectionName='pos_device_zreports';
     var model=conn.model(collectionName, schema);
     

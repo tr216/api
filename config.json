@@ -11,5 +11,13 @@
   },
   "connector_service":{
   	"port":33216
+  },
+  "error_log":{
+    "path":"/var/log/api.tr216.com.error.log",
+    "active": false
+  },
+  "event_log":{
+    "path":"/var/log/api.tr216.com.access.log",
+    "active": false
   }
 }

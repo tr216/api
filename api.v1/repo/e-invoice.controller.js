@@ -49,13 +49,31 @@ module.exports = function(activeDb, member, req, res, callback) {
                     }
                 break;
                 case 'sendtogib':
-                return sendToGib(activeDb,member,req,res,callback);
+                    return sendToGib(activeDb,member,req,res,callback);
+                break;
+                case 'saveinboxinvoice':
+                case 'saveoutboxinvoice':
+                case 'invoice':
+                    post(activeDb,member,req,res,callback);
                 break;
                 default:
-                return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
+                    return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
                 break;
             }
 
+        break;
+        case 'PUT':
+            switch(req.params.param1.lcaseeng()){
+                
+                case 'saveinboxinvoice':
+                case 'saveoutboxinvoice':
+                case 'invoice':
+                    put(activeDb,member,req,res,callback);
+                break;
+                default:
+                    return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
+                break;
+            }
         break;
         default:
         return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
@@ -63,6 +81,57 @@ module.exports = function(activeDb, member, req, res, callback) {
     }
 }
 
+
+function post(activeDb,member,req,res,callback){
+    var data = req.body || {};
+    
+    var newdoc = new activeDb.e_invoices(data);
+    var err=epValidateSync(newdoc);
+    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+
+    newdoc.save(function(err, newdoc2) {
+        if (!err) {
+            callback({success:true,data:newdoc2});
+        } else {
+            callback({success: false, error: {code: err.name, message: err.message}});
+        }
+    });     
+}
+
+function put(activeDb,member,req,res,callback){
+    if(req.params.param2==undefined){
+        callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    }else{
+        var data = req.body || {};
+        data._id = req.params.param2;
+        data.modifiedDate = new Date();
+        console.log(data);
+        activeDb.e_invoices.findOne({ _id: data._id},(err,doc)=>{
+            if (!err) {
+                if(doc==null){
+                    callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+                }else{
+                    
+                    var doc2 = Object.assign(doc, data);
+                    var newdoc = new activeDb.e_invoices(doc2);
+                    var err=epValidateSync(newdoc);
+                    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+
+                    newdoc.save(function(err, newdoc2) {
+                        if (!err) {
+                            callback({success: true,data: newdoc2});
+                        } else {
+                            callback({success: false, error: {code: err.name, message: err.message}});
+                        }
+                    });
+                   
+                }
+            }else{
+                callback({success: false, error: {code: err.name, message: err.message}});
+            }
+        });
+    }
+}
 
 function transferImport(activeDb,member,req,res,callback){
     
@@ -216,7 +285,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
                 
                 obj['accountingParty']={title:'',vknTckn:''}
                 if(ioType==0){
-                    obj['accountingParty']['title']=e.accountingCustomerParty.party.partyName.name.value;
+                    obj['accountingParty']['title']=e.accountingCustomerParty.party.partyName.name.value || (e.accountingCustomerParty.party.person.firstName.value + ' ' + e.accountingCustomerParty.party.person.familyName.value);;
                     e.accountingCustomerParty.party.partyIdentification.forEach((e2)=>{
                         var schemeID='';
                         if(e2.ID.attr!=undefined){
@@ -228,7 +297,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
                         }
                     });
                 }else{
-                    obj['accountingParty']['title']=e.accountingSupplierParty.party.partyName.name.value;
+                    obj['accountingParty']['title']=e.accountingSupplierParty.party.partyName.name.value || (e.accountingSupplierParty.party.person.firstName.value + ' ' + e.accountingSupplierParty.party.person.familyName.value);
                     e.accountingSupplierParty.party.partyIdentification.forEach((e2)=>{
                         var schemeID='';
                         if(e2.ID.attr!=undefined){

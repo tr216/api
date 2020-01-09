@@ -179,7 +179,36 @@ module.exports=function(conn){
                 }
             }
         },
-        
+        paymentTerms:{
+            amount :{ value:{ type: Number,default: 0}, attr:{ currencyID:{ type: String, default:'' } }},
+            note:{value:{ type: String, trim:true, default: ''}},
+            paymentDueDate:{value:{ type: String, trim:true, default: ''}},
+            penaltyAmount :{ value:{ type: Number,default: 0}, attr:{ currencyID:{ type: String, default:'' } }},
+            penaltySurchargePercent :{ value:{ type: Number,default: 0}},
+            settlementPeriod:{
+                description:{ value:{ type: String, trim:true, default: ''}},
+                durationMeasure:{},
+                startDate: { type: String },
+                startTime: { type: String },
+                endDate: { type: String },
+                endTime: { type: String }
+            }
+
+        },
+        paymentMeans:[{
+            instructionNote:{value:{ type: String, trim:true, default: ''}},
+            paymentMeansCode:{value:{ type: String, trim:true, default: ''}, attr:{ name:{ type: String, default:'' } }},
+            paymentChannelCode:{value:{ type: String, trim:true, default: ''}, attr:{ name:{ type: String, default:'' } }},
+            paymentDueDate:{value:{ type: String, trim:true, default: ''}},
+            payerFinancialAccount:{},
+            payeeFinancialAccount:{}
+        }],
+        taxExchangeRate:{ 
+            sourceCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
+            targetCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
+            calculationRate   :{value:{ type: Number,default: 0}},
+            date   :{ value:{ type: String, trim:true, default: ''}}
+        },
         pricingExchangeRate:{ 
             sourceCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
             targetCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
@@ -187,6 +216,12 @@ module.exports=function(conn){
             date   :{ value:{ type: String, trim:true, default: ''}}
         },
         paymentExchangeRate:{ 
+            sourceCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
+            targetCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
+            calculationRate   :{value:{ type: Number,default: 0}},
+            date   :{ value:{ type: String, trim:true, default: ''}}
+        },
+        paymentAlternativeExchangeRate:{ 
             sourceCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
             targetCurrencyCode  :{ value:{ type: String, trim:true, default: 'TRY'}},
             calculationRate   :{value:{ type: Number,default: 0}},
@@ -334,7 +369,7 @@ module.exports=function(conn){
             invoicedQuantity :{
                 value:{ type: Number,default: 0},
                 attr: {
-                    unitCode: { type: String }
+                    unitCode: { type: String, default:'' }
                 }
             },
             lineExtensionAmount : {
@@ -371,7 +406,11 @@ module.exports=function(conn){
                 manufacturersItemIdentification:{ID:{ value:{ type: String, trim:true, default: ''}}},
                 modelName:{value:{ type: String, trim:true, default: ''}},
                 name:{value:{ type: String, trim:true, default: ''}},
-                sellersItemIdentification:{ID:{ value:{ type: String, trim:true, default: ''}}}
+                sellersItemIdentification:{ID:{ value:{ type: String, trim:true, default: ''}}},
+                originCountry:{
+                    identificationCode:{ value:{ type: String, trim:true, default: ''}},
+                    name:{value:{ type: String, trim:true, default: ''}}
+                }
             },
             price : {
                 priceAmount :  {
@@ -427,7 +466,10 @@ module.exports=function(conn){
                             currencyID:{ type: String, default:''}
                         }
                     },
-                    ID:{ value:{ type: String, trim:true, default: ''}},
+                    ID:{ 
+                        value:{ type: String, trim:true, default: ''},
+                        attr:{ schemeID :{ type: String, default:'INCOTERMS'}}
+                    },
                     specialTerms:{value:{ type: String, trim:true, default: ''}}
                 }],
                 despatch:{
@@ -497,7 +539,9 @@ module.exports=function(conn){
                             currencyID:{ type: String, default:'' }
                         }
                     },
-                    goodsItem:[{}], //qwerty alt nesleneler oldukca fazla
+                    goodsItem:[{
+                        requiredCustomsID:{ value:{ type: String, trim:true, default: ''}}
+                    }], //qwerty alt nesleneler oldukca fazla
                     grossVolumeMeasure:{
                         unitCode:{type: String},
                         value:{ type: Number,default: 0}
@@ -531,7 +575,7 @@ module.exports=function(conn){
                         }
                     },
                     returnAddress:{}, //qwerty address
-                    shipmentStage:[{}], //qwerty  detaylar kalin, shipment stage ayri bir cumhuriyet
+                    shipmentStage:[{transportModeCode:{value:{ type: String, trim:true, default: ''}}}], //qwerty  detaylar kalin, shipment stage ayri bir cumhuriyet
                     specialInstructions:[{ value:{ type: String, trim:true, default: ''}}],
                     totalGoodsItemQuantity:{
                         value:{ type: Number,default: 0},
@@ -545,7 +589,18 @@ module.exports=function(conn){
                             unitCode: {type: String}
                         }
                     },
-                    transportHandlingUnit:[{}] //qwerty  detaylar kalin
+                    transportHandlingUnit:[{
+                        actualPackage:[{
+                            ID:{ value:{ type: String, trim:true, default: ''}},
+                            quantity:{
+                                value:{ type: Number,default: 0},
+                                attr: {
+                                    unitCode: { type: String }
+                                }
+                            },
+                            packagingTypeCode:{value:{ type: String, trim:true, default: ''}}
+                        }]
+                    }] 
                 }
             }],
             despatchLineReference:[{
@@ -661,6 +716,20 @@ module.exports=function(conn){
     schema.plugin(mongoosePaginate);
     schema.plugin(mongooseAggregatePaginate);
     
+    schema.index({
+        "ioType":1,
+        "ID.value":1,
+        "uuid.value":1,
+        "eIntegrator":1,
+        "profileId.value":1,
+        "invoiceTypeCode.value":1,
+        "documentCurrencyCode.value":1,
+        "localDocumentId":1,
+        "invoiceStatus":1,
+        "localStatus":1,
+        "createdDate":1
+    });
+
 
     var collectionName='e_invoices';
     var model=conn.model(collectionName, schema);

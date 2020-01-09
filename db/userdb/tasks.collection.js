@@ -31,7 +31,13 @@ module.exports=function(conn){
 
     });
     schema.plugin(mongoosePaginate);
-    
+    schema.index({
+        "taskType":1,
+        "collectionName":1,
+        "documentId":1,
+        "startDate":1,
+        "status":1
+    });
 
     var collectionName='tasks';
     var model=conn.model(collectionName, schema);
