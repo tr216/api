@@ -372,6 +372,14 @@ module.exports=function(conn){
                     unitCode: { type: String, default:'' }
                 }
             },
+            price : {
+                priceAmount :  {
+                value:{ type: Number,default: 0},
+                    attr:{
+                        currencyID:{ type: String, default:'' }
+                    }
+                }
+            },
             lineExtensionAmount : {
                 value:{ type: Number,default: 0},
                 attr:{
@@ -410,14 +418,6 @@ module.exports=function(conn){
                 originCountry:{
                     identificationCode:{ value:{ type: String, trim:true, default: ''}},
                     name:{value:{ type: String, trim:true, default: ''}}
-                }
-            },
-            price : {
-                priceAmount :  {
-                value:{ type: Number,default: 0},
-                    attr:{
-                        currencyID:{ type: String, default:'' }
-                    }
                 }
             },
             receiptLineReference:[{
@@ -540,7 +540,7 @@ module.exports=function(conn){
                         }
                     },
                     goodsItem:[{
-                        requiredCustomsID:{ value:{ type: String, trim:true, default: ''}}
+                        requiredCustomsId:{ value:{ type: String, trim:true, default: ''}}
                     }], //qwerty alt nesleneler oldukca fazla
                     grossVolumeMeasure:{
                         unitCode:{type: String},
@@ -693,10 +693,12 @@ module.exports=function(conn){
 
     schema.pre('save', function(next) {
         this.lineCountNumeric.value=this.invoiceLine.length;
-        
+
+       
         next();
         //bir seyler ters giderse 
         // next(new Error('ters giden birseyler var'));
+        
     });
     schema.pre('remove', function(next) {
         next();

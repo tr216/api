@@ -84,7 +84,7 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
-    
+    data=mrutil.amountValueFixed2Digit(data,'');
     var newdoc = new activeDb.e_invoices(data);
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
@@ -105,13 +105,13 @@ function put(activeDb,member,req,res,callback){
         var data = req.body || {};
         data._id = req.params.param2;
         data.modifiedDate = new Date();
-        console.log(data);
         activeDb.e_invoices.findOne({ _id: data._id},(err,doc)=>{
             if (!err) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
                     
+                    data=mrutil.amountValueFixed2Digit(data,'');
                     var doc2 = Object.assign(doc, data);
                     var newdoc = new activeDb.e_invoices(doc2);
                     var err=epValidateSync(newdoc);
