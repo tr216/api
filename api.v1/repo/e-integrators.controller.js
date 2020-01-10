@@ -66,7 +66,9 @@ function getList(activeDb,member,req,res,callback){
     }
 
     var filter = {};
-  
+    if((req.query.passive || '') !=''){
+        filter['passive']=req.query.passive;
+    }
     activeDb.e_integrators.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
@@ -162,7 +164,14 @@ function post(activeDb,member,req,res,callback){
 
     newdoc.save(function(err, newdoc2) {
         if (!err) {
-            callback({success:true,data:newdoc2});
+            if(newdoc2.isDefault){
+                activeDb.e_integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
+                    callback({success:true,data:newdoc2});
+                });
+            }else{
+                callback({success:true,data:newdoc2});
+            }
+            
         } else {
             callback({success: false, error: {code: err.name, message: err.message}});
         }
@@ -210,7 +219,13 @@ function put(activeDb,member,req,res,callback){
 
                     newdoc.save(function(err, newdoc2) {
                         if (!err) {
-                            callback({success: true,data: newdoc2});
+                            if(newdoc2.isDefault){
+                                activeDb.e_integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
+                                    callback({success:true,data:newdoc2});
+                                });
+                            }else{
+                                callback({success:true,data:newdoc2});
+                            }
                         } else {
                             callback({success: false, error: {code: err.name, message: err.message}});
                         }

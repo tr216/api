@@ -57,37 +57,13 @@ function getList(activeDb,member,req,res,callback){
     if(!req.query.page){
         options.limit=50000;
     }
-
     var filter = {};
-    if((req.query.connectorType || '')!=''){
-        filter['connectorType']=req.query.connectorType;
+    if((req.query.importerType || '')!=''){
+        filter['importerType']=req.query.importerType;
     }
-    
-    activeDb.local_connectors.paginate(filter,options,(err, resp)=>{
+    activeDb.file_importers.paginate(filter,options,(err, resp)=>{
         if(dberr(err,callback)){
-            var filter={$or:[]}
-            resp.docs.forEach((item)=>{
-                filter.$or.push({connectorId:item.connectorId,connectorPass:item.connectorPass});
-            });
-            db.etulia_connectors.find(filter,(err,docs)=>{
-                if(dberr(err,callback)){
-                    resp.docs.forEach((item)=>{
-                        var connectedItem= docs.find((e)=>{return (item.connectorId==e.connectorId && item.connectorPass==e.connectorPass)});
-                        if(connectedItem!=undefined){
-                            item['status']='offline';
-                            item['lastOnline']=connectedItem.lastOnline;
-                            if((new Date()-connectedItem.lastOnline)/1000<120){
-                                item['status']='online';
-                            }
-                        }else{
-                            item['status']='error';
-                            item['lastOnline']=null;
-                        }
-                    });
-                    callback({success: true,data: resp});
-                }
-            });
-            
+            callback({success: true,data: resp});
         }
     });
 }
@@ -96,7 +72,7 @@ function getOne(activeDb,member,req,res,callback){
     var populate=[{path:'files',select:'_id name extension fileName type size createdDate modifiedDate'}];
     var fileId=req.query.fileId || req.query.fileid || '';
     
-    activeDb.local_connectors.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
+    activeDb.file_importers.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if (dberr(err,callback)) {
             if(doc==null){
                 return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
@@ -151,7 +127,7 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
-    var newdoc = new activeDb.local_connectors(data);
+    var newdoc = new activeDb.file_importers(data);
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
@@ -175,13 +151,13 @@ function put(activeDb,member,req,res,callback){
         data.modifiedDate = new Date();
 
 
-        activeDb.local_connectors.findOne({ _id: data._id},(err,doc)=>{
+        activeDb.file_importers.findOne({ _id: data._id},(err,doc)=>{
             if (!err) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
                     var doc2 = Object.assign(doc, data);
-                    var newdoc = new activeDb.local_connectors(doc2);
+                    var newdoc = new activeDb.file_importers(doc2);
                     var err=epValidateSync(newdoc);
                     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
                     
@@ -206,7 +182,7 @@ function deleteItem(activeDb,member,req,res,callback){
     }else{
         var data = req.body || {};
         data._id = req.params.param1;
-        activeDb.local_connectors.removeOne(member,{ _id: data._id},(err,doc)=>{
+        activeDb.file_importers.removeOne(member,{ _id: data._id},(err,doc)=>{
             if (!err) {
                 callback({success: true});
             }else{
@@ -229,16 +205,16 @@ function saveFile(activeDb,member,req,res,callback){
         }else{
              data['_id']=req.query.fileId || req.query.fileid
         }
-        console.log('fileID:',data['_id']);
+        
 
-        activeDb.local_connectors.findOne({ _id: req.params.param1}).populate(populate).exec((err,doc)=>{
+        activeDb.file_importers.findOne({ _id: req.params.param1}).populate(populate).exec((err,doc)=>{
             if (dberr(err,callback)) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
 
                     if(data._id==undefined){
-                        console.log('data:',data);
+                        
                         var newfileDoc = new activeDb.files(data);
                         var err=epValidateSync(newfileDoc);
                         if(err) return callback({success: false, error: {code: err.name, message: err.message}});
@@ -306,7 +282,7 @@ function setStart(activeDb,member,req,res,callback){
         callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
     }else{
         var fileId=req.query.fileId || req.query.fileid || '';
-        activeDb.local_connectors.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
+        activeDb.file_importers.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
             if (dberr(err,callback)) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
@@ -334,7 +310,7 @@ function deleteFile(activeDb,member,req,res,callback){
         callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
     }else{
         var fileId=req.query.fileId || req.query.fileid || '';
-        activeDb.local_connectors.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
+        activeDb.file_importers.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
             if (dberr(err,callback)) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
@@ -369,7 +345,7 @@ function runCode(activeDb,member,req,res,callback){
     }else{
         var data = req.body || {};
         var populate=['startFile','files'];
-        activeDb.local_connectors.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
+        activeDb.file_importers.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
             if(dberr(err,callback)){
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
@@ -393,7 +369,7 @@ function runCode(activeDb,member,req,res,callback){
 
 function test(activeDb,member,req,res,callback){
     var data = req.body || {};
-    //var newdoc = new activeDb.local_connectors(data);
+    //var newdoc = new activeDb.file_importers(data);
    
     if(data['connectorId']==undefined || data['connectorPass']==undefined || data['connectionType']==undefined){
         return callback({success:false,error:{code:'WRONG_PARAMETER',message:'connectorId, connectorPass, connectionType are required.'}});

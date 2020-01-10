@@ -35,6 +35,7 @@ global.ttext = require('./lib/language.js');
 global.passport = require('./lib/passport.js');
 global.passportRepo = require('./lib/passport_repo.js');
 global.rootPath=__dirname;
+global.eInvoiceHelper=require('./lib/einvoice_helper.js');
 
 var app = express();
 var cors = require('cors');
