@@ -235,3 +235,63 @@ exports.sendToGib=function(dbModel,eInvoice,cb){
 	}
 	
 }
+
+exports.approveInvoice=function(dbModel,eInvoice,cb){
+	try{
+		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
+			
+			switch(eInvoice.eIntegrator.eIntegrator){
+				case 'uyumsoft':
+					uyumsoft.sendDocumentResponse('Approved',dbModel,eInvoice,cb);
+				break;
+				default:
+					cb(null);
+				break;
+			}
+		});
+		
+	}catch(tryErr){
+		cb(tryErr)
+	}
+	
+}
+
+exports.declineInvoice=function(dbModel,eInvoice,cb){
+	try{
+		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
+			
+			switch(eInvoice.eIntegrator.eIntegrator){
+				case 'uyumsoft':
+					uyumsoft.sendDocumentResponse('Declined',dbModel,eInvoice,cb);
+				break;
+				default:
+					cb(null);
+				break;
+			}
+		});
+		
+	}catch(tryErr){
+		cb(tryErr)
+	}
+	
+}
+
+exports.returnInvoice=function(dbModel,eInvoice,cb){
+	try{
+		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
+			
+			switch(eInvoice.eIntegrator.eIntegrator){
+				case 'uyumsoft':
+					uyumsoft.sendDocumentResponse('Return',dbModel,eInvoice,cb);
+				break;
+				default:
+					cb(null);
+				break;
+			}
+		});
+		
+	}catch(tryErr){
+		cb(tryErr)
+	}
+	
+}

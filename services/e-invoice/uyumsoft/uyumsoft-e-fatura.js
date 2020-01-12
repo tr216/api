@@ -106,6 +106,7 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 					}
 				}
 			}
+			console.log('before:')
 			api.getInboxInvoice(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,result)=>{
 				if(!err){
 					var invoice=prepareInvoiceObject(result.doc.invoice);
@@ -324,6 +325,10 @@ function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,files,callback){
 					
 					var data={ioType:ioType,eIntegrator:eIntegratorDoc._id}
 					data=Object.assign(data,invoice);
+					var testInvoiceValidate=new dbModel.e_invoices(data);
+					var err=epValidateSync(testInvoiceValidate);
+					console.log('Error:',err);
+					if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 					saveFiles(dbModel,invoice.ID.value, files,(err,resultFiles)=>{
 						if(!err){
 							if(resultFiles.html) data['html']=resultFiles.html;
@@ -619,6 +624,15 @@ exports.sendToGib=function(dbModel,eInvoice,callback){
 					return;
 				}
 			});
+			if( eInvoice.profileId.value!='EARSIVFATURA'){
+				eInvoice.accountingCustomerParty.party.partyIdentification.forEach((e)=>{
+					var schemeID=(e.ID.attr.schemeID || '').toUpperCase();
+					if(schemeID=='VKN' || schemeID=='TCKN'){
+						e.ID.value='9000068418';
+						return;
+					}
+				});
+			}
 		}
 
 		eInvoice.accountingCustomerParty.party.partyIdentification.forEach((e)=>{
@@ -634,6 +648,7 @@ exports.sendToGib=function(dbModel,eInvoice,callback){
 			if(isTestPlatform) email='alitek@gmail.com';
 		}
 
+		
 		findEInvoiceUserPostBoxAlias(vergiNo,eInvoice.profileId.value,(err,postboxAlias)=>{
 			if(!err) alias=postboxAlias;
 
@@ -651,6 +666,7 @@ exports.sendToGib=function(dbModel,eInvoice,callback){
 			}
 			
 			if(!isTestPlatform || eInvoice.profileId.value=='EARSIVFATURA'){
+			// if(!isTestPlatform){
 				xml +='<s:TargetCustomer Title="' + title + '" VknTckn="' + vergiNo + '" Alias="' + alias + '" />';
 			}else{
 				xml +='<s:TargetCustomer Title="' + title + '" VknTckn="9000068418" Alias="defaultpk" />';
@@ -662,7 +678,7 @@ exports.sendToGib=function(dbModel,eInvoice,callback){
 			xml +='</s:InvoiceInfo>';
 			xml +='</s:invoices>';
 
-
+			console.log('before: api.sendInvoice(options,xml,(err,result)=>{');
 			api.sendInvoice(options,xml,(err,result)=>{
 				if(!err){
 
@@ -686,12 +702,41 @@ function findEInvoiceUserPostBoxAlias(vergiNo,profileId,callback){
 
 		db.einvoice_users.findOne({identifier:vergiNo,enabled:true},(err,doc)=>{
 			if(!err){
-				callback(null,doc.postboxAlias);
+				if(doc!=null){
+					callback(null,doc.postboxAlias);
+				}else{
+					callback(null,'defaultpk');
+				}
+				
 			}else{
 				callback(err);
 			}
 		});
 
+	}catch(tryErr){
+		callback(tryErr);
+	}
+}
+
+
+exports.sendDocumentResponse=function(responseStatus, dbModel,eInvoice,callback){
+	try{
+		var options=JSON.parse(JSON.stringify(eInvoice.eIntegrator));
+		var isTestPlatform=false;
+		if(options.url.indexOf('test')>-1) isTestPlatform=true;
+		var query={DocumentResponseInfo:[{InvoiceId:eInvoice.uuid.value,ResponseStatus:responseStatus}]}
+
+		api.sendDocumentResponse(options,query,(err,result)=>{
+				if(!err){
+
+					console.log('sendDocumentResponse result:',result);
+					callback(null,eInvoice);
+				}else{
+					console.log('sendDocumentResponse error:',err);
+					callback(err);
+				}
+
+			});
 	}catch(tryErr){
 		callback(tryErr);
 	}

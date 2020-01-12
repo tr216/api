@@ -435,11 +435,17 @@ exports.getOutboxInvoice = function (options,invoiceId,callback) {
 
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
+                    var result={}
 
-                    var result={
+                    try{
+                        result={
                         IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceResponse'][0]['GetOutboxInvoiceResult'][0]['$'].IsSucceded=='true',
                         doc:{invoice:jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceResponse']['GetOutboxInvoiceResult']['Value']['Invoice']}
+                        }
+                    }catch(err){
+                        return callback({code: err.name || 'CATCHED_ERROR',message:err.message || 'CATCHED_ERROR'});
                     }
+                    
                    
                     callback(null,result);
                     
@@ -450,7 +456,7 @@ exports.getOutboxInvoice = function (options,invoiceId,callback) {
             });
         });
     }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
     }
 }
 
@@ -776,21 +782,23 @@ exports.getEInvoiceUsers = function (options,query,callback) {
                         result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].TotalPages);
                         
                         var items=jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['Items'];
+                        if(items){
+                            items.forEach((item)=>{
+                                var obj={
+                                    identifier:item['$'].Identifier.trim(),
+                                    postboxAlias:item['$'].PostboxAlias.trim(),
+                                    title:item['$'].Title.trim(),
+                                    type:item['$'].Type.trim(),
+                                    systemCreateDate:new Date(item['$'].SystemCreateDate + '.000+0300'),
+                                    firstCreateDate:new Date(item['$'].FirstCreateDate + '.000+0300'),
+                                    enabled:Boolean(item['$'].Enabled)
+
+                                }
+                                result.docs.push(obj);
+                            });
+
+                        }
                         
-                        items.forEach((item)=>{
-                            var obj={
-                                identifier:item['$'].Identifier.trim(),
-                                postboxAlias:item['$'].PostboxAlias.trim(),
-                                title:item['$'].Title.trim(),
-                                type:item['$'].Type.trim(),
-                                systemCreateDate:new Date(item['$'].SystemCreateDate + '.000+0300'),
-                                firstCreateDate:new Date(item['$'].FirstCreateDate + '.000+0300'),
-                                enabled:Boolean(item['$'].Enabled)
-
-                            }
-                            result.docs.push(obj);
-                        });
-
                         callback(null,result);
                     }else{
                         callback({code:'UNSUCCESSFUL',message:'Uyumsoft getEInvoiceUsers Basarisiz'});
@@ -858,4 +866,44 @@ exports.sendInvoice = function (options,ssss,callback) {
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
     }
     
+}
+
+/**
+* @query :{ documentResponseInfo: [{InvoiceId:string, ResponseStatus:string}]}
+* ResponseStatus : 'Approved' || ' Declined' || 'Return'
+*/
+exports.sendDocumentResponse = function (options,query,callback) {
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
+
+        var message=generateRequestMessage('SendDocumentResponse',query,false);
+
+        proxy.send(message, "http://tempuri.org/IIntegration/SendDocumentResponse", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+            mrutil.xml2json3(response,(err,jsObject)=>{
+                if(!err){
+                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+                    console.log('jsObject:',jsObject);
+                    callback(null);
+                }else{
+                    callback(err);
+                }
+            });
+
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
 }

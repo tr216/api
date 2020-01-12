@@ -5,6 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 global.colors = require('colors');
+global.os = require('os');
 
 require("tls").DEFAULT_MIN_VERSION = 'TLSv1';
 
@@ -36,6 +37,7 @@ global.passport = require('./lib/passport.js');
 global.passportRepo = require('./lib/passport_repo.js');
 global.rootPath=__dirname;
 global.eInvoiceHelper=require('./lib/einvoice_helper.js');
+global.fileImporter=require('./lib/file_importer.js');
 
 var app = express();
 var cors = require('cors');
@@ -163,7 +165,7 @@ function onListening() {
 
 
 process.on('uncaughtException', function (err) {
-    console.log('Caught exception: ', err);
+    console.error('Caught exception: ', err);
 });
 
 

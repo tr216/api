@@ -7,6 +7,7 @@ module.exports=function(conn){
         files:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},
+        isDefault: {type: Boolean, default: true},
         passive: {type: Boolean, default: false}
     });
 

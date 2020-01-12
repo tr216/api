@@ -1,7 +1,6 @@
 module.exports = function(activeDb, member, req, res, callback) {
-
 	if(req.params.param1==undefined) return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-   
+
 	switch(req.method){
 		case 'GET':
 			switch(req.params.param1.lcaseeng()){
@@ -31,7 +30,9 @@ module.exports = function(activeDb, member, req, res, callback) {
 				break;
 				case 'einvoiceuserlist':
 				return getEInvoiceUserList(activeDb,member,req,res,callback);
-			
+				case 'errors':
+				return getErrors(activeDb,member,req,res,callback);
+
 				default:
 				return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
 				break;
@@ -50,13 +51,18 @@ module.exports = function(activeDb, member, req, res, callback) {
 				break;
 				case 'sendtogib':
 					return sendToGib(activeDb,member,req,res,callback);
-				break;
+				case 'approve':
+					return approveDeclineInvoice('approve', activeDb,member,req,res,callback);
+				case 'decline':
+					return approveDeclineInvoice('decline', activeDb,member,req,res,callback);
 				case 'saveinboxinvoice':
 				case 'saveoutboxinvoice':
 				case 'invoice':
 					return post(activeDb,member,req,res,callback);
 				case 'findgtipno':
 				return findGTIPNO(activeDb,member,req,res,callback);
+				case 'importoutboxinvoice':
+					return importOutboxInvoice(activeDb,member,req,res,callback);
 				default:
 					return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
 				break;
@@ -93,6 +99,20 @@ function findGTIPNO(activeDb,member,req,res,callback){
 	callback({success: true,data:'ok'});
 }
 
+function getErrors(activeDb,member,req,res,callback){
+	var _id= req.params.param2 || req.query._id || '';
+	var select='_id profileId ID invoiceTypeCode localDocumentId issueDate ioType eIntegrator invoiceErrors localErrors invoiceStatus localStatus';
+	
+	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
+	activeDb.e_invoices.findOne({_id:_id},select).exec((err,doc)=>{
+		if(dberr(err,callback))
+			if(dbnull(doc,callback)){
+				var data=doc.toJSON();
+				callback({success: true,data: data});
+			}
+	});
+}
+
 function post(activeDb,member,req,res,callback){
 	var data = req.body || {};
 	data=mrutil.amountValueFixed2Digit(data,'');
@@ -112,6 +132,42 @@ function post(activeDb,member,req,res,callback){
 			});
 		}
 	});
+}
+
+function importOutboxInvoice(activeDb,member,req,res,callback){
+	var data = req.body || {};
+	
+	if(!data.files) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'files elemani bulunamadi'}});
+	if(!Array.isArray(data.files)) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'files elemani array olmak zorundadir'}});
+	if(data.files.length==0) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'files elemani bos olamaz'}});
+	data.files.forEach((e)=>{
+		if(e.base64Data){
+			e['data']=atob(e.base64Data);
+		}
+	});
+	
+
+	fileImporter.run(activeDb,(data.fileImporter || ''),data,(err,results)=>{
+		if(!err){
+			eInvoiceHelper.findDefaultEIntegrator(activeDb,(data.eIntegrator || ''),(err,eIntegratorDoc)=>{
+				if(!err){
+					eInvoiceHelper.insertEInvoice(activeDb,eIntegratorDoc,results,(err)=>{
+						if(!err){
+							callback({success:true,data:'ok'})
+						}else{
+							callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
+						}
+					})
+				}else{
+					callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
+				}
+			});
+			
+		}else{
+			callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
+		}
+	});
+	
 }
 
 function put(activeDb,member,req,res,callback){
@@ -222,7 +278,6 @@ function transferImport(activeDb,member,req,res,callback){
 			});
 		}
 	})
-	
 }
 
 function getInvoiceList(ioType,activeDb,member,req,res,callback){
@@ -468,7 +523,6 @@ function getEInvoiceUserList(activeDb,member,req,res,callback){
 	});
 }
 
-
 function isEInvoiceUser(activeDb,member,req,res,callback){
 	callback({success:true,data:{value:'ok'}});
   // var vknTckn=req.query.vknTckn || req.query.vkntckn || '';
@@ -482,8 +536,6 @@ function isEInvoiceUser(activeDb,member,req,res,callback){
   //   break;
   // }
 }
-
-
 
 function sendToGib(activeDb,member,req,res,callback){
 	var data = req.body || {};
@@ -568,5 +620,88 @@ function sendToGib(activeDb,member,req,res,callback){
 			});
 		}
 	})
-	
+}
+
+
+function approveDeclineInvoice(type, activeDb,member,req,res,callback){
+	var data = req.body || {};
+	if(data.list==undefined){
+		return callback({success: false, error: {code: 'ERROR', message: 'list is required.'}});
+	}
+	var taskType='';
+	switch(type){
+		case 'approve':
+			taskType='einvoice_approve';
+		break;
+		case 'decline':
+			taskType='einvoice_decline';
+		break;
+	}
+	var populate={
+		path:'eIntegrator'
+	}
+	var select='_id ID uuid eIntegrator';
+
+	var idList=[];
+	data.list.forEach((e)=>{
+		if(e && typeof e === 'object' && e.constructor === Object){
+			if(e._id!=undefined){
+				idList.push(e._id);
+			}else if(e.id!=undefined){
+				idList.push(e.id);
+			}else{
+				return callback({success: false, error: {code: 'ERROR', message: 'list is wrong.'}});
+			}
+		}else{
+			idList.push(e);
+		}
+	});
+
+	var filter={invoiceStatus:'WaitingForAprovement',_id:{$in:idList}};
+
+	activeDb.e_invoices.find(filter).select(select).populate(populate).exec((err,docs)=>{
+		if (dberr(err,callback)) {
+			var index=0;
+			
+
+			function pushTask(cb){
+				console.log('docs.length:',docs.length);
+				if(index>=docs.length){
+					cb(null);
+				}else{
+					
+					var taskdata={taskType: taskType,collectionName:'e_invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
+					taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
+						if(!err){
+							
+							docs[index].save((err,newDoc)=>{
+								if(!err){
+									index++;
+									setTimeout(pushTask,0,cb);
+								}else{
+									console.log('burasi:',err);
+									cb(err);
+								}
+							});
+						}else{
+							cb(err);
+						}
+					});
+				}
+			}
+			pushTask((err)=>{
+				if(err){
+					console.error(err);
+				}
+				if(dberr(err,callback)){
+					var resp=[]
+					
+					docs.forEach((e)=>{
+						resp.push(e._id.toString());
+					});
+					callback({success: true,data:resp});
+				}
+			});
+		}
+	})
 }

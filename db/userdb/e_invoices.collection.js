@@ -682,9 +682,9 @@ module.exports=function(conn){
         html:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
         localDocumentId: {type: String, default: ''},
         invoiceStatus: {type: String, default: 'Draft',enum:['Draft','Pending', 'Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
-        invoiceErrors:[{code:'',message:''}],
+        invoiceErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
         localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
-        localErrors:[{code:'',message:''}],
+        localErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now}
     });
@@ -692,7 +692,10 @@ module.exports=function(conn){
     
 
     schema.pre('save', function(next) {
-        this.lineCountNumeric.value=this.invoiceLine.length;
+        if(this.invoiceLine){
+            this.lineCountNumeric.value=this.invoiceLine.length;
+        }
+        
 
        
         next();
