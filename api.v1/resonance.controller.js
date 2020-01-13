@@ -133,7 +133,7 @@ module.exports = function(req, res, callback) {
                 var data = req.body || {};
                 data._id = req.query._id || '';
                 data.modifieddate = new Date();
-                console.log(data);
+                eventLog(data);
                 db.locations.remove({
                     _id: data._id,
                     owner : member._id

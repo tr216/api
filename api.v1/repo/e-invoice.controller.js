@@ -431,7 +431,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 			resp.docs=liste;
 			callback({success: true,data: resp});
 		} else {
-			console.log('error:',err);
+			errorLog('error:',err);
 		}
 	});
 }
@@ -665,7 +665,7 @@ function approveDeclineInvoice(type, activeDb,member,req,res,callback){
 			
 
 			function pushTask(cb){
-				console.log('docs.length:',docs.length);
+				eventLog('docs.length:',docs.length);
 				if(index>=docs.length){
 					cb(null);
 				}else{
@@ -679,7 +679,7 @@ function approveDeclineInvoice(type, activeDb,member,req,res,callback){
 									index++;
 									setTimeout(pushTask,0,cb);
 								}else{
-									console.log('burasi:',err);
+									eventLog('burasi:',err);
 									cb(err);
 								}
 							});
@@ -691,7 +691,7 @@ function approveDeclineInvoice(type, activeDb,member,req,res,callback){
 			}
 			pushTask((err)=>{
 				if(err){
-					console.error(err);
+					errorLog(err);
 				}
 				if(dberr(err,callback)){
 					var resp=[]

@@ -56,7 +56,7 @@ exports.setPending=(taskDoc,cb)=>{
 
 exports.setError=(taskDoc,error,cb)=>{
 	taskDoc.status='error';
-	console.log('setError:',error);
+	eventLog('setError:',error);
 	taskDoc.endDate=new Date();
 	if(error){
 		if(Array.isArray(error)){
@@ -64,7 +64,7 @@ exports.setError=(taskDoc,error,cb)=>{
 				taskDoc.error.push(e);
 			});
 		}else{
-			console.log('taskDoc.error.push(error):',error);
+			eventLog('taskDoc.error.push(error):',error);
 			taskDoc.error.push(error);
 		}
 	}

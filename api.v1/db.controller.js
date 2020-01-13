@@ -216,7 +216,7 @@ function resonance_mysqltest(member,req,res,callback){
                
                 var params={connection:{user:user,password:password,server:server,database:database,port:port}};
                 service_resonance.sendCommand({id:doc.resonanceId,password:doc.resonancePassword,uuid:doc.resonanceUuid},"MYSQL_CONNECTION_TEST",params,function(result){
-                    console.log(result.data);
+                    eventLog(result.data);
                     callback(result.data);
                 });
             }else{
@@ -334,13 +334,13 @@ function resonance_mssql(member,req,res,callback){
                         }
                        
                     }else{
-                        console.log('error:db.resonanceIds.findOne');
+                        eventLog('error:db.resonanceIds.findOne');
                         callback({success:false,error:{code:err.name,message:err.message}});
                     }
                 });   
             }
         }else{
-            console.log('error:db.dbdefines.findOne');
+            eventLog('error:db.dbdefines.findOne');
             callback({success:false,error:{code:err.name,message:err.message}});
         }
     });
@@ -463,13 +463,13 @@ function resonance_mysql(member,req,res,callback){
                         }
                        
                     }else{
-                        console.log('error:db.resonanceIds.findOne');
+                        eventLog('error:db.resonanceIds.findOne');
                         callback({success:false,error:{code:err.name,message:err.message}});
                     }
                 });   
             }
         }else{
-            console.log('error:db.dbdefines.findOne');
+            eventLog('error:db.dbdefines.findOne');
             callback({success:false,error:{code:err.name,message:err.message}});
         }
     });

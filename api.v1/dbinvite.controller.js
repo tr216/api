@@ -1,5 +1,5 @@
 module.exports = function(member, req, res, callback) {
-    console.log('req.params:',req.params);
+    eventLog('req.params:',req.params);
     if(req.params.param1==undefined) return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
 
     switch(req.method){
@@ -37,7 +37,7 @@ module.exports = function(member, req, res, callback) {
 function getList(member,req,res,callback){
     var filter={}
     filter={deleted:false,_id:req.params.param1,owner:member._id};
-    console.log('filter:',filter);
+    eventLog('filter:',filter);
     db.dbdefines.findOne(filter).populate([{path:'authorizedMembers.memberId', select:'_id username'}]).exec((err,doc)=>{
         if(dberr(err,callback))
             if(dbnull(doc,callback)){
@@ -128,7 +128,7 @@ function put(member,req,res,callback){
     db.dbdefines.findOne({owner:member._id,_id:req.params.param1,deleted:false, $or:[{'authorizedMembers.memberId':req.params.param2},{'authorizedMembers._id':req.params.param2}]},(err,doc)=>{
         if (dberr(err,callback)) {
             if(dbnull(doc,callback)){
-                console.log('data:',data);
+                eventLog('data:',data);
                 var bFound=false;
                 doc.authorizedMembers.forEach((e)=>{
                     if(e.memberId==req.params.param2 || e._id==req.params.param2){

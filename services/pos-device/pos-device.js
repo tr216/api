@@ -4,13 +4,13 @@ var ingenico=require('./ingenico/ingenico.js');
 
 exports.run=function(dbModel){
 	function calistir(cb){
-		console.log('posDevice_checkDbAndDownload started.',dbModel.dbName);
+		eventLog('posDevice_checkDbAndDownload started.',dbModel.dbName);
 		try{
 			checkDbAndDownload(dbModel,(err)=>{
 				if(err){
-					console.error('posDevice_checkDbAndDownload',err);
+					errorLog('posDevice_checkDbAndDownload',err);
 				}
-				console.log('posDevice_checkDbAndDownload ended.',dbModel.dbName);
+				eventLog('posDevice_checkDbAndDownload ended.',dbModel.dbName);
 				setTimeout(calistir,60000,cb);
 			});
 		}catch(tryErr){
@@ -19,18 +19,18 @@ exports.run=function(dbModel){
 	}
 
 	setTimeout(()=>{
-		console.log('PosDevice service started: ',dbModel.dbName);
+		eventLog('PosDevice service started: ',dbModel.dbName);
 		calistir((err)=>{});
 	},12000);
 }
 
 // setTimeout(()=>{
-// 	console.log(('Pos-Device Service Scheduled Task').green + ' started');
+// 	eventLog(('Pos-Device Service Scheduled Task').green + ' started');
 // 	Object.keys(repoDb).forEach((e)=>{
 // 		repoDb[e].posDevice_checkDbAndDownload=function(){
-// 			console.log('posDevice_checkDbAndDownload started.',e);
+// 			eventLog('posDevice_checkDbAndDownload started.',e);
 // 			checkDbAndDownload(this,(err)=>{
-// 				console.log('posDevice_checkDbAndDownload ended.',e);
+// 				eventLog('posDevice_checkDbAndDownload ended.',e);
 // 				setTimeout(repoDb[e].posDevice_checkDbAndDownload,10000);
 // 			});
 // 		}
@@ -56,8 +56,8 @@ function checkDbAndDownload(dbModel,callback){
 							
 							downloadData(dbModel,serviceDocs[index],posDeviceDocs,(err)=>{
 								if(err){
-									console.log('Pos Device Service Download error:',err);
-									console.log('Pos Device Service Download error service:',serviceDocs[index]);
+									eventLog('Pos Device Service Download error:',err);
+									eventLog('Pos Device Service Download error service:',serviceDocs[index]);
 								}
 								index++;
 								setTimeout(runService,3000,cb);

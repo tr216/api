@@ -13,19 +13,30 @@ function generateRequestMessage(funcName,query,isQuery=true){
         message +='<s:query PageIndex="' + (query.pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 10) + '">';
         for(let k in query){
             if(k!='pageIndex' && k!='PageIndex' && k!='pageSize' && k!='PageSize'){
-                message +="<s:" + k + ">" + query[k].toString() + "</s:" + k +">";
+                if(!Array.isArray(query[k])){
+                    message +="<s:" + k + ">" + query[k].toString() + "</s:" + k +">";
+                }else{
+                    query[k].forEach((e)=>{
+                        message +='<s:' + k + '>' + e.toString() + '</s:' + k +'>';
+                    });
+                }
             }
         }
         message +='</s:query>';
     }else{
         
             for(let k in query){
-                if(Object.keys(query[k]).indexOf('pageIndex')>-1 || Object.keys(query[k]).indexOf('pageSize')>-1 || Object.keys(query[k]).indexOf('PageIndex')>-1 || Object.keys(query[k]).indexOf('PageSize')>-1){
-                    message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 10) + '">' + query[k].toString() + '</s:' + k +'>';
+                if(!Array.isArray(query[k])){
+                    if(Object.keys(query[k]).indexOf('pageIndex')>-1 || Object.keys(query[k]).indexOf('pageSize')>-1 || Object.keys(query[k]).indexOf('PageIndex')>-1 || Object.keys(query[k]).indexOf('PageSize')>-1){
+                        message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 10) + '">' + query[k].toString() + '</s:' + k +'>';
+                    }else{
+                        message +='<s:' + k + '>' + query[k].toString() + '</s:' + k +'>';
+                    }
                 }else{
-                    message +='<s:' + k + '>' + query[k].toString() + '</s:' + k +'>';
+                    query[k].forEach((e)=>{
+                        message +='<s:' + k + '>' + e.toString() + '</s:' + k +'>';
+                    });
                 }
-                
             }
         
     }
@@ -48,7 +59,7 @@ function seperateItems(response){
         s2=response.indexOf('</Items>',s1);                
         if(s2<0 || s2<s1) break;
         var sbuf=response.substr(s1,s2-s1+8);
-        console.log('sbuf.length:',sbuf.length);
+        eventLog('sbuf.length:',sbuf.length);
         items.push(sbuf);
     }
 
@@ -334,6 +345,7 @@ exports.getOutboxInvoiceList = function (options,query,callback) {
                                 }
                                 result.docs.push(obj);
                             }
+                            eventLog('result.docs')
                             callback(null,result);
                         }else{
                             callback(null,result);
@@ -895,7 +907,13 @@ exports.sendDocumentResponse = function (options,query,callback) {
                         var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
-                    console.log('jsObject:',jsObject);
+                    if(jsObject['s:Envelope']['s:Body']['SendDocumentResponseResponse']['SendDocumentResponseResult']['$'].IsSucceded=='false'){
+                        return callback({code:'UYUMSOFT_SEND_DOCUMENT_RESPONSE',message:jsObject['s:Envelope']['s:Body']['SendDocumentResponseResponse']['SendDocumentResponseResult']['$'].Message});
+                    }
+                    var result={
+                        IsSucceded: true
+                    }
+                    
                     callback(null);
                 }else{
                     callback(err);
@@ -907,3 +925,104 @@ exports.sendDocumentResponse = function (options,query,callback) {
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
     }
 }
+
+/**
+* @query :{  InvoiceIds: String[] }
+*/
+/*
+exports.checkInboxInvoicesStatus=function(options,query,callback){
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
+
+        var message=generateRequestMessage('QueryInboxInvoiceStatus',query,false);
+        
+        proxy.send(message, "http://tempuri.org/IIntegration/QueryInboxInvoiceStatus", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+            mrutil.xml2json(response,(err,jsObject)=>{
+                if(!err){
+                    if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
+
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+                    if(jsObject['s:Envelope']['s:Body'][0]['QueryInboxInvoiceStatusResponse'][0]['QueryInboxInvoiceStatusResult'][0]['$'].IsSucceded=='false'){
+                        return callback({code:'UYUMSOFT_QUERY_INBOX_INVOICE_STATUS',message:jsObject['s:Envelope']['s:Body'][0]['QueryInboxInvoiceStatusResponse'][0]['QueryInboxInvoiceStatusResult'][0]['$'].Message});
+                    }
+                    eventLog('api result:',JSON.stringify(jsObject['s:Envelope']['s:Body'],null,2));
+
+                    var result={
+                        IsSucceded: true,
+                        Value:jsObject['s:Envelope']['s:Body'][0]['QueryInboxInvoiceStatusResponse'][0]['QueryInboxInvoiceStatusResult'][0]['Value']
+                    }
+                    
+                    callback(null,result);
+                }else{
+                    callback(err);
+                }
+            });
+
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
+*/
+/**
+* @query :{  InvoiceIds: String[] }
+*/
+/** 
+exports.checkOutboxInvoicesStatus=function(options,query,callback){
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName"
+        })
+        var proxy = new Proxy(binding, options.url);
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
+
+        var message=generateRequestMessage('QueryOutboxInvoiceStatus',query,false);
+        
+        proxy.send(message, "http://tempuri.org/IIntegration/QueryOutboxInvoiceStatus", function(response, ctx) {
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+            mrutil.xml2json(response,(err,jsObject)=>{
+                if(!err){
+                    if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
+
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+                    if(jsObject['s:Envelope']['s:Body'][0]['QueryOutboxInvoiceStatusResponse'][0]['QueryOutboxInvoiceStatusResult'][0]['$'].IsSucceded=='false'){
+                        return callback({code:'UYUMSOFT_QUERY_OUTBOX_INVOICE_STATUS',message:jsObject['s:Envelope']['s:Body'][0]['QueryOutboxInvoiceStatusResponse'][0]['QueryOutboxInvoiceStatusResult'][0]['$'].Message});
+                    }
+                    eventLog('api result:',JSON.stringify(jsObject['s:Envelope']['s:Body'],null,2));
+
+                    var result={
+                        IsSucceded: true,
+                        Value:jsObject['s:Envelope']['s:Body'][0]['QueryOutboxInvoiceStatusResponse'][0]['QueryOutboxInvoiceStatusResult'][0]['Value']
+                    }
+                    
+                    callback(null,result);
+                }else{
+                    callback(err);
+                }
+            });
+
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+    }
+}
+**/

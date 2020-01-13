@@ -76,7 +76,7 @@ function getList(activeDb,member,req,res,callback){
             });
             callback({success: true,data: resp});
         } else {
-            console.error(__filename,err);
+            errorLog(__filename,err);
         }
     });
 }

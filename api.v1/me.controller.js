@@ -7,11 +7,11 @@ module.exports = function(member, req, res, callback) {
             getMyProfile(member,req,res,callback);
         break;
         case 'PUT':
-        console.log('req.params:',req.params);
+        eventLog('req.params:',req.params);
         if(req.params.param1==undefined){
             put(member,req,res,callback);
         }else if(req.params.param1=='change-password'){
-            console.log('changePassword(member,req,res,callback);',req.params.param1);
+            eventLog('changePassword(member,req,res,callback);',req.params.param1);
             changePassword(member,req,res,callback);
         }else{
             callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
@@ -81,21 +81,21 @@ function put(member,req,res,callback){
 }
 
 function changePassword(member,req,res,callback){
-    console.log('changePassword1');
+    eventLog('changePassword1');
     db.members.findOne({_id:member._id},(err,doc)=>{
         if(dberr(err,callback)){
-            console.log('changePassword2');
+            eventLog('changePassword2');
             if(doc==null) return callback({success:false,error:{code:'RECORD_NOT_FOUND',message:'Kayit bulunamadi'}});
             //var data={}
             // doc.name=req.body.name || '';
             // doc.lastName=req.body.lastName || '';
             // doc.email=req.body.email || '';
             // doc.gender=req.body.gender || '';
-            console.log('changePassword3');
+            eventLog('changePassword3');
             var oldPassword=req.body.oldPassword || '';
             var newPassword=req.body.newPassword || '';
 
-            console.log('changePassword4');
+            eventLog('changePassword4');
             if(newPassword.trim()=='') return callback({success:false,error:{code:'REQUIRE_FIELD',message:'Yeni parola gereklidir.'}});
             // if(doc.name.trim()=='') return callback({success:false,error:{code:'REQUIRE_FIELD',message:'Isim gereklidir.'}});
             // if(doc.lastName.trim()=='') return callback({success:false,error:{code:'REQUIRE_FIELD',message:'Soyad gereklidir.'}});
@@ -104,7 +104,7 @@ function changePassword(member,req,res,callback){
                 doc.password=newPassword;
             // }
             // if(doc.gender!='male' && doc.gender!='female') return callback({success:false,error:{code:'REQUIRE_FIELD',message:'Cinsiyet hatali.'}});
-            console.log('doc.save');
+            eventLog('doc.save');
             doc.save((err,newDoc)=>{
                 if(dberr(err,callback)){
                     var myProfile={

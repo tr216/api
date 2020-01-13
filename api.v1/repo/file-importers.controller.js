@@ -253,7 +253,7 @@ function saveFile(activeDb,member,req,res,callback){
                                 fileDoc.type=data.type;
                                 fileDoc.size=data.size;
 
-                                //console.log('fileDoc:',fileDoc);
+                                //eventLog('fileDoc:',fileDoc);
                                 var err=epValidateSync(fileDoc);
                                 if(dberr(err,callback)){
                                     fileDoc.save((err)=>{

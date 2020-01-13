@@ -4,10 +4,10 @@ exports.run=function(dbModel){
 	
 	function calistir(callback){
 
-		console.log('Task service started: ',dbModel.dbName);
+		eventLog('Task service started: ',dbModel.dbName);
 		dbModel.tasks.find({status:'pending'},(err,taskDocs)=>{
 			if(!err){
-				console.log('(' + dbModel.dbName.green + ') Calistirilacak gorev sayisi:',taskDocs.length);
+				eventLog('(' + dbModel.dbName.green + ') Calistirilacak gorev sayisi:',taskDocs.length);
 				var index=0;
 				function taskCalistir(cb){
 					try{
@@ -124,7 +124,7 @@ function einvoice_decline(dbModel,taskDoc,cb){
 				dbModel.e_invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
 					if(!err33){
 						if(doc!=null){
-							doc.invoiceErrors.push({code:(err.name || err.code || 'APPROVE_INVOICE'),message:(err.message || 'Fatura reddedilirken hata olustu')});
+							doc.invoiceErrors.push({code:(err.name || err.code || 'DECLINE_INVOICE'),message:(err.message || 'Fatura reddedilirken hata olustu')});
 							//doc.invoiceStatus='Error';
 							
 							doc.save((err44,doc2)=>{
@@ -215,10 +215,10 @@ function connector_transfer_zreport_calistir(dbModel,taskDoc,cb){
        
 		dbModel.pos_device_zreports.findOne({_id:taskDoc.documentId}).populate(populate).exec((err,zreportDoc)=>{
 			if(!err){
-				console.log('Cihaz seri No:',zreportDoc.posDevice.deviceSerialNo);
-				console.log('Lokasyon:',zreportDoc.posDevice.location.locationName);
-				console.log('Yazar kasa servisi:',zreportDoc.posDevice.service.serviceType);
-				console.log('Local connectorId:',zreportDoc.posDevice.localConnector.connectorId);
+				eventLog('Cihaz seri No:',zreportDoc.posDevice.deviceSerialNo);
+				eventLog('Lokasyon:',zreportDoc.posDevice.location.locationName);
+				eventLog('Yazar kasa servisi:',zreportDoc.posDevice.service.serviceType);
+				eventLog('Local connectorId:',zreportDoc.posDevice.localConnector.connectorId);
 				
 
 				services.tr216LocalConnector.run(zreportDoc.posDevice.localConnector,zreportDoc,(err,result)=>{
@@ -297,9 +297,9 @@ function connector_import_einvoice_calistir(dbModel,taskDoc,cb){
 
 		dbModel.e_integrators.findOne({_id:taskDoc.documentId}).populate(populate).exec((err,eIntegratorDoc)=>{
 			if(!err){
-				console.log('eIntegrator:',eIntegratorDoc.eIntegrator);
-				console.log('name:',eIntegratorDoc.name);
-				console.log('Local connectorId:',eIntegratorDoc.localConnectorExportInvoice.localConnector.connectorId);
+				eventLog('eIntegrator:',eIntegratorDoc.eIntegrator);
+				eventLog('name:',eIntegratorDoc.name);
+				eventLog('Local connectorId:',eIntegratorDoc.localConnectorExportInvoice.localConnector.connectorId);
 				services.tr216LocalConnector.run(eIntegratorDoc.localConnectorExportInvoice.localConnector,eIntegratorDoc,(err,result)=>{
 					if(!err){
 						eInvoiceHelper.insertEInvoice(dbModel,eIntegratorDoc,result.data,(err,docs)=>{

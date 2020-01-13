@@ -120,7 +120,7 @@ function smssend(phonenumber,authCode,callback){
     });
 
     res.on('end', function(){
-      //console.log('smsbody:' + body);
+      //eventLog('smsbody:' + body);
       callback({success:true, data: body});
     });
   }).on('error', function(e){

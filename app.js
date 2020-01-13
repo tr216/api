@@ -1,3 +1,5 @@
+require('./eventlog.js');
+
 global.express = require('express');
 global.path = require('path');
 var favicon = require('serve-favicon');
@@ -6,6 +8,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 global.colors = require('colors');
 global.os = require('os');
+
 
 require("tls").DEFAULT_MIN_VERSION = 'TLSv1';
 
@@ -67,7 +70,7 @@ app.use(bodyParser.json({limit: "50mb"}));
 app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
 
 app.use(cookieParser());
-console.log(path.join(__dirname, 'downloads'));
+eventLog(path.join(__dirname, 'downloads'));
 
 app.use('/downloads',express.static(path.join(__dirname, 'downloads')));
 // app.use(passport.initialize());
@@ -83,11 +86,11 @@ require('./lib/loader_db.js')((err)=>{
         global.services=require('./services/services.js');
         
       }else{
-        console.log('loader_api_v1.js ERROR:',err);
+        eventLog('loader_api_v1.js ERROR:',err);
       }
     });
   }else{
-    console.log('loader_db.js ERROR:',err);
+    eventLog('loader_db.js ERROR:',err);
   }
 });
 
@@ -165,7 +168,7 @@ function onListening() {
 
 
 process.on('uncaughtException', function (err) {
-    console.error('Caught exception: ', err);
+    errorLog('Caught exception: ', err);
 });
 
 

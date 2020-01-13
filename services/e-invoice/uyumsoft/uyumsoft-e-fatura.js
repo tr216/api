@@ -3,8 +3,8 @@ var api=require('./api.js');
 
 exports.downloadInboxInvoices=function(dbModel,eIntegratorDoc,callback){
 	var isTestPlatform=eIntegratorDoc.url.indexOf('test')>-1?true:false;
-	if(isTestPlatform) console.log('uyumsoft test platform');
-	console.log('downloadInboxInvoices dbId:',dbModel._id);
+	if(isTestPlatform) eventLog('uyumsoft test platform');
+	eventLog('downloadInboxInvoices dbId:',dbModel._id);
 	dbModel.e_invoices.find({eIntegrator:eIntegratorDoc._id, ioType:1}).sort({'issueDate.value':-1}).limit(1).exec((err,docs)=>{
 		if(!err){
 			var date2=new Date();
@@ -21,22 +21,22 @@ exports.downloadInboxInvoices=function(dbModel,eIntegratorDoc,callback){
 			}
 			if(docs.length>0){
 				var date1=mrutil.datefromyyyymmdd(docs[0].issueDate.value);
-				console.log('Son tarih:',date1);
+				eventLog('Son tarih:',date1);
 
 				date1=date1.addDays(-10);
-				console.log('Date1:',date1);
+				eventLog('Date1:',date1);
 				query.ExecutionStartDate=date1.yyyymmdd() + 'T00:00:00.000Z';
 				// query.ExecutionEndDate=date2.yyyymmdd() + 'T23:59:59.000Z';
 			}
 			if(isTestPlatform) query.ExecutionStartDate=(new Date()).addDays(-1).yyyymmdd() + 'T00:00:00.000Z';
-			//console.log('downloadInboxInvoices query:',query);
+			//eventLog('downloadInboxInvoices query:',query);
 			
 			var indirilecekFaturalar=[];
 
 			function listeIndir(cb){
 				api.getInboxInvoiceList(eIntegratorDoc,JSON.parse(JSON.stringify(query)),(err,result)=>{
 					if(!err){
-						console.log('inbox invoices pageIndex:',(result.page +1) + '/' + result.pageCount);
+						eventLog('inbox invoices pageIndex:',(result.page +1) + '/' + result.pageCount);
 						if(result.docs.length>0){
 							for(var i=0;i<result.docs.length;i++){
 								if(result.docs[i].uuid!=undefined){
@@ -45,7 +45,7 @@ exports.downloadInboxInvoices=function(dbModel,eIntegratorDoc,callback){
 							}
 							query.PageIndex++;
 							if(query.PageIndex>=result.pageCount  || ( isTestPlatform && query.PageIndex==2)){ 
-								console.log('downloadInboxInvoices.listeIndir sonu.');
+								eventLog('downloadInboxInvoices.listeIndir sonu.');
 								kaydetInboxInvoices(dbModel,eIntegratorDoc,Array.from(indirilecekFaturalar),(err)=>{
 									indirilecekFaturalar=[];
 									cb(null);
@@ -64,7 +64,7 @@ exports.downloadInboxInvoices=function(dbModel,eIntegratorDoc,callback){
 							cb(null)
 						}
 					}else{
-						console.log('downloadInboxInvoices Hata:',err);
+						eventLog('downloadInboxInvoices Hata:',err);
 						cb(err);
 					}
 				}) 
@@ -83,7 +83,7 @@ exports.downloadInboxInvoices=function(dbModel,eIntegratorDoc,callback){
 
 function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callback){
 	var index=0;
-	console.log('kaydetInboxInvoices indirilecekFaturalar.length:',indirilecekFaturalar.length);
+	eventLog('kaydetInboxInvoices indirilecekFaturalar.length:',indirilecekFaturalar.length);
 	function faturaIndir(cb){
 		if(index>=indirilecekFaturalar.length) return cb(null);
 		dbModel.e_invoices.findOne({ioType:1,'uuid.value':indirilecekFaturalar[index].uuid},(err,doc)=>{
@@ -93,20 +93,20 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 						doc.modifiedDate=new Date();
 						doc.invoiceStatus=indirilecekFaturalar[index].status;
 						doc.save((err,doc2)=>{
-							//console.log('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
+							//eventLog('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
 							index++;
 							setTimeout(faturaIndir,0,cb);
 							return;
 						});
 					}else{
-						//console.log('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
+						//eventLog('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
 						index++;
 						setTimeout(faturaIndir,0,cb);
 						return;
 					}
 				}
 			}
-			console.log('before:')
+			eventLog('before:')
 			api.getInboxInvoice(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,result)=>{
 				if(!err){
 					var invoice=prepareInvoiceObject(result.doc.invoice);
@@ -124,15 +124,15 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 								files.pdf=resultPdf.doc.pdf
 								
 							}else{
-								console.log('api.getInboxInvoicePdf Error:',err);
+								eventLog('api.getInboxInvoicePdf Error:',err);
 							}
 							insertInvoice(dbModel, eIntegratorDoc,1, invoice,files,(err)=>{
 								if(err){
-									console.log('insertInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
+									eventLog('insertInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
 									index++;
 									setTimeout(faturaIndir,500,cb);
 								}else{
-									console.log('insertInboxInvoice OK uuid: ', indirilecekFaturalar[index].uuid);
+									eventLog('insertInboxInvoice OK uuid: ', indirilecekFaturalar[index].uuid);
 									index++;
 									setTimeout(faturaIndir,500,cb);
 									
@@ -144,7 +144,7 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 					
 					
 				}else{
-					console.log('api.getInboxInvoice error: ',err);
+					eventLog('api.getInboxInvoice error: ',err);
 					index++;
 					setTimeout(faturaIndir,500,cb);
 				}
@@ -161,8 +161,8 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 
 exports.downloadOutboxInvoices=function(dbModel,eIntegratorDoc,callback){
 	var isTestPlatform=eIntegratorDoc.url.indexOf('test')>-1?true:false;
-	if(isTestPlatform) console.log('uyumsoft test platform');
-	console.log('downloadOutboxInvoices dbId:',dbModel._id);
+	if(isTestPlatform) eventLog('uyumsoft test platform');
+	eventLog('downloadOutboxInvoices dbId:',dbModel._id);
 	dbModel.e_invoices.find({eIntegrator:eIntegratorDoc._id, ioType:0}).sort({'issueDate.value':-1}).limit(1).exec((err,docs)=>{
 		if(!err){
 			var date2=new Date();
@@ -179,22 +179,22 @@ exports.downloadOutboxInvoices=function(dbModel,eIntegratorDoc,callback){
 			}
 			if(docs.length>0){
 				var date1=mrutil.datefromyyyymmdd(docs[0].issueDate.value);
-				console.log('Son tarih:',date1);
+				eventLog('Son tarih:',date1);
 
 				date1=date1.addDays(-10);
-				console.log('Date1:',date1);
+				eventLog('Date1:',date1);
 				query.ExecutionStartDate=date1.yyyymmdd() + 'T00:00:00.000Z';
 				// query.ExecutionEndDate=date2.yyyymmdd() + 'T23:59:59.000Z';
 			}
 			if(isTestPlatform) query.ExecutionStartDate=(new Date()).addDays(-1).yyyymmdd() + 'T00:00:00.000Z';
-			//console.log('downloadOutboxInvoices query:',query);
+			//eventLog('downloadOutboxInvoices query:',query);
 			
 			var indirilecekFaturalar=[];
 
 			function listeIndir(cb){
 				api.getOutboxInvoiceList(eIntegratorDoc,JSON.parse(JSON.stringify(query)),(err,result)=>{
 					if(!err){
-						console.log('Outbox invoices pageIndex:',(result.page +1) + '/' + result.pageCount);
+						eventLog('Outbox invoices pageIndex:',(result.page +1) + '/' + result.pageCount);
 						if(result.docs.length>0){
 							for(var i=0;i<result.docs.length;i++){
 								if(result.docs[i].uuid!=undefined){
@@ -203,7 +203,7 @@ exports.downloadOutboxInvoices=function(dbModel,eIntegratorDoc,callback){
 							}
 							query.PageIndex++;
 							if(query.PageIndex>=result.pageCount  || ( isTestPlatform && query.PageIndex==2)){ 
-								console.log('downloadOutboxInvoices.listeIndir sonu.');
+								eventLog('downloadOutboxInvoices.listeIndir sonu.');
 								kaydetOutboxInvoices(dbModel,eIntegratorDoc,Array.from(indirilecekFaturalar),(err)=>{
 									indirilecekFaturalar=[];
 									cb(null);
@@ -222,7 +222,7 @@ exports.downloadOutboxInvoices=function(dbModel,eIntegratorDoc,callback){
 							cb(null)
 						}
 					}else{
-						console.log('downloadOutboxInvoices Hata:',err);
+						eventLog('downloadOutboxInvoices Hata:',err);
 						cb(err);
 					}
 				}) 
@@ -241,7 +241,7 @@ exports.downloadOutboxInvoices=function(dbModel,eIntegratorDoc,callback){
 
 function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callback){
 	var index=0;
-	console.log('kaydetOutboxInvoices indirilecekFaturalar.length:',indirilecekFaturalar.length);
+	eventLog('kaydetOutboxInvoices indirilecekFaturalar.length:',indirilecekFaturalar.length);
 	function faturaIndir(cb){
 		if(index>=indirilecekFaturalar.length) return cb(null);
 		dbModel.e_invoices.findOne({ioType:0,'uuid.value':indirilecekFaturalar[index].uuid},(err,doc)=>{
@@ -251,13 +251,13 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 						doc.modifiedDate=new Date();
 						doc.invoiceStatus=indirilecekFaturalar[index].status;
 						doc.save((err,doc2)=>{
-							//console.log('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
+							//eventLog('zaten indirilmis. statusu degistirildi. ',indirilecekFaturalar[index].uuid);
 							index++;
 							setTimeout(faturaIndir,500,cb);
 							return;
 						});
 					}else{
-						//console.log('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
+						//eventLog('zaten indirilmis. ',indirilecekFaturalar[index].uuid);
 						index++;
 						setTimeout(faturaIndir,500,cb);
 						return;
@@ -281,15 +281,15 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 								files.pdf=resultPdf.doc.pdf
 								
 							}else{
-								console.log('api.getOutboxInvoicePdf Error:',err);
+								eventLog('api.getOutboxInvoicePdf Error:',err);
 							}
 							insertInvoice(dbModel, eIntegratorDoc,0, invoice,files,(err)=>{
 								if(err){
-									console.error('insertOutboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
+									errorLog('insertOutboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
 									index++;
 									setTimeout(faturaIndir,500,cb);
 								}else{
-									console.log('insertOutboxInvoice OK uuid: ', indirilecekFaturalar[index].uuid);
+									eventLog('insertOutboxInvoice OK uuid: ', indirilecekFaturalar[index].uuid);
 									index++;
 									setTimeout(faturaIndir,500,cb);
 									
@@ -301,7 +301,7 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 					
 					
 				}else{
-					console.log('api.getOutboxInvoice error: ',err);
+					eventLog('api.getOutboxInvoice error: ',err);
 					index++;
 					setTimeout(faturaIndir,500,cb);
 				}
@@ -321,13 +321,13 @@ function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,files,callback){
 		dbModel.e_invoices.findOne({ioType:ioType,'uuid.value':invoice.uuid.value},(err,foundDoc)=>{
 			if(!err){
 				if(foundDoc==null){
-					console.log('insertInvoice uuid:', invoice.uuid.value);
+					eventLog('insertInvoice uuid:', invoice.uuid.value);
 					
 					var data={ioType:ioType,eIntegrator:eIntegratorDoc._id}
 					data=Object.assign(data,invoice);
 					var testInvoiceValidate=new dbModel.e_invoices(data);
 					var err=epValidateSync(testInvoiceValidate);
-					console.log('Error:',err);
+					eventLog('Error:',err);
 					if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 					saveFiles(dbModel,invoice.ID.value, files,(err,resultFiles)=>{
 						if(!err){
@@ -346,12 +346,12 @@ function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,files,callback){
 					
 					
 				}else{
-					console.log('insertInvoice zaten var');
+					eventLog('insertInvoice zaten var');
 					callback(null);
 				}
 				
 			}else{
-				console.error('insertInvoice HATA:',err);
+				errorLog('insertInvoice HATA:',err);
 				callback(err);
 			}
 		});
@@ -504,11 +504,11 @@ exports.downloadEInvoiceUsers=function(callback){
 	function listeIndir(cb){
 		api.getEInvoiceUsers({url:'https://efatura.uyumsoft.com.tr/Services/Integration',username:'Alitek_WebServis',password:'AyXEZR%k'},query,(err,result)=>{
 			if(!err){
-				console.log('einvoice_users pageIndex:',(result.page +1) + '/' + result.pageCount);
+				eventLog('einvoice_users pageIndex:',(result.page +1) + '/' + result.pageCount);
 				if(result.docs.length>0){
 					insertEInvoiceUsers(result.docs,(err)=>{
 						if(err){
-							console.log('insertEInvoiceUsers Error:',err);
+							eventLog('insertEInvoiceUsers Error:',err);
 						}
 						query.pagination.pageIndex++;
 						if(query.pagination.pageIndex>=result.pageCount){ 
@@ -522,7 +522,7 @@ exports.downloadEInvoiceUsers=function(callback){
 					cb(null)
 				}
 			}else{
-				console.log('einvoice_users error:',err);
+				eventLog('einvoice_users error:',err);
 				if(hataDeneme<10){
 					hataDeneme++;
 					setTimeout(listeIndir,3000,cb);
@@ -561,7 +561,7 @@ function insertEInvoiceUsers(docs,callback){
 					});
 					newDoc.save((err,newDoc2)=>{
 						if(!err){
-							console.log('E-Fatura Mukellefi eklendi:' + newDoc2.title);
+							eventLog('E-Fatura Mukellefi eklendi:' + newDoc2.title);
 							index++;
 							setTimeout(kaydet,500,cb);
 						}else{
@@ -584,7 +584,7 @@ function insertEInvoiceUsers(docs,callback){
 
 						foundDoc.save((err,newDoc2)=>{
 							if(!err){
-								console.log('E-Fatura Mukellefi duzeltildi:' + newDoc2.title);
+								eventLog('E-Fatura Mukellefi duzeltildi:' + newDoc2.title);
 								index++;
 								setTimeout(kaydet,500,cb); 
 							}else{
@@ -678,14 +678,14 @@ exports.sendToGib=function(dbModel,eInvoice,callback){
 			xml +='</s:InvoiceInfo>';
 			xml +='</s:invoices>';
 
-			console.log('before: api.sendInvoice(options,xml,(err,result)=>{');
+			
 			api.sendInvoice(options,xml,(err,result)=>{
 				if(!err){
 
-					//console.log('sendToGib result:',result);
+					//eventLog('sendToGib result:',result);
 					callback(null,eInvoice);
 				}else{
-					//console.log('sendToGib error:',err);
+					//eventLog('sendToGib error:',err);
 					callback(err);
 				}
 
@@ -724,19 +724,180 @@ exports.sendDocumentResponse=function(responseStatus, dbModel,eInvoice,callback)
 		var options=JSON.parse(JSON.stringify(eInvoice.eIntegrator));
 		var isTestPlatform=false;
 		if(options.url.indexOf('test')>-1) isTestPlatform=true;
-		var query={DocumentResponseInfo:[{InvoiceId:eInvoice.uuid.value,ResponseStatus:responseStatus}]}
+		var query={DocumentResponseInfo:[{InvoiceId:eInvoice.uuid.value,ResponseStatus:-1}]}
+		switch(responseStatus.toLowerCase()){
+			case 'approved':
+				query.DocumentResponseInfo[0].ResponseStatus=0;
+			break;
+			case 'declined':
+				query.DocumentResponseInfo[0].ResponseStatus=1;
+			break;
+			case 'return':
+				query.DocumentResponseInfo[0].ResponseStatus=2;
+			break;
+		}
 
 		api.sendDocumentResponse(options,query,(err,result)=>{
 				if(!err){
 
-					console.log('sendDocumentResponse result:',result);
+					eventLog('sendDocumentResponse result:',result);
 					callback(null,eInvoice);
 				}else{
-					console.log('sendDocumentResponse error:',err);
+					eventLog('sendDocumentResponse error:',err);
 					callback(err);
 				}
 
 			});
+	}catch(tryErr){
+		callback(tryErr);
+	}
+}
+
+exports.checkInboxInvoicesStatus=function(dbModel,eIntegratorDoc,invoiceList,callback){
+	try{
+		var options=JSON.parse(JSON.stringify(eIntegratorDoc));
+		var isTestPlatform=false;
+		if(options.url.indexOf('test')>-1) isTestPlatform=true;
+		var query={
+			InvoiceIds:[],
+			PageIndex:0, 
+			PageSize:10000,
+
+			OnlyNewestInvoices:false,
+			SetTaken:false
+		}
+		invoiceList.forEach((e)=>{
+			query.InvoiceIds.push(e.uuid);
+		})
+		var guncellenmisInvoiceList=[];
+
+		function listeIndir(cb){
+			api.getInboxInvoiceList(eIntegratorDoc,JSON.parse(JSON.stringify(query)),(err,result)=>{
+				if(!err){
+					
+					if(result.docs.length>0){
+						eventLog('result.docs.length:',result.docs.length);
+						eventLog('api.getInboxInvoiceList page:',result.page+1,'/',result.pageCount);
+						query.PageIndex++;
+						if(query.PageIndex>=result.pageCount  || ( isTestPlatform && query.PageIndex==2)){ 
+							result.docs.forEach((e)=>{
+								invoiceList.forEach((e2)=>{
+									if(e.uuid==e2.uuid){
+										if(e2.status!=e.status){
+											guncellenmisInvoiceList.push({_id:e2._id,uuid:e2.uuid,status:e.status});
+										}
+										return;
+									}
+								});
+								
+							})
+							cb(null);
+						}else{
+							result.docs.forEach((e)=>{
+								invoiceList.forEach((e2)=>{
+									if(e.uuid==e2.uuid){
+										if(e2.status!=e.status){
+											guncellenmisInvoiceList.push({_id:e2._id,uuid:e2.uuid,status:e.status});
+										}
+										return;
+									}
+								});
+								
+							})
+							setTimeout(()=>{
+								listeIndir(cb);
+								return;
+							},1000);
+						}
+					}else{
+						cb(null)
+					}
+				}else{
+					eventLog('checkInboxInvoicesStatus Hata:',err);
+					cb(err);
+				}
+			}) 
+		}
+
+
+		listeIndir((err)=>{
+			callback(err,guncellenmisInvoiceList);
+		});
+	}catch(tryErr){
+		callback(tryErr);
+	}
+}
+
+exports.checkOutboxInvoicesStatus=function(dbModel,eIntegratorDoc,invoiceList,callback){
+	try{
+		var options=JSON.parse(JSON.stringify(eIntegratorDoc));
+		var isTestPlatform=false;
+		if(options.url.indexOf('test')>-1) isTestPlatform=true;
+		var query={
+			InvoiceIds:[],
+			PageIndex:0, 
+			PageSize:10000,
+
+			OnlyNewestInvoices:false,
+			SetTaken:false
+		}
+		invoiceList.forEach((e)=>{
+			query.InvoiceIds.push(e.uuid);
+		})
+		var guncellenmisInvoiceList=[];
+
+		function listeIndir(cb){
+			api.getOutboxInvoiceList(eIntegratorDoc,JSON.parse(JSON.stringify(query)),(err,result)=>{
+				if(!err){
+					
+					if(result.docs.length>0){
+						eventLog('result.docs.length:',result.docs.length);
+						eventLog('api.getOutboxInvoiceList page:',result.page+1,'/',result.pageCount);
+						query.PageIndex++;
+						if(query.PageIndex>=result.pageCount  || ( isTestPlatform && query.PageIndex==2)){ 
+							result.docs.forEach((e)=>{
+								invoiceList.forEach((e2)=>{
+									if(e.uuid==e2.uuid){
+										if(e2.status!=e.status){
+											guncellenmisInvoiceList.push({_id:e2._id,uuid:e2.uuid,status:e.status});
+										}
+										return;
+									}
+								});
+								
+							})
+							cb(null);
+						}else{
+							result.docs.forEach((e)=>{
+								invoiceList.forEach((e2)=>{
+									if(e.uuid==e2.uuid){
+										if(e2.status!=e.status){
+											guncellenmisInvoiceList.push({_id:e2._id,uuid:e2.uuid,status:e.status});
+										}
+										return;
+									}
+								});
+								
+							})
+							setTimeout(()=>{
+								listeIndir(cb);
+								return;
+							},1000);
+						}
+					}else{
+						cb(null)
+					}
+				}else{
+					eventLog('checkOutboxInvoicesStatus Hata:',err);
+					cb(err);
+				}
+			}) 
+		}
+
+
+		listeIndir((err)=>{
+			callback(err,guncellenmisInvoiceList);
+		});
 	}catch(tryErr){
 		callback(tryErr);
 	}

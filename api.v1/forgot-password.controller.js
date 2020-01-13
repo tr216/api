@@ -60,8 +60,8 @@ function smssend(phonenumber,password,callback){
     });
 
     res.on('end', function(){
-      //console.log('smsbody:' + body);
-      console.log('parola Hatirlatma sms: ',phonenumber,password);
+      //eventLog('smsbody:' + body);
+      eventLog('parola Hatirlatma sms: ',phonenumber,password);
       callback({success:true, data: body});
     });
   }).on('error', function(e){
@@ -73,7 +73,7 @@ function mailsend(email,password,callback){
   var subject="Parola Hatirlatma";
   var body="Parolaniz : " + password;
   mrutil.sendmail(email,subject,body,function(result){
-    console.log('parola Hatirlatma email: ',email,password);
+    eventLog('parola Hatirlatma email: ',email,password);
     callback(result);
   });
   

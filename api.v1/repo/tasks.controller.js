@@ -59,7 +59,7 @@ function getList(activeDb,member,req,res,callback){
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
         } else {
-            console.log('error:',err);
+            eventLog('error:',err);
         }
     });
 }

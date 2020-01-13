@@ -73,7 +73,7 @@ function getList(activeDb,member,req,res,callback){
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
         } else {
-            console.log('error:',err);
+            eventLog('error:',err);
         }
     });
 }
@@ -90,8 +90,8 @@ function getOne(activeDb,member,req,res,callback){
             if(doc.invoiceXslt!=undefined){
                 doc=doc.toJSON();
                 doc.invoiceXsltFiles.forEach((e)=>{
-                	console.log('e._id:',e._id)
-                	console.log('doc.invoiceXslt:',doc.invoiceXslt.toString())
+                	eventLog('e._id:',e._id)
+                	eventLog('doc.invoiceXslt:',doc.invoiceXslt.toString())
                     if(e._id.toString()==doc.invoiceXslt.toString()){
                         e['isDefault']=true;
                     }else{
@@ -268,7 +268,7 @@ function saveFile(activeDb,member,req,res,callback){
         }else{
              data['_id']=req.query.fileId || req.query.fileid
         }
-        console.log('fileID:',data['_id']);
+        eventLog('fileID:',data['_id']);
 
         activeDb.e_integrators.findOne({ _id: req.params.param1}).populate(populate).exec((err,doc)=>{
             if (dberr(err,callback)) {
@@ -315,7 +315,7 @@ function saveFile(activeDb,member,req,res,callback){
                                 fileDoc.type=data.type;
                                 fileDoc.size=data.size;
 
-                                //console.log('fileDoc:',fileDoc);
+                                //eventLog('fileDoc:',fileDoc);
                                 var err=epValidateSync(fileDoc);
                                 if(dberr(err,callback)){
                                     fileDoc.save((err)=>{

@@ -76,12 +76,12 @@ module.exports = function(req, res, callback) {
 		}
 
 		if (lastmessageid != '') {
-			console.log('lastmessageid:' + lastmessageid);
+			eventLog('lastmessageid:' + lastmessageid);
 			match.$match._id = {
 				$gt: ObjectId(lastmessageid)
 			};
 		}
-		console.log('match:' + JSON.stringify(match));
+		eventLog('match:' + JSON.stringify(match));
 
 		db.messages.aggregate(aggregation).exec(function(err, docs) {
 			if (err) {
@@ -161,12 +161,12 @@ module.exports = function(req, res, callback) {
 								_id: item.memberid2.mainpicture
 							}, function(err, image) {
 								if (err) {
-									console.log('err:' + err.name + '-' + err.message);
+									eventLog('err:' + err.name + '-' + err.message);
 								}
 								if (image != null) {
 									//image=image.image;
 									item.image = image.image;
-									//console.log('image:' + image);
+									//eventLog('image:' + image);
 									delete item.memberid2.mainpicture;
 									delete item.memberid2.mainpictureblur;
 									popdocs2.push(item);
@@ -191,7 +191,7 @@ module.exports = function(req, res, callback) {
 						// if(image==null){
 
 						// }else{
-						// 	console.log('image null degil');
+						// 	eventLog('image null degil');
 						// 	item.image=image;
 						// 	popdocs2.push(item);
 						// 	delete item.memberid2.mainpicturesmall;
@@ -223,9 +223,9 @@ module.exports = function(req, res, callback) {
 									multi: true
 								}, function(err, docs) { //okunmamislari read=true yapalim
 									if (err) {
-										console.log('error:' + err.name + ' - ' + err.message);
+										eventLog('error:' + err.name + ' - ' + err.message);
 									}
-									console.log('update result:' + docs.length);
+									eventLog('update result:' + docs.length);
 									var aggregation = [{
 										$match: {
 											memberid: ObjectId(authinfo._id),

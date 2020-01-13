@@ -143,11 +143,11 @@ module.exports = function(req, res, callback) {
 									_id: item.memberid.mainpicturesmall
 								}, function(err, image) {
 									if (err) {
-										console.log('err:' + err.name + '-' + err.message);
+										errorLog('err:' + err.name + '-' + err.message);
 									}
 									image = image.image;
 									item.image = image.image;
-									//console.log('image:' + image);
+									//eventLog('image:' + image);
 									delete item.memberid.mainpicturesmall;
 									delete item.memberid.mainpicturesmallblur;
 									popdocs2.push(item);
@@ -184,7 +184,7 @@ module.exports = function(req, res, callback) {
 							multi: true
 						}, function(err, docs) { //okunmamislari read=true yapalim
 							if (err) {
-								console.error(__filename,err);
+								errorLog(__filename,err);
 							}
 							socket.senddata(authinfo._id, {
 								type: 'visitors',

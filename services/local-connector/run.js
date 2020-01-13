@@ -30,7 +30,7 @@ function runRendered(localConnectorDoc,data,cb){
 			}
 			
 		}catch(err){
-			console.log('err:',err);
+			eventLog('err:',err);
 			return cb({code:'PARSING_ERROR',message:err.message});
 		}
 		
@@ -85,7 +85,7 @@ function runRendered(localConnectorDoc,data,cb){
 						break;
 					}
 
-					console.log('js comut gonderildi.')
+					eventLog('js comut gonderildi.')
 					services.tr216LocalConnector.sendCommand({id:localConnectorDoc.connectorId,password:localConnectorDoc.connectorPass}
 						,command, params,(result)=>{
 						
@@ -153,7 +153,7 @@ function render(localConnectorDoc,data,cb){
 		
 		cb(null,renderedCode);
 	}catch(err){
-		console.log(err);
+		eventLog(err);
 		
 		cb({code:err.name || 'EJS_RENDER_ERROR' ,name:err.name || 'EJS_RENDER_ERROR',message: err.message || err.toString()});
 	}

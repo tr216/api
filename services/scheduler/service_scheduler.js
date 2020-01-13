@@ -12,9 +12,9 @@ var rapormailigonder = require('./rapormailigonder.js');
 var isCheking=false;
 exports.start=function(){
 	setInterval(function () {
-		console.log('[Scheduler] Scheduler check started');
+		eventLog('[Scheduler] Scheduler check started');
 		if(isCheking){
-			console.log('[Scheduler] Scheduler checking continue.');
+			eventLog('[Scheduler] Scheduler checking continue.');
 			return;
 		}
 		isCheking=true;
@@ -22,12 +22,12 @@ exports.start=function(){
 		checkScheduler(function(result){
 			isCheking=false;
 			if(!result.success){
-				console.log('[Scheduler] Scheduler finished with error:' + JSON.stringify(result)); //.error.code + ' - ' + result.error.message);
+				eventLog('[Scheduler] Scheduler finished with error:' + JSON.stringify(result)); //.error.code + ' - ' + result.error.message);
 			}else{
-				console.log('[Scheduler] Scheduler finished successfully');
+				eventLog('[Scheduler] Scheduler finished successfully');
 			}
 		});
-	    //console.log('Scheduler checked.');
+	    //eventLog('Scheduler checked.');
 	}, 10000);
 }
 
@@ -39,7 +39,7 @@ function checkScheduler(callback) {
 			if(!result.success){
 				callback({success:false, error:result.error});
 			}else{
-				console.log('[Scheduler] total active task count:' + result.data.rows.length);
+				eventLog('[Scheduler] total active task count:' + result.data.rows.length);
 				if(result.data.rows.length==0){
 					callback({success:false, error:{code:'ERROR',message:'There is no active scheduler job'}});
 				}else{
@@ -54,7 +54,7 @@ function checkScheduler(callback) {
 
 
 						if(bFound==false && result.data.rows[i]["SchedulerDay"]==now_day && suandakika>=ayardakika && suandakika<=(ayardakika+30)){
-							console.log('[Scheduler] task found. Scheduler task detail: {Day=' + result.data.rows[i]["SchedulerDay"] + ', Hour=' + result.data.rows[i]["SchedulerHour"]  + ', Minute=' + result.data.rows[i]["SchedulerMinute"] + '}');
+							eventLog('[Scheduler] task found. Scheduler task detail: {Day=' + result.data.rows[i]["SchedulerDay"] + ', Hour=' + result.data.rows[i]["SchedulerHour"]  + ', Minute=' + result.data.rows[i]["SchedulerMinute"] + '}');
 							bFound=true;
 
 
@@ -94,9 +94,9 @@ function checkScheduler(callback) {
 							if(i==result.data.rows.length-1){
 								sendReportMail(result.data.rows[i]["SchedulerDay"],result.data.rows[i]["SchedulerHour"],result.data.rows[i]["SchedulerMinute"],function(result){
 									if(result.success){
-										console.log('[Scheduler] Reconciliation report was sent successfully.');
+										eventLog('[Scheduler] Reconciliation report was sent successfully.');
 									}else{
-										console.log('[Scheduler] Reconciliation report was not successful. Error:' + result.error.message);
+										eventLog('[Scheduler] Reconciliation report was not successful. Error:' + result.error.message);
 									}
 								});
 							}
@@ -105,7 +105,7 @@ function checkScheduler(callback) {
 
 					}
 					if(!bFound){
-						console.log('[Scheduler] Task could not be found for starting.');
+						eventLog('[Scheduler] Task could not be found for starting.');
 						callback({success:true, error:null});
 					}
 				}
@@ -118,11 +118,11 @@ function checkScheduler(callback) {
 }
 
 function runScheduler(callback){
-	console.log('Scheduler running....');
-	console.log('Scheduler calisti hobaaaa....');
+	eventLog('Scheduler running....');
+	eventLog('Scheduler calisti hobaaaa....');
 	//callback({success:true,error:null});
 	sendmail(function(result){
-		console.log('Scheduler finished.');
+		eventLog('Scheduler finished.');
 		callback(result);
 
 	});
@@ -159,7 +159,7 @@ function sendmail(callback){
 			callback(result);
 		}else{
 			if(result.data.rows.length>0){
-				console.log('[Scheduler] ' + result.data.rows.length + ' record(s) was found.');
+				eventLog('[Scheduler] ' + result.data.rows.length + ' record(s) was found.');
 				var rowIndex=0;
 				var sqlResult=result.data.rows;
 
@@ -173,7 +173,7 @@ function sendmail(callback){
 					rowIndex++;
 					mutabakatemail.sendMutabakatMail(formdata,0,function(res){
 						if(res.success==false){
-							console.log("Mail gonderim hata:" + res.error.message);
+							eventLog("Mail gonderim hata:" + res.error.message);
 						}
 
 						setTimeout(mailGonderelimAbicim,10,callback);
@@ -212,17 +212,17 @@ function sendReportMail(SchedulerDay,SchedulerHour,SchedulerMinute, callback){
 			}
 			if(Number(optionParameters.SCHEDULERREPORT_AFTERDAY)>0 && optionParameters.SCHEDULERREPORT_MAILTO!=''){
 				if(Number(SchedulerDay)+Number(optionParameters.SCHEDULERREPORT_AFTERDAY)==now_day && ((new Date(LastSent)).getDate()<now_day || LastSent==(new Date(1900,1,1,0,0,0)).yyyymmdd() ) && suandakika>=ayardakika && suandakika<=(ayardakika+30)){
-					console.log('[Scheduler] Report mail is sending now...');
+					eventLog('[Scheduler] Report mail is sending now...');
 					rapormailigonder.sendRepotMail(optionParameters.SCHEDULERREPORT_MAILTO,function(result){
 						if(result.success){
 							var params={lastsent: (new Date()).yyyymmddhhmmss()};
 							var sql ="INSERT INTO parameters (ParamName,ParamValue) VALUES('SCHEDULERREPORT_LASTSENT', :lastsent) ON DUPLICATE KEY UPDATE ParamValue=VALUES(ParamValue);";
 							dbHelper.query(sql,params,function(result){
-								console.log('[Scheduler] Report mail was sent successfully.');
+								eventLog('[Scheduler] Report mail was sent successfully.');
 								callback(result);
 							});
 						}else{
-							console.log('[Scheduler] Report mail was not successful. Error:' + result.error.message);
+							eventLog('[Scheduler] Report mail was not successful. Error:' + result.error.message);
 							callback(result);
 						}
 						

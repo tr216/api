@@ -229,7 +229,7 @@ function saveFile(activeDb,member,req,res,callback){
         }else{
              data['_id']=req.query.fileId || req.query.fileid
         }
-        console.log('fileID:',data['_id']);
+        eventLog('fileID:',data['_id']);
 
         activeDb.local_connectors.findOne({ _id: req.params.param1}).populate(populate).exec((err,doc)=>{
             if (dberr(err,callback)) {
@@ -238,7 +238,7 @@ function saveFile(activeDb,member,req,res,callback){
                 }else{
 
                     if(data._id==undefined){
-                        console.log('data:',data);
+                        eventLog('data:',data);
                         var newfileDoc = new activeDb.files(data);
                         var err=epValidateSync(newfileDoc);
                         if(err) return callback({success: false, error: {code: err.name, message: err.message}});
@@ -277,7 +277,7 @@ function saveFile(activeDb,member,req,res,callback){
                                 fileDoc.type=data.type;
                                 fileDoc.size=data.size;
 
-                                //console.log('fileDoc:',fileDoc);
+                                //eventLog('fileDoc:',fileDoc);
                                 var err=epValidateSync(fileDoc);
                                 if(dberr(err,callback)){
                                     fileDoc.save((err)=>{

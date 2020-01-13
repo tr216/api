@@ -681,7 +681,7 @@ module.exports=function(conn){
         pdf:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
         html:{type: mongoose.Schema.Types.ObjectId, ref: 'files' , default:null},
         localDocumentId: {type: String, default: ''},
-        invoiceStatus: {type: String, default: 'Draft',enum:['Draft','Pending', 'Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
+        invoiceStatus: {type: String, default: 'Draft',enum:['Draft','Pending','Queued', 'Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
         invoiceErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
         localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
         localErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
@@ -724,6 +724,7 @@ module.exports=function(conn){
     schema.index({
         "ioType":1,
         "ID.value":1,
+        "issueDate.value":1,
         "uuid.value":1,
         "eIntegrator":1,
         "profileId.value":1,

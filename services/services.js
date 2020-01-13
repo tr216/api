@@ -9,12 +9,12 @@ exports.eLedger=require('./e-ledger/e-ledger.js');
 
 exports.runUserDbServices=function(){
     exports.tasks.run(this);
-    // exports.eInvoice.run(this); 
-    // exports.posDevice.run(this);
+    exports.eInvoice.run(this); 
+    exports.posDevice.run(this);
 }
 
 exports.start=function(){
-    console.log('Main Service started.');
+    eventLog('Main Service started.');
     Object.keys(repoDb).forEach((dbId)=>{
         if(repoDb[dbId]['runUserDbServices']==undefined){
             repoDb[dbId]['runUserDbServices']=exports.runUserDbServices;

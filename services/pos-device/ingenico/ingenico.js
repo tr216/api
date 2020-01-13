@@ -2,26 +2,23 @@ var api=require('./api.js');
 
 
 exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
-	//console.log('Basic ' + Buffer.from('intiba:intibA!2').toString('base64'))
+	//eventLog('Basic ' + Buffer.from('intiba:intibA!2').toString('base64'))
 	if(posDeviceDocs.length>0){
 		var index=0;
 
 		function zRaporIndir(cb){
-			console.log('zRaporIndir ' + (index+1).toString() + '/' + posDeviceDocs.length )
+			eventLog('zRaporIndir ' + (index+1).toString() + '/' + posDeviceDocs.length )
 			if(index>=posDeviceDocs.length){
 				cb(null);
 			}else{
 				if(posDeviceDocs[index].deviceSerialNo!=''){
 					generateReqOption(dbModel,posDeviceDocs[index],(err,reqOpt)=>{
 						if(!err){
-							//console.log('reqOpt:',reqOpt);
+							//eventLog('reqOpt:',reqOpt);
 							api.getZReport(serviceDoc,reqOpt,(err,resp)=>{
 								if(!err){
-									mrutil.log('resp.ZReportItems.length:',resp.ZReportItems.length.toString());
-									//mrutil.log('resp.ZReportItems:',resp.ZReportItems);
-									//mrutil.log('resp.ZReportItems.length:',resp.ZReportItems.length.toString());
-									// index++;
-									// setTimeout(zRaporIndir,0,cb);
+									eventLog('resp.ZReportItems.length:',resp.ZReportItems.length.toString());
+									
 									insertZReports(dbModel,posDeviceDocs[index],resp.ZReportItems,(err)=>{
 										if(!err){
 											index++;
@@ -29,27 +26,27 @@ exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
 											setTimeout(zRaporIndir,1000,cb);
 										}else{
 											
-											console.log('insertZReports Error:' ,err);
+											errorLog('insertZReports Error:' ,err);
 											index++;
 											setTimeout(zRaporIndir,1000,cb);
 										}
 									});
 								}else{
 									
-									console.log('download getZReport Error:' , err);
+									eventLog('download getZReport Error:' , err);
 									if(err.errno!=undefined){
 										if(err.errno=='ETIMEDOUT'){
-											console.log('download getZReport Error: 30sn sonra yeniden deniyoruz' , {});
+											eventLog('download getZReport Error: 30sn sonra yeniden deniyoruz' , {});
 											setTimeout(zRaporIndir,30000,cb);
 										}else{
 											index++;
-											console.log('getZReport Error:' ,err);
+											errorLog('getZReport Error:' ,err);
 											setTimeout(zRaporIndir,1000,cb);
 											//cb(err);
 										}
 									}else{
 										index++;
-										console.log('getZReport Error:' ,err);
+										eventLog('getZReport Error:' ,err);
 										setTimeout(zRaporIndir,1000,cb);
 										//cb(err);
 									}
@@ -58,13 +55,13 @@ exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
 							});
 						}else{
 							index++;
-							console.log('generateReqOption Error:' , err);
+							errorLog('generateReqOption Error:' , err);
 							setTimeout(zRaporIndir,1000,cb);
 							//cb(err);
 						}
 					});
 				}else{
-					console.log('posDeviceDocs[index].deviceSerialNo==""');
+					eventLog('posDeviceDocs[index].deviceSerialNo==""');
 					index++;
 					setTimeout(zRaporIndir,1000,cb);
 				}
@@ -73,14 +70,14 @@ exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
 	
 		zRaporIndir((err)=>{
 			if(!err){
-				console.log('ingenico pos device service download completed:',serviceDoc.name,' total device:',posDeviceDocs.length);
+				eventLog('ingenico pos device service download completed:',serviceDoc.name,' total device:',posDeviceDocs.length);
 			}else{
-				console.log('ingenico pos device service download error:' , err);
+				errorLog('ingenico pos device service download error:' , err);
 			}
 			callback(err);
 		});
 	}else{
-		console.log('posDeviceDocs.length==0');
+		eventLog('posDeviceDocs.length==0');
 		callback(null);
 	}
 	
@@ -106,7 +103,7 @@ function insertZReports(dbModel,posDeviceDoc,ZReportItems,callback){
 					setTimeout(dahaOncedenKaydedilmisMi,0,cb);
 				}
 			}else{
-				console.log('dbModel.pos_device_zreports.countDocuments error:' , err);
+				errorLog('dbModel.pos_device_zreports.countDocuments error:' , err);
 				cb(err);
 			}
 		});
@@ -114,7 +111,7 @@ function insertZReports(dbModel,posDeviceDoc,ZReportItems,callback){
 	
 	dahaOncedenKaydedilmisMi((err)=>{
 		if(!err){
-			mrutil.log('insertZReports ZReportItems.length:',ZReportItems.length.toString());
+			eventLog('insertZReports ZReportItems.length:',ZReportItems.length.toString());
 			if(ZReportItems.length==0) return callback(null);
 			var data=[];
 			ZReportItems.forEach((e)=>{
@@ -124,23 +121,23 @@ function insertZReports(dbModel,posDeviceDoc,ZReportItems,callback){
 				data.push({posDevice:posDeviceDoc._id,data:e,zNo:e.ZNo,zDate:d,zTotal:e.GunlukToplamTutar});
 
 			});
-			mrutil.log('insertZReports beforeSort  data.length:',data.length.toString());
+			eventLog('insertZReports beforeSort  data.length:',data.length.toString());
 			data.sort(function(a,b){
 				if(a.zDate>b.zDate) return 1;
 				if(a.zDate<b.zDate) return -1;
 				return 0;
 			});
 
-			mrutil.log('insertZReports  data.length:',data.length.toString());
+			eventLog('insertZReports  data.length:',data.length.toString());
 
 			dbModel.pos_device_zreports.insertMany(data,{ordered:true},(err,docs)=>{
 				if(err){
-					console.log('dbModel.pos_device_zreports.insertMany  error:' , err);
+					errorLog('dbModel.pos_device_zreports.insertMany  error:' , err);
 				}
 				callback(err);
 			});
 		}else{
-			console.log('dahaOncedenKaydedilmisMi error:' , err);
+			errorLog('dahaOncedenKaydedilmisMi error:' , err);
 			callback(err);
 		}
 	});
