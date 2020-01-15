@@ -1,8 +1,10 @@
 
 
 var BasicHttpBinding = require('wcf.js').BasicHttpBinding;
-//var BasicHttpBinding = require('wcf.js').WSHttpBinding;
+// var CustomBinding = require('wcf.js').CustomBinding;
+// var WSHttpBinding = require('wcf.js').WSHttpBinding;
 var Proxy = require('wcf.js').Proxy;
+var timeout=180000;
 
 function generateRequestMessage(funcName,query,isQuery=true){
     var message =  '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">' +
@@ -148,11 +150,28 @@ function uyumsoftInvoiceProfileID(typeCode){
 *  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined, Return, EArchivedCanceled, Error
 */
 
-exports.getInboxInvoiceList = function (options,query,callback) {
+
+exports.getInboxInvoiceList = function (options,query,mainCallback) {
+    var timeIsUp=false;
+    var stopTimer=false;
+
+    var callback=function(...obj){
+        stopTimer=true;
+        if(!timeIsUp) return mainCallback(...obj);
+        else return;
+    }
+    setTimeout(()=>{
+        if(stopTimer) return;
+        eventLog('Zaman asimi oldu'.green);
+        timeIsUp=true;
+        return mainCallback({code:'TIME_OUT',message:'Zaman asimi oldu'});
+        
+    }, timeout)
     try{ 
+
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
 
         var proxy = new Proxy(binding, options.url);
@@ -163,23 +182,26 @@ exports.getInboxInvoiceList = function (options,query,callback) {
 
         var message=generateRequestMessage('GetInboxInvoiceList',query);
         
-        
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {')
         proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {
-
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {')
 
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
                 return callback({code:ctx.error['code'],message:ctx.error['code']});
             }
-        
+            
+            eventLog('before: mrutil.xml2json(response,(err,jsObject)=>{')
             mrutil.xml2json(response,(err,jsObject)=>{
+                eventLog('after: mrutil.xml2json(response,(err,jsObject)=>{')
                 if(!err){
                     
                     if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
                         var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
-
                         return callback({code:'WebServiceError',message:errorMessage});
+                        
+                       
                     }
                     if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['$'].IsSucceded=='true'){
                         var result={
@@ -249,11 +271,241 @@ exports.getInboxInvoiceList = function (options,query,callback) {
 
         
         });
-
+        
     }catch(tryErr){
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
     }
 }
+
+
+/**
+* @query :{ invoiceId: String}
+*/
+exports.getInboxInvoice = function (options,invoiceId,mainCallback) {
+    var timeIsUp=false;
+    var stopTimer=false;
+
+    var callback=function(...obj){
+        stopTimer=true;
+        if(!timeIsUp) return mainCallback(...obj);
+        else return;
+    }
+    setTimeout(()=>{
+        if(stopTimer) return;
+        eventLog('Zaman asimi oldu'.green);
+        timeIsUp=true;
+        return mainCallback({code:'TIME_OUT',message:'Zaman asimi oldu'});
+        
+    }, timeout)
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+        })
+        var proxy = new Proxy(binding, options.url);
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
+
+        var message=generateRequestMessage('GetInboxInvoice',{invoiceId:invoiceId},false);
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {')
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+
+            mrutil.xml2json3(response,(err,jsObject)=>{
+                if(!err){
+                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
+
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+
+                    try{
+                        if(jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['$'].IsSucceded=='true'){
+                            var result={
+                                IsSucceded: true, 
+                                doc:{invoice:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['Value']['Invoice']}
+                            }
+                            return callback(null,result);
+                        }else{
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['$'].Message});
+                        }
+                        
+                    }catch(tryErr1){
+                        callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
+                    }
+                }else{
+                    callback(err);
+                }
+            });
+        
+        });
+    }catch(tryErr){
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
+    }
+}; 
+
+/**
+* @query :{ invoiceId: String}
+*/
+exports.getInboxInvoiceHtml = function (options,invoiceId,mainCallback) {
+    var timeIsUp=false;
+    var stopTimer=false;
+
+    var callback=function(...obj){
+        stopTimer=true;
+        if(!timeIsUp) return mainCallback(...obj);
+        else return;
+    }
+    setTimeout(()=>{
+        if(stopTimer) return;
+        eventLog('Zaman asimi oldu'.green);
+        timeIsUp=true;
+        return mainCallback({code:'TIME_OUT',message:'Zaman asimi oldu'});
+        
+    }, timeout)
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+        })
+        var proxy = new Proxy(binding, options.url);
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
+
+        var message=generateRequestMessage('GetInboxInvoiceView',{invoiceId:invoiceId},false);
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {')
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+            eventLog('before: mrutil.xml2json(response,(err,jsObject)=>{')
+            mrutil.xml2json(response,(err,jsObject)=>{
+                eventLog('after: mrutil.xml2json(response,(err,jsObject)=>{')
+                if(!err){
+                    
+                    if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+
+                                     
+                   try{
+                        if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceViewResponse'][0]['GetInboxInvoiceViewResult'][0]['$'].IsSucceded=='true'){
+                            var result={
+                                IsSucceded: true, 
+                                doc:{html:(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceViewResponse'][0]['GetInboxInvoiceViewResult'][0]['Value'][0].Html || '')}
+                            }
+                            return callback(null,result);
+                        }else{
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceViewResponse'][0]['GetInboxInvoiceViewResult'][0]['$'].Message});
+                        }
+                        
+                    }catch(tryErr1){
+                        errorLog('exports.getInboxInvoiceHtml tryErr1:',tryErr1)
+                        return callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
+                    }
+                }else{
+                    errorLog('exports.getInboxInvoiceHtml err:',err)
+                    callback(err);
+                }
+            });
+        
+        });
+    }catch(tryErr){
+        errorLog('exports.getInboxInvoicePdf tryErr:',tryErr)
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
+    }
+}
+
+
+/**
+* @query :{ invoiceId: String}
+*/
+exports.getInboxInvoicePdf = function (options,invoiceId,mainCallback) {
+    var timeIsUp=false;
+    var stopTimer=false;
+
+    var callback=function(...obj){
+        stopTimer=true;
+        if(!timeIsUp) return mainCallback(...obj);
+        else return;
+    }
+    setTimeout(()=>{
+        if(stopTimer) return;
+        eventLog('Zaman asimi oldu'.green);
+        timeIsUp=true;
+        return mainCallback({code:'TIME_OUT',message:'Zaman asimi oldu'});
+        
+    }, timeout)
+    try{
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+        })
+        var proxy = new Proxy(binding, options.url);
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
+
+        var message=generateRequestMessage('GetInboxInvoicePdf',{invoiceId:invoiceId},false);
+
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {')
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+            eventLog('before: mrutil.xml2json(response,(err,jsObject)=>{')
+            mrutil.xml2json(response,(err,jsObject)=>{
+                eventLog('after: mrutil.xml2json(response,(err,jsObject)=>{')
+                if(!err){
+                    
+                    if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
+                        return callback({code:'WebServiceError',message:errorMessage});
+                    }
+
+                                     
+                   try{
+                        if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoicePdfResponse'][0]['GetInboxInvoicePdfResult'][0]['$'].IsSucceded=='true'){
+                            var result={
+                                IsSucceded: true, 
+                                doc:{pdf:(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoicePdfResponse'][0]['GetInboxInvoicePdfResult'][0]['Value'][0].Data || '')}
+                            }
+                            return callback(null,result);
+                        }else{
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoicePdfResponse'][0]['GetInboxInvoicePdfResult'][0]['$'].Message});
+                        }
+                        
+                    }catch(tryErr1){
+                        errorLog('exports.getInboxInvoicePdf tryErr1:',tryErr1)
+                        return callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
+                    }
+                }else{
+                    errorLog('exports.getInboxInvoicePdf err:',err)
+                    callback(err);
+                }
+            });
+        });
+    }catch(tryErr){
+        errorLog('exports.getInboxInvoicePdf tryErr:',tryErr)
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
+    }
+}
+
+
 
 /**
 * @query :{CreateStartDate:Date, CreateEndDate:Date, ExecutionStartDate:Date, ExecutionEndDate:Date, PageIndex:Number, PageSize:Number
@@ -262,36 +514,57 @@ exports.getInboxInvoiceList = function (options,query,callback) {
 *  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined, Return, EArchivedCanceled, Error
 */
 
-exports.getOutboxInvoiceList = function (options,query,callback) {
+exports.getOutboxInvoiceList = function (options,query,mainCallback) {
+    var timeIsUp=false;
+    var stopTimer=false;
+
+    var callback=function(...obj){
+        stopTimer=true;
+        if(!timeIsUp) return mainCallback(...obj);
+        else return;
+    }
+    setTimeout(()=>{
+        if(stopTimer) return;
+        eventLog('Zaman asimi oldu'.green);
+        timeIsUp=true;
+        return mainCallback({code:'TIME_OUT',message:'Zaman asimi oldu'});
+        
+    }, timeout)
     try{ 
-    var binding = new BasicHttpBinding(
-        { SecurityMode: "TransportWithMessageCredential"
-        , MessageClientCredentialType: "UserName"
-    })
-    var proxy = new Proxy(binding, options.url);
-    // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-    proxy.ClientCredentials.Username.Username =options.username;
-    proxy.ClientCredentials.Username.Password =options.password ;
 
-    var message=generateRequestMessage('GetOutboxInvoiceList',query);
-    
-    
-    proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceList", function(response, ctx) {
+        var binding = new BasicHttpBinding(
+            { SecurityMode: "TransportWithMessageCredential"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+        })
+
+        var proxy = new Proxy(binding, options.url);
         
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
+        proxy.ClientCredentials.Username.Username =options.username;
+        proxy.ClientCredentials.Username.Password =options.password ;
 
-        if(ctx.error!=undefined){
-            if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
-
-            return callback({code:ctx.error['code'],message:ctx.error['code']});
-        }
+        var message=generateRequestMessage('GetOutboxInvoiceList',query);
         
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceList", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceList", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceList", function(response, ctx) {')
+
+            if(ctx.error!=undefined){
+                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
+
+                return callback({code:ctx.error['code'],message:ctx.error['code']});
+            }
+            
+            eventLog('before: mrutil.xml2json(response,(err,jsObject)=>{')
             mrutil.xml2json(response,(err,jsObject)=>{
+                eventLog('after: mrutil.xml2json(response,(err,jsObject)=>{')
                 if(!err){
                     
                     if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
                         var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
-
                         return callback({code:'WebServiceError',message:errorMessage});
+                        
+                       
                     }
                     if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['$'].IsSucceded=='true'){
                         var result={
@@ -308,7 +581,7 @@ exports.getOutboxInvoiceList = function (options,query,callback) {
                         result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].PageSize);
                         result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].TotalCount);
                         result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].TotalPages);
-                       
+                        
                         var items=jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['Items'];
                         if(items){
                             for(var i=0;i<items.length;i++){
@@ -345,7 +618,6 @@ exports.getOutboxInvoiceList = function (options,query,callback) {
                                 }
                                 result.docs.push(obj);
                             }
-                            eventLog('result.docs')
                             callback(null,result);
                         }else{
                             callback(null,result);
@@ -362,28 +634,46 @@ exports.getOutboxInvoiceList = function (options,query,callback) {
 
         
         });
+        
     }catch(tryErr){
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
-    }   
+    }
 }
+
 
 /**
 * @query :{ invoiceId: String}
 */
-exports.getInboxInvoice = function (options,invoiceId,callback) {
+exports.getOutboxInvoice = function (options,invoiceId,mainCallback) {
+    var timeIsUp=false;
+    var stopTimer=false;
+
+    var callback=function(...obj){
+        stopTimer=true;
+        if(!timeIsUp) return mainCallback(...obj);
+        else return;
+    }
+    setTimeout(()=>{
+        if(stopTimer) return;
+        eventLog('Zaman asimi oldu'.green);
+        timeIsUp=true;
+        return mainCallback({code:'TIME_OUT',message:'Zaman asimi oldu'});
+        
+    }, timeout)
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetInboxInvoice',{invoiceId:invoiceId},false);
-
-        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {
+        var message=generateRequestMessage('GetOutboxInvoice',{invoiceId:invoiceId},false);
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -398,12 +688,20 @@ exports.getInboxInvoice = function (options,invoiceId,callback) {
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
 
-                    var result={
-                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceResponse'][0]['GetInboxInvoiceResult'][0]['$'].IsSucceded=='true',
-                        doc:{invoice:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['Value']['Invoice']}
+                    try{
+                        if(jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceResponse']['GetOutboxInvoiceResult']['$'].IsSucceded=='true'){
+                            var result={
+                                IsSucceded: true, 
+                                doc:{invoice:jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceResponse']['GetOutboxInvoiceResult']['Value']['Invoice']}
+                            }
+                            return callback(null,result);
+                        }else{
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceResponse']['GetOutboxInvoiceResult']['$'].Message});
+                        }
+                        
+                    }catch(tryErr1){
+                        callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
                     }
-                    
-                    callback(null,result);
                 }else{
                     callback(err);
                 }
@@ -411,207 +709,84 @@ exports.getInboxInvoice = function (options,invoiceId,callback) {
         
         });
     }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
     }
 }; 
 
 /**
 * @query :{ invoiceId: String}
 */
-exports.getOutboxInvoice = function (options,invoiceId,callback) {
-    try{
-        var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
-        })
-        var proxy = new Proxy(binding, options.url);
+exports.getOutboxInvoiceHtml = function (options,invoiceId,mainCallback) {
+    var timeIsUp=false;
+    var stopTimer=false;
 
-        proxy.ClientCredentials.Username.Username =options.username;
-        proxy.ClientCredentials.Username.Password =options.password ;
-
-        var message=generateRequestMessage('GetOutboxInvoice',{invoiceId:invoiceId},false);
-
-        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {
-            if(ctx.error!=undefined){
-                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
-
-                return callback({code:ctx.error['code'],message:ctx.error['code']});
-            }
-        
-            mrutil.xml2json3(response,(err,jsObject)=>{
-                if(!err){
-                    jsObject=mrutil.deleteObjectProperty(jsObject,'xmlns*');
-                   
-                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
-                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
-
-                        return callback({code:'WebServiceError',message:errorMessage});
-                    }
-                    var result={}
-
-                    try{
-                        result={
-                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceResponse'][0]['GetOutboxInvoiceResult'][0]['$'].IsSucceded=='true',
-                        doc:{invoice:jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceResponse']['GetOutboxInvoiceResult']['Value']['Invoice']}
-                        }
-                    }catch(err){
-                        return callback({code: err.name || 'CATCHED_ERROR',message:err.message || 'CATCHED_ERROR'});
-                    }
-                    
-                   
-                    callback(null,result);
-                    
-                    
-                }else{
-                    callback(err);
-                }
-            });
-        });
-    }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
+    var callback=function(...obj){
+        stopTimer=true;
+        if(!timeIsUp) return mainCallback(...obj);
+        else return;
     }
-}
-
-/**
-* @query :{ invoiceId: String}
-*/
-exports.getInboxInvoiceHtml = function (options,invoiceId,callback) {
+    setTimeout(()=>{
+        if(stopTimer) return;
+        eventLog('Zaman asimi oldu'.green);
+        timeIsUp=true;
+        return mainCallback({code:'TIME_OUT',message:'Zaman asimi oldu'});
+        
+    }, timeout)
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-        proxy.ClientCredentials.Username.Username =options.username;
-        proxy.ClientCredentials.Username.Password =options.password ;
-
-        var message=generateRequestMessage('GetInboxInvoiceView',{invoiceId:invoiceId},false);
-
-        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {
-            
-            if(ctx.error!=undefined){
-                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
-
-                return callback({code:ctx.error['code'],message:ctx.error['code']});
-            }
-            mrutil.xml2json3(response,(err,jsObject)=>{
-                if(!err){
-                    
-                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
-                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
-                        return callback({code:'WebServiceError',message:errorMessage});
-                    }
-
-                    var result={
-                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceResponse'][0]['GetInboxInvoiceResult'][0]['$'].IsSucceded=='true',
-                        doc:{html:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceViewResponse']['GetInboxInvoiceViewResult']['Value']['Html']}
-                    }
-                   
-                    callback(null,result);
-                }else{
-                    callback(err);
-                }
-            });
-        
-        });
-    }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
-    }
-}
-
-
-/**
-* @query :{ invoiceId: String}
-*/
-exports.getInboxInvoicePdf = function (options,invoiceId,callback) {
-    try{
-        var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
-        })
-        var proxy = new Proxy(binding, options.url);
-        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
-        proxy.ClientCredentials.Username.Username =options.username;
-        proxy.ClientCredentials.Username.Password =options.password ;
-
-        var message=generateRequestMessage('GetInboxInvoicePdf',{invoiceId:invoiceId},false);
-
-        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {
-            
-            if(ctx.error!=undefined){
-                if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
-
-                return callback({code:ctx.error['code'],message:ctx.error['code']});
-            }
-
-            mrutil.xml2json3(response,(err,jsObject)=>{
-                if(!err){
-                    
-                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
-                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
-                        return callback({code:'WebServiceError',message:errorMessage});
-                    }
-
-                    var result={
-                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceResponse'][0]['GetInboxInvoiceResult'][0]['$'].IsSucceded=='true',
-                        doc:{pdf:jsObject['s:Envelope']['s:Body']['GetInboxInvoicePdfResponse']['GetInboxInvoicePdfResult']['Value']['Data']}
-                    }
-                   
-                    callback(null,result);
-                }else{
-                    callback(err);
-                }
-            });
-        
-        });
-    }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
-    }
-}
-
-/**
-* @query :{ invoiceId: String}
-*/
-exports.getOutboxInvoiceHtml = function (options,invoiceId,callback) {
-    try{
-        var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
-        })
-        var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
         var message=generateRequestMessage('GetOutboxInvoiceView',{invoiceId:invoiceId},false);
-
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceView", function(response, ctx) {')
         proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceView", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceView", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
                 return callback({code:ctx.error['code'],message:ctx.error['code']});
             }
-            mrutil.xml2json3(response,(err,jsObject)=>{
+            eventLog('before: mrutil.xml2json(response,(err,jsObject)=>{')
+            mrutil.xml2json(response,(err,jsObject)=>{
+                eventLog('after: mrutil.xml2json(response,(err,jsObject)=>{')
                 if(!err){
-                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
-                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
+                    
+                    if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
 
-                    var result={
-                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceResponse'][0]['GetOutboxInvoiceResult'][0]['$'].IsSucceded=='true',
-                        doc:{html:jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceViewResponse']['GetOutboxInvoiceViewResult']['Value']['Html']}
+                                     
+                   try{
+                        if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceViewResponse'][0]['GetOutboxInvoiceViewResult'][0]['$'].IsSucceded=='true'){
+                            var result={
+                                IsSucceded: true, 
+                                doc:{html:(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceViewResponse'][0]['GetOutboxInvoiceViewResult'][0]['Value'][0].Html || '')}
+                            }
+                            return callback(null,result);
+                        }else{
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceViewResponse'][0]['GetOutboxInvoiceViewResult'][0]['$'].Message});
+                        }
+                        
+                    }catch(tryErr1){
+                        errorLog('exports.getOutboxInvoiceHtml tryErr1:',tryErr1)
+                        return callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
                     }
-                   
-                    callback(null,result);
                 }else{
+                    errorLog('exports.getOutboxInvoiceHtml err:',err)
                     callback(err);
                 }
             });
-
+        
         });
     }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+        errorLog('exports.getOutboxInvoicePdf tryErr:',tryErr)
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
     }
 }
 
@@ -619,47 +794,83 @@ exports.getOutboxInvoiceHtml = function (options,invoiceId,callback) {
 /**
 * @query :{ invoiceId: String}
 */
-exports.getOutboxInvoicePdf = function (options,invoiceId,callback) {
+exports.getOutboxInvoicePdf = function (options,invoiceId,mainCallback) {
+    var timeIsUp=false;
+    var stopTimer=false;
+
+    var callback=function(...obj){
+        stopTimer=true;
+        if(!timeIsUp) return mainCallback(...obj);
+        else return;
+    }
+    setTimeout(()=>{
+        if(stopTimer) return;
+        eventLog('Zaman asimi oldu'.green);
+        timeIsUp=true;
+        return mainCallback({code:'TIME_OUT',message:'Zaman asimi oldu'});
+        
+    }, timeout)
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
+        // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
         var message=generateRequestMessage('GetOutboxInvoicePdf',{invoiceId:invoiceId},false);
 
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoicePdf", function(response, ctx) {')
         proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoicePdf", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoicePdf", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
                 return callback({code:ctx.error['code'],message:ctx.error['code']});
             }
-            mrutil.xml2json3(response,(err,jsObject)=>{
+            eventLog('before: mrutil.xml2json(response,(err,jsObject)=>{')
+            mrutil.xml2json(response,(err,jsObject)=>{
+                eventLog('after: mrutil.xml2json(response,(err,jsObject)=>{')
                 if(!err){
-                    if(jsObject['s:Envelope']['s:Body']['s:Fault']!=undefined){
-                        var errorMessage=jsObject['s:Envelope']['s:Body']['s:Fault']['faultstring'];
+                    
+                    if(jsObject['s:Envelope']['s:Body'][0]['s:Fault']!=undefined){
+                        var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
 
-                    var result={
-                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceResponse'][0]['GetOutboxInvoiceResult'][0]['$'].IsSucceded=='true',
-                        doc:{pdf:jsObject['s:Envelope']['s:Body']['GetOutboxInvoicePdfResponse']['GetOutboxInvoicePdfResult']['Value']['Data']}
+                                     
+                   try{
+                        if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoicePdfResponse'][0]['GetOutboxInvoicePdfResult'][0]['$'].IsSucceded=='true'){
+                            var result={
+                                IsSucceded: true, 
+                                doc:{pdf:(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoicePdfResponse'][0]['GetOutboxInvoicePdfResult'][0]['Value'][0].Data || '')}
+                            }
+                            return callback(null,result);
+                        }else{
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoicePdfResponse'][0]['GetOutboxInvoicePdfResult'][0]['$'].Message});
+                        }
+                        
+                    }catch(tryErr1){
+                        errorLog('exports.getOutboxInvoicePdf tryErr1:',tryErr1)
+                        return callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
                     }
-                   
-                    callback(null,result);
                 }else{
+                    errorLog('exports.getOutboxInvoicePdf err:',err)
                     callback(err);
                 }
             });
-
         });
     }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+        errorLog('exports.getOutboxInvoicePdf tryErr:',tryErr)
+        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
     }
 }
+
+
+
+
 /**
 * @query :{ invoices: String[]}
 */
@@ -667,7 +878,7 @@ exports.setInvoicesTaken = function (options,invoices,callback) {
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
@@ -708,7 +919,7 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
@@ -756,7 +967,7 @@ exports.getEInvoiceUsers = function (options,query,callback) {
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
@@ -832,7 +1043,7 @@ exports.sendInvoice = function (options,ssss,callback) {
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
@@ -888,7 +1099,7 @@ exports.sendDocumentResponse = function (options,query,callback) {
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
@@ -934,7 +1145,7 @@ exports.checkInboxInvoicesStatus=function(options,query,callback){
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
@@ -984,7 +1195,7 @@ exports.checkOutboxInvoicesStatus=function(options,query,callback){
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName"
+            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
         })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;

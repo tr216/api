@@ -288,7 +288,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 		limit:10
 		,
 		select:'_id eIntegrator profileId ID uuid issueDate issueTime invoiceTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal invoiceStatus invoiceErrors localStatus localErrors',
-		sort:{'issueDate.value':'desc'}
+		sort:{'issueDate.value':'desc' , 'ID.value':'desc'}
 	}
 
 	if((req.query.pageSize || req.query.limit)){

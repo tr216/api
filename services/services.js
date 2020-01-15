@@ -10,7 +10,7 @@ exports.eLedger=require('./e-ledger/e-ledger.js');
 exports.runUserDbServices=function(){
     exports.tasks.run(this);
     exports.eInvoice.run(this); 
-    exports.posDevice.run(this);
+    exports.posDevice.run(this); 
 }
 
 exports.start=function(){
