@@ -17,7 +17,7 @@ module.exports = function(member, req, res, callback) {
 }
 
 function getList(member,req,res,callback){
-    db.dbdefines.find({deleted:false, passive:false, $or:[{owner:member._id},{'authorizedMembers.memberId':member._id}]}).populate('owner','_id username name lastName').exec((err,docs)=>{
+    db.dbdefines.find({deleted:false, passive:false, $or:[{owner:member._id},{'authorizedMembers.memberId':member._id}]}).populate('owner','_id username name lastName modules').exec((err,docs)=>{
         if(!err){
             var data=[];
             for(var d=0;d<docs.length;d++){
@@ -51,7 +51,7 @@ function getList(member,req,res,callback){
 }
 
 function getOne(member,req,res,callback){
-    db.dbdefines.findOne({_id:req.params.param1, deleted:false, passive:false,owner:member._id}).populate('authorizedMembers.memberId','_id username name lastName').exec((err,doc)=>{
+    db.dbdefines.findOne({_id:req.params.param1, deleted:false, passive:false,owner:member._id}).populate('owner','_id username name lastName modules').populate('authorizedMembers.memberId','_id username name lastName').exec((err,doc)=>{
         if(dberr(err,callback)){
             if(dbnull(doc,callback)){
                 callback({success:true,data:doc});

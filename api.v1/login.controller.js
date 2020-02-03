@@ -48,7 +48,8 @@ module.exports= function (member, req, res,callback) {
 		                    role : doc.role,
 		                    isSysUser:false,
 		                    isMember:true,
-		                    ip: IP
+		                    ip: IP,
+		                    modules:(doc.modules || {})
 		                }
 		                var token;
 		                var jwt = require('jsonwebtoken');

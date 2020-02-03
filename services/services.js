@@ -8,9 +8,9 @@ exports.eInvoice=require('./e-invoice/e-invoice.js');
 exports.eLedger=require('./e-ledger/e-ledger.js');
 
 exports.runUserDbServices=function(){
-    exports.tasks.run(this);
-    exports.eInvoice.run(this); 
-    exports.posDevice.run(this); 
+    if(config.enabled_services.tasks) exports.tasks.run(this);
+    if(config.enabled_services.eInvoice) exports.eInvoice.run(this); 
+    if(config.enabled_services.posDevice) exports.posDevice.run(this); 
 }
 
 exports.start=function(){

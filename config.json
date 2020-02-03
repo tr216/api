@@ -19,5 +19,13 @@
   "event_log":{
     "path":"/var/log/api.tr216.com.access.log",
     "active": false
+  },
+  "enabled_services":{
+    "tasks":true,
+    "posDevice":true,
+    "scheduler":true,
+    "eInvoice":true,
+    "eLedger":true,
+    "localConnector":true
   }
 }
