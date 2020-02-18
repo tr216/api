@@ -54,7 +54,7 @@ exports.getZReport=(serviceOptions,reqOptions,cb)=>{
 						resp.ZReportItems[index]['SubParts']=subResult;
 					}
 					index++;
-					setTimeout(detaylariIndir,100,callb);
+					setTimeout(detaylariIndir,2000,callb);
 				});
 			}
 			

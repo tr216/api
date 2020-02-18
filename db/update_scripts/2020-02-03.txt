@@ -27,7 +27,7 @@ db.getCollection('members').find({}).forEach(function(e){
                 gittigidiyor:false,
                 hepsiburada:false,
             },
-            posDevice: false
+            posDevice: true
         }
         db.getCollection('members').updateOne({_id:e._id},{$set:{modules:modules}});
     }

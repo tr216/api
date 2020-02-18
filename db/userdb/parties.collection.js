@@ -13,48 +13,54 @@ module.exports=function(conn){
               message: 'Acente eklerken, ana firma secmelisiniz'
             }
         },
-        websiteURI:{ type: String, trim:true, default: ''},
+        account: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts'},
+        websiteURI:{value:{ type: String, trim:true, default: ''}},
         partyIdentification:[{
-            schemeId:{ type: String, trim:true, default: 'VKN'},
-            id:{ type: String, trim:true, default: ''}
+            ID:{ 
+                value:{ type: String, trim:true, default: ''},
+                attr: {
+                    schemeID: { type: String}
+                }
+            }
         }],
         partyName:{
-            name:{ type: String, trim:true, default: ''}
+            name:{value:{ type: String, trim:true, default: ''}}
         },
         postalAddress:{
-            room:{ type: String, trim:true, default: ''},
-            streetName:{ type: String, trim:true, default: ''},
-            blockName:{ type: String, trim:true, default: ''},
-            buildingName:{ type: String, trim:true, default: ''},
-            buildingNumber:{ type: String, trim:true, default: ''},
-            citySubdivisionName:{ type: String, trim:true, default: ''},
-            cityName:{ type: String, trim:true, default: ''},
-            postalZone:{ type: String, trim:true, default: ''},
-            postbox:{ type: String, trim:true, default: ''},
-            region:{ type: String, trim:true, default: ''},
-            district:{ type: String, trim:true, default: ''},
+            room:{ value:{ type: String, trim:true, default: ''}},
+            streetName:{ value:{ type: String, trim:true, default: ''}},
+            blockName:{ value:{ type: String, trim:true, default: ''}},
+            buildingName:{ value:{ type: String, trim:true, default: ''}},
+            buildingNumber:{ value:{ type: String, trim:true, default: ''}},
+            citySubdivisionName:{ value:{ type: String, trim:true, default: ''}},
+            cityName:{ value:{ type: String, trim:true, default: ''}},
+            postalZone:{ value:{ type: String, trim:true, default: ''}},
+            postbox:{ value:{ type: String, trim:true, default: ''}},
+            region:{ value:{ type: String, trim:true, default: ''}},
+            district:{ value:{ type: String, trim:true, default: ''}},
+            province:{ value:{ type: String, trim:true, default: ''}},
             country:{
-                identificationCode:{ type: String, default: 'TR'},
-                name:{ type: String, trim:true, default: 'Türkiye'}
+                identificationCode:{ value:{ type: String, trim:true, default: 'TR'}},
+                name:{value:{ type: String, trim:true, default: 'Türkiye'}}
             }
         },
         partyTaxScheme:{
             taxScheme:{
-                name:{ type: String, trim:true, default: ''},
-                taxTypeCode:{ type: String, trim:true, default: ''}
+                name:{ value:{ type: String, trim:true, default: ''}},
+                taxTypeCode:{ value:{ type: String, trim:true, default: ''}}
             }
         },
         contact:{
-            telephone:{ type: String, trim:true, default: ''},
-            telefax:{ type: String, trim:true, default: ''},
-            electronicMail:{ type: String, trim:true, default: ''}
+            telephone:{ value:{ type: String, trim:true, default: ''}},
+            telefax:{ value:{ type: String, trim:true, default: ''}},
+            electronicMail:{ value:{ type: String, trim:true, default: ''}}
         },
         person:{
-            firstName:{ type: String, trim:true, default: ''},
-            middleName:{ type: String, trim:true, default: ''},
-            familyName:{ type: String, trim:true, default: ''},
-            nameSuffix:{ type: String, trim:true, default: ''},
-            title:{ type: String, trim:true, default: ''}
+            firstName:{ value:{ type: String, trim:true, default: ''}},
+            middleName:{ value:{ type: String, trim:true, default: ''}},
+            familyName:{ value:{ type: String, trim:true, default: ''}},
+            nameSuffix:{ value:{ type: String, trim:true, default: ''}},
+            title:{ value:{ type: String, trim:true, default: ''}}
         },
         passive:{type:Boolean , default:false},
         createdDate: { type: Date,default: Date.now},
@@ -84,6 +90,16 @@ module.exports=function(conn){
     schema.plugin(mongoosePaginate);
     schema.plugin(mongooseAggregatePaginate);
     
+    schema.index({
+        "partyName.name.value":1,
+        "passive":1,
+        "postalAddress.province.value":1,
+        "postalAddress.cityName.value":1,
+        "person.firstName.value":1,
+        "person.middleName.value":1,
+        "person.familyName.value":1,
+        "createdDate":1
+    });
 
     var collectionName='parties';
     var model=conn.model(collectionName, schema);

@@ -70,6 +70,7 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 		break;
 		case 'PUT':
+
 			switch(req.params.param1.lcaseeng()){
 				
 				case 'saveinboxinvoice':
@@ -120,6 +121,7 @@ function post(activeDb,member,req,res,callback){
 	var err=epValidateSync(newDoc);
 	if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 	newDoc.uuid.value=uuid.v4();
+	newDoc=calculateInvoiceTotals(newDoc);
 	activeDb.e_integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
 		if(dberr(err,callback)){
 			if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Faturada entegrator bulanamadi.'}});
@@ -171,35 +173,138 @@ function importOutboxInvoice(activeDb,member,req,res,callback){
 }
 
 function put(activeDb,member,req,res,callback){
+	eventLog('put buraya geldi');
 	if(req.params.param2==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
 	var data = req.body || {};
 	data._id = req.params.param2;
 	data.modifiedDate = new Date();
+	eventLog('put sonra buraya geldi');
 	activeDb.e_invoices.findOne({ _id: data._id},(err,doc)=>{
 		if (!err) {
 			if(doc==null){
+				eventLog('doc==null');
 				callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
 			}else{
-				
+				eventLog('Before taxtotal:',doc.taxTotal);
 				data=mrutil.amountValueFixed2Digit(data,'');
 				var doc2 = Object.assign(doc, data);
 				var newDoc = new activeDb.e_invoices(doc2);
 				var err=epValidateSync(newDoc);
 				if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-
+				newDoc=calculateInvoiceTotals(newDoc);
 				newDoc.save(function(err, newDoc2) {
 					if(dberr(err,callback)){
+						eventLog('After taxtotal:',doc.taxTotal);
 						callback({success: true,data: newDoc2});
 					}
 				});
 			   
 			}
 		}else{
+			eventLog('put error:',err);
 			callback({success: false, error: {code: err.name, message: err.message}});
 		}
 	});
 }
 
+function calculateInvoiceTotals(invoice){
+	var bSatirdaVergiVar=false;
+	if(invoice.invoiceLine!=undefined){
+	    if(invoice.invoiceLine.length>0){
+	        invoice.invoiceLine.forEach(function(line){
+	            if(line.taxTotal!=undefined)
+	                if(line.taxTotal.taxAmount.value>0){
+	                    bSatirdaVergiVar=true;
+	                }
+	        });
+	    }
+	    invoice.lineCountNumeric.value=invoice.invoiceLine.length;
+	}
+    if(bSatirdaVergiVar){
+        invoice.taxTotal=[];
+        invoice.withholdingTaxTotal=[];
+        invoice.invoiceLine.forEach(function(line){
+            if(line.taxTotal!=undefined)
+                if(line.taxTotal.taxAmount.value>0 && line.taxTotal.taxSubtotal.length>0){
+                    var bAyniVergiTuruBulundu=false;
+                    invoice.taxTotal.forEach(function(e){
+                        if(e.taxSubtotal.length>0)
+                            if(e.taxSubtotal[0].percent==line.taxTotal.taxSubtotal[0].percent && e.taxSubtotal[0].taxCategory.taxScheme.taxTypeCode.value==line.taxTotal.taxSubtotal[0].taxCategory.taxScheme.taxTypeCode.value){
+                                e.taxAmount.value +=line.taxTotal.taxAmount.value;
+                                e.taxSubtotal[0].taxableAmount.value += line.taxTotal.taxSubtotal[0].taxableAmount.value;
+                                e.taxSubtotal[0].taxAmount.value += line.taxTotal.taxSubtotal[0].taxAmount.value;
+                                bAyniVergiTuruBulundu=true;
+                                return;
+                            }
+                    });
+                    if(bAyniVergiTuruBulundu==false){
+                        invoice.taxTotal.push(JSON.parse(JSON.stringify(line.taxTotal)))
+                    }
+                }
+            if(line.withholdingTaxTotal!=undefined)
+                if(line.withholdingTaxTotal.length>0)
+                    if(line.withholdingTaxTotal[0].taxAmount.value>0 && line.withholdingTaxTotal[0].taxSubtotal.length>0){
+                        var bAyniVergiTuruBulundu=false;
+                        invoice.withholdingTaxTotal.forEach(function(e){
+                            if(e.taxSubtotal.length>0)
+                                if(e.taxSubtotal[0].percent==line.withholdingTaxTotal[0].taxSubtotal[0].percent && e.taxSubtotal[0].taxCategory.taxScheme.taxTypeCode.value==line.withholdingTaxTotal[0].taxSubtotal[0].taxCategory.taxScheme.taxTypeCode.value){
+                                    e.taxAmount.value +=line.withholdingTaxTotal[0].taxAmount.value;
+                                    e.taxSubtotal[0].taxableAmount.value += line.withholdingTaxTotal[0].taxSubtotal[0].taxableAmount.value;
+                                    e.taxSubtotal[0].taxAmount.value += line.withholdingTaxTotal[0].taxSubtotal[0].taxAmount.value;
+                                    bAyniVergiTuruBulundu=true;
+                                    return;
+                                }
+                        });
+                        if(bAyniVergiTuruBulundu==false){
+                            invoice.withholdingTaxTotal.push(JSON.parse(JSON.stringify(line.withholdingTaxTotal[0])))
+                        }
+                    }
+        });
+    }
+
+    var vergiToplam=0;
+    invoice.taxTotal.forEach((e)=>{
+    	vergiToplam +=e.taxAmount.value;
+    })
+	var tevkifatToplam=0;
+    invoice.withholdingTaxTotal.forEach((e)=>{
+    	tevkifatToplam +=e.taxAmount.value;
+    })
+
+    var toplamIndirim=0;
+    var toplamMasraf=0;
+    invoice.allowanceCharge.forEach((e)=>{
+    	if(e.chargeIndicator.value){
+    		toplamMasraf +=e.amount.value;
+    	}else{
+    		toplamIndirim +=e.amount.value;
+    	}
+    })
+
+    invoice.legalMonetaryTotal={
+    	lineExtensionAmount:{value:0},
+    	allowanceTotalAmount:{value:toplamIndirim},
+    	chargeTotalAmount:{value:toplamMasraf},
+    	taxExclusiveAmount:{value:0},
+    	taxInclusiveAmount:{value:0},
+    	payableRoundingAmount:{value:0},
+    	payableAmount:{value:0},
+    }
+
+
+    if(invoice.invoiceLine!=undefined){
+	    invoice.invoiceLine.forEach(function(line){
+	    	invoice.legalMonetaryTotal.lineExtensionAmount.value += line.lineExtensionAmount.value;
+	    });
+	}
+	invoice.legalMonetaryTotal.taxExclusiveAmount.value=invoice.legalMonetaryTotal.lineExtensionAmount.value - toplamIndirim + toplamMasraf;
+	invoice.legalMonetaryTotal.taxInclusiveAmount.value=invoice.legalMonetaryTotal.taxExclusiveAmount.value + vergiToplam - tevkifatToplam;
+	invoice.legalMonetaryTotal.payableRoundingAmount.value=invoice.legalMonetaryTotal.taxInclusiveAmount.value;
+	invoice.legalMonetaryTotal.payableAmount.value=invoice.legalMonetaryTotal.taxInclusiveAmount.value;
+
+
+	return invoice;
+}
 function transferImport(activeDb,member,req,res,callback){
 	
 	activeDb.e_integrators.find({passive:false,'localConnectorImportInvoice.localConnector':{$ne:null}}).populate(['localConnectorImportInvoice.localConnector']).exec((err,docs)=>{

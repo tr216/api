@@ -15,6 +15,10 @@
 		"inputFields":["_id","createdDate","modifiedDate","__v"],
     	"outputFields":["__v", "createdDate","modifiedDate"]
 	},
+    "accounts":{
+        "inputFields":["_id","createdDate","modifiedDate","__v","accountCode", "balanceAmount","balanceQuantity","balanceQuantity2","balanceQuantity3","balanceReports"],
+        "outputFields":["__v", "createdDate","modifiedDate"]
+    },
 	"standart":{
 		"inputFields":["createdDate","modifiedDate","__v", "deleted"],
     	"outputFields":["__v", "deleted"]
