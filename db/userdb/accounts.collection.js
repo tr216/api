@@ -72,7 +72,8 @@ module.exports=function(conn){
 
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
     // model.removeMany=(member, filter,cb)=>{ sendToTrashMany(conn,collectionName,member,filter,cb); }
-    model.relations={accounts:'parentAccount'}
+    model.relations={accounts:'parentAccount', parties:'account'}
+
     return model;
 }
 

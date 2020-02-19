@@ -24,20 +24,12 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 }
 
-var locationTypes=[
-            {"text":"(0)Depo","value": 0},
-            {"text":"(1)Magaza","value": 1},
-            {"text":"(2)Uretim","value":2},
-            {"text":"(3)Iade","value":3},
-            {"text":"(4)Seyyar","value":4},
-            {"text":"(5)Diger","value":5}
-        ]
 function getList(activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1)}
     if(!req.query.page){
         options.limit=50000;
     }
-    var filter = {};
+    var filter = {partyType:'Customer'};
 
     for(var i=0;i<100;i++){
         if(req.query['order'+i]!=undefined){
@@ -49,7 +41,6 @@ function getList(activeDb,member,req,res,callback){
                 if(options['sort']==undefined) options['sort']={};
 
                 if(key.indexOf('.')<0 && key!=''){
-                    if(key=='locationTypeName') key='locationType';
                     options['sort'][key]=oBy;
                 }
                 
@@ -62,46 +53,41 @@ function getList(activeDb,member,req,res,callback){
     if(req.query.passive!=undefined){
         filter['passive']=req.query.passive;
     }
-    activeDb.locations.paginate(filter,options,(err, resp)=>{
+    if((req.query.name || req.query.partyName || '')!=''){
+        filter['partyName.name.value']={ $regex: '.*' + (req.query.name || req.query.partyName) + '.*' ,$options: 'i' };
+    }
+
+    if((req.query.cityName || '')!=''){
+        filter['postalAddress.cityName.value']={ $regex: '.*' + req.query.cityName + '.*' ,$options: 'i' };
+    }
+    if((req.query.district || '')!=''){
+        filter['postalAddress.district.value']={ $regex: '.*' + req.query.district + '.*' ,$options: 'i' };
+    }
+    activeDb.parties.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
-            resp.docs.forEach((doc)=>{
-                //doc=doc.toObject();
-                doc['locationTypeName']='';
-                locationTypes.forEach((e)=>{
-                    if(e.value==doc.locationType){
-                        doc['locationTypeName']=e.text;
-                        return;
-                    }
-                });
-            });
             callback({success: true,data: resp});
-        } else {
-            errorLog(__filename,err);
         }
     });
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.locations.findOne({_id:req.params.param1},(err,doc)=>{
-        if (!err) {
+    activeDb.parties.findOne({_id:req.params.param1},(err,doc)=>{
+        if(dberr(err,callback)) {
             callback({success: true,data: doc});
-        } else {
-            callback({success: false, error: {code: err.name, message: err.message}});
         }
     });
 }
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
-    var newdoc = new activeDb.locations(data);
+    var newdoc = new activeDb.parties(data);
+    newdoc.partyType='Customer';
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
     newdoc.save(function(err, newdoc2) {
-        if (!err) {
+        if(dberr(err,callback)) {
             callback({success:true,data:newdoc2});
-        } else {
-            callback({success: false, error: {code: err.name, message: err.message}});
-        }
+        } 
     });
 }
 
@@ -113,25 +99,22 @@ function put(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         data.modifiedDate = new Date();
 
-        activeDb.locations.findOne({ _id: data._id},(err,doc)=>{
-            if (!err) {
-                if(doc==null){
-                    callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
-                }else{
-                    var doc2 = Object.assign(doc, data);
-                    var newdoc = new activeDb.locations(doc2);
-                    var err=epValidateSync(newdoc);
-                    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-                    newdoc.save(function(err, newdoc2) {
-                        if (!err) {
-                            callback({success: true,data: newdoc2});
-                        } else {
-                            callback({success: false, error: {code: err.name, message: err.message}});
-                        }
-                    });
-                }
-            }else{
-                callback({success: false, error: {code: err.name, message: err.message}});
+        activeDb.parties.findOne({ _id: data._id},(err,doc)=>{
+            if(dberr(err,callback)) {
+                if(doc==null) return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+                    
+                if(doc.partyType!='Customer' &&  doc.partyType!='CustomerAgency')
+                    return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Yanlis partyType'}});
+                    
+                var doc2 = Object.assign(doc, data);
+                var newdoc = new activeDb.parties(doc2);
+                var err=epValidateSync(newdoc);
+                if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+                newdoc.save(function(err, newdoc2) {
+                    if(dberr(err,callback)) {
+                        callback({success: true,data: newdoc2});
+                    } 
+                });
             }
         });
     }
@@ -143,11 +126,9 @@ function deleteItem(activeDb,member,req,res,callback){
     }else{
         var data = req.body || {};
         data._id = req.params.param1;
-        activeDb.locations.removeOne(member,{ _id: data._id},(err,doc)=>{
-            if (!err) {
+        activeDb.parties.removeOne(member,{ _id: data._id},(err,doc)=>{
+            if(dberr(err,callback)) {
                 callback({success: true});
-            }else{
-                callback({success: false, error: {code: err.name, message: err.message}});
             }
         });
     }

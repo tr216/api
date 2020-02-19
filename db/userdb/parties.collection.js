@@ -24,7 +24,7 @@ module.exports=function(conn){
             }
         }],
         partyName:{
-            name:{value:{ type: String, trim:true, default: ''}}
+            name:{value:{ type: String, trim:true, required:[true,'Isim gereklidir'], default: ''}}
         },
         postalAddress:{
             room:{ value:{ type: String, trim:true, default: ''}},
