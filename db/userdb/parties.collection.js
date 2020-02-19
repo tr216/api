@@ -62,6 +62,7 @@ module.exports=function(conn){
             nameSuffix:{ value:{ type: String, trim:true, default: ''}},
             title:{ value:{ type: String, trim:true, default: ''}}
         },
+        tags:{ type: String, trim:true, default: ''},
         passive:{type:Boolean , default:false},
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now}
@@ -99,7 +100,8 @@ module.exports=function(conn){
         "person.firstName.value":1,
         "person.middleName.value":1,
         "person.familyName.value":1,
-        "createdDate":1
+        "createdDate":1,
+        "tags":1
     });
 
     var collectionName='parties';

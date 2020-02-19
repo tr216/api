@@ -80,6 +80,11 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
+    // if(data.tags!=undefined){
+    //     if(typeof data.tags=='string'){
+    //         data.tags=data.tags.split(',');
+    //     }
+    // }
     var newdoc = new activeDb.parties(data);
     newdoc.partyType='Vendor';
     var err=epValidateSync(newdoc);
@@ -98,7 +103,11 @@ function put(activeDb,member,req,res,callback){
         var data=req.body || {};
         data._id = req.params.param1;
         data.modifiedDate = new Date();
-
+        // if(data.tags!=undefined){
+        //     if(typeof data.tags=='string'){
+        //         data.tags=data.tags.split(',');
+        //     }
+        // }
         activeDb.parties.findOne({ _id: data._id},(err,doc)=>{
             if(dberr(err,callback)) {
                 if(doc==null) return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
