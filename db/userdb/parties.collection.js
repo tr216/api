@@ -92,6 +92,7 @@ module.exports=function(conn){
     
     schema.index({
         "partyName.name.value":1,
+        "partyType":1,
         "passive":1,
         "postalAddress.province.value":1,
         "postalAddress.cityName.value":1,

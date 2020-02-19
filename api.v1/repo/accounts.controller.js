@@ -25,21 +25,22 @@ module.exports = function(activeDb, member, req, res, callback) {
 }
 
 function getList(activeDb,member,req,res,callback){
-    var options={page: (req.query.page || 1)}
+    var options={page: (req.query.page || 1),
+        sort:{accountCode:1}
+        
+    }
     if(!req.query.page){
         options.limit=50000;
     }
     var filter = {};
 
-    
-
-    if(req.query.code!=undefined){
-        filter['fullCode']={ $regex: '' + req.query.code + '.*' ,$options: 'i' };
+    if((req.query.code || req.query.accountCode || '')!=''){
+        filter['accountCode']={ $regex: '' + (req.query.code || req.query.accountCode) + '.*' ,$options: 'i' };
     }
-    if(req.query.name!=undefined){
-        filter['name']={ $regex: '.*' + req.query.code + '.*' ,$options: 'i' };
+    if((req.query.name || '')!=''){
+        filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };
     }
-    
+    console.log('filter:',filter);
     activeDb.accounts.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
@@ -50,7 +51,7 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.accounts.findOne({_id:req.params.param1},(err,doc)=>{
+    activeDb.accounts.findOne({_id:req.params.param1}).populate([{path:'parentAccount',select:'_id accountCode name'}]).exec((err,doc)=>{
         if (!err) {
             callback({success: true,data: doc});
         } else {
@@ -61,7 +62,9 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
+    if((data.parentAccount || '')=='') data.parentAccount=undefined;
     var newdoc = new activeDb.accounts(data);
+
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
     newdoc.save(function(err, newdoc2) {

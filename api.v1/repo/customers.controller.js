@@ -24,6 +24,14 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 }
 
+var locationTypes=[
+            {"text":"(0)Depo","value": 0},
+            {"text":"(1)Magaza","value": 1},
+            {"text":"(2)Uretim","value":2},
+            {"text":"(3)Iade","value":3},
+            {"text":"(4)Seyyar","value":4},
+            {"text":"(5)Diger","value":5}
+        ]
 function getList(activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1)}
     if(!req.query.page){

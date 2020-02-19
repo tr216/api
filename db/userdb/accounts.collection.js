@@ -62,7 +62,7 @@ module.exports=function(conn){
     var collectionName='accounts';
     var model=conn.model(collectionName, schema);
     schema.index({
-        "fullCode":1,
+        "accountCode":1,
         "code":1,
         "name":1,
         "balanceAmount":1,
