@@ -61,7 +61,14 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.recipes.findOne({_id:req.params.param1},(err,doc)=>{
+    var populate=[
+        { path:'process.station', select:'_id name'},
+        { path:'process.step', select:'_id name useMaterial'},
+        { path:'process.input.item', select:'_id itemType name'},
+        { path:'process.output.item', select:'_id itemType name'},
+        { path:'materialSummary.item', select:'_id itemType name'}
+    ]
+    activeDb.recipes.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if(dberr(err,callback)) {
             callback({success: true,data: doc});
         }
@@ -78,10 +85,23 @@ function post(activeDb,member,req,res,callback){
 
             var err=epValidateSync(newdoc);
             if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-
+            
             newdoc.save(function(err, newdoc2) {
                 if(dberr(err,callback)) {
-                    callback({success:true,data:newdoc2});
+                    defaultReceteAyarla(activeDb,newdoc2,(err,newdoc3)=>{
+                        var populate=[
+                            { path:'process.station', select:'_id name'},
+                            { path:'process.step', select:'_id name useMaterial'},
+                            { path:'process.input.item', select:'_id itemType name'},
+                            { path:'process.output.item', select:'_id itemType name'},
+                            { path:'materialSummary.item', select:'_id itemType name'}
+                        ]
+                        activeDb.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
+                            if(dberr(err,callback)) {
+                                callback({success: true,data: doc});
+                            }
+                        });
+                    });
                 } 
             });
         }
@@ -109,13 +129,52 @@ function put(activeDb,member,req,res,callback){
                         var err=epValidateSync(newdoc);
                         if(err) return callback({success: false, error: {code: err.name, message: err.message}});
                         newdoc.save(function(err, newdoc2) {
-                            if(dberr(err,callback)) {
-                                callback({success: true,data: newdoc2});
-                            } 
+                            defaultReceteAyarla(activeDb,newdoc2,(err,newdoc3)=>{
+                                var populate=[
+                                    { path:'process.station', select:'_id name'},
+                                    { path:'process.step', select:'_id name useMaterial'},
+                                    { path:'process.input.item', select:'_id itemType name'},
+                                    { path:'process.output.item', select:'_id itemType name'},
+                                    { path:'materialSummary.item', select:'_id itemType name'}
+                                ]
+                                activeDb.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
+                                    if(dberr(err,callback)) {
+                                        callback({success: true,data: doc});
+                                    }
+                                });
+                            });
                         });
                     }
                 });
             }
+        });
+    }
+}
+
+function defaultReceteAyarla(activeDb,doc,callback){
+    console.log('doc.isDefault:',doc.isDefault);
+    if(doc.isDefault){
+
+        // activeDb.recipes.find({ item:doc.item, isDefault:true }).count((err,countQuery)=>{
+        //     console.log('countQuery1:',countQuery)
+            activeDb.recipes.updateMany({item:doc.item,_id:{$ne:doc._id}},{$set:{isDefault:false}},{multi:true},(err,c)=>{
+                callback(null,doc);
+            });
+        // });
+        
+    }else{
+        activeDb.recipes.find({ item:doc.item, isDefault:true }).count((err,countQuery)=>{
+            console.log('countQuery2:',countQuery)
+            if(countQuery>0) return callback(null,doc);
+            doc.isDefault=true;
+            doc.save((err,doc2)=>{
+                if(!err){
+                   callback(null,doc2); 
+                }else{
+                   callback(null,doc); 
+                }
+                
+            })
         });
     }
 }
@@ -128,7 +187,12 @@ function deleteItem(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         activeDb.recipes.removeOne(member,{ _id: data._id},(err,doc)=>{
             if(dberr(err,callback)) {
-                callback({success: true});
+                const countQuery = activeDb.recipes.where({ item:doc.item, isDefault:true }).countDocuments();
+                if(countQuery>0) return callback({success: true});
+                activeDb.recipes.updateOne({item:doc.item},{$set:{isDefault:true}},(err,c)=>{
+                    callback({success: true});
+                });
+                
             }
         });
     }
