@@ -57,10 +57,6 @@ module.exports=function(conn){
 
     });
     schema.plugin(mongoosePaginate);
- 
-
-    var collectionName='accounts';
-    var model=conn.model(collectionName, schema);
     schema.index({
         "accountCode":1,
         "code":1,
@@ -69,6 +65,10 @@ module.exports=function(conn){
         "balanceQuantity":1,
         "createdDate":1
     });
+
+    var collectionName='accounts';
+    var model=conn.model(collectionName, schema);
+    
 
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
     // model.removeMany=(member, filter,cb)=>{ sendToTrashMany(conn,collectionName,member,filter,cb); }

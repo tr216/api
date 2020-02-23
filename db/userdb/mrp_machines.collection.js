@@ -1,7 +1,8 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
-        locationName: {type: String, trim:true, required: true},
-        locationType: {type: Number, required: true, default: 0}, //0=Depo , 1=Magaza , 2=Uretim , 3=Iade, 4=Seyyar, 5=Diger
+        station: {type: mongoose.Schema.Types.ObjectId, ref: 'mrp_stations', required: [true,'Istasyon gereklidir.']},
+        name: {type: String, trim:true, required: true},
+        description: {type: String, trim:true},
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},
         passive: {type: Boolean, default: false}
@@ -28,12 +29,11 @@ module.exports=function(conn){
     schema.plugin(mongoosePaginate);
  
 
-    var collectionName='locations';
+    var collectionName='mrp_machines';
     var model=conn.model(collectionName, schema);
     
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
     // model.removeMany=(member, filter,cb)=>{ sendToTrashMany(conn,collectionName,member,filter,cb); }
-    model.relations={pos_devices:'location'}
-    model.relations={machines:'location'}
+    //model.relations={pos_devices:'location'}
     return model;
 }
