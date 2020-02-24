@@ -19,7 +19,7 @@ module.exports=function(conn){
                 quantity:{ type: Number, default: 0},
                 unitCode:{type: String, trim:true, default: ''}
             }],
-            output: [{
+            output: [{  //yan urunler
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},
                 quantity:{ type: Number, default: 0},
                 unitCode:{type: String, trim:true, default: ''}
@@ -27,6 +27,11 @@ module.exports=function(conn){
             parameters:{type: String, default: ''}
         }],
         materialSummary:[{
+            item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
+            quantity:{ type: Number, default: 0},
+            unitCode:{type: String, trim:true, default: ''}
+        }],
+        outputSummary:[{
             item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
             quantity:{ type: Number, default: 0},
             unitCode:{type: String, trim:true, default: ''}

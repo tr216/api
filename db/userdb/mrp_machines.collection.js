@@ -3,6 +3,12 @@ module.exports=function(conn){
         station: {type: mongoose.Schema.Types.ObjectId, ref: 'mrp_stations', required: [true,'Istasyon gereklidir.']},
         name: {type: String, trim:true, required: true},
         description: {type: String, trim:true},
+        minCapacity:{type: Number, default:0},
+        maxCapacity:{type: Number, default:0},
+        machineParameters:[{
+            name:{type: String, trim:true},
+            value:{type: String, trim:true}
+        }],
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},
         passive: {type: Boolean, default: false}

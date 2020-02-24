@@ -85,7 +85,7 @@ function post(activeDb,member,req,res,callback){
 
             var err=epValidateSync(newdoc);
             if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-            
+            newdoc=calculateMaterialSummary(newdoc);
             newdoc.save(function(err, newdoc2) {
                 if(dberr(err,callback)) {
                     defaultReceteAyarla(activeDb,newdoc2,(err,newdoc3)=>{
@@ -128,6 +128,7 @@ function put(activeDb,member,req,res,callback){
                         var newdoc = new activeDb.recipes(doc2);
                         var err=epValidateSync(newdoc);
                         if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+                        newdoc=calculateMaterialSummary(newdoc);
                         newdoc.save(function(err, newdoc2) {
                             defaultReceteAyarla(activeDb,newdoc2,(err,newdoc3)=>{
                                 var populate=[
@@ -149,6 +150,41 @@ function put(activeDb,member,req,res,callback){
             }
         });
     }
+}
+
+function calculateMaterialSummary(doc){
+    doc.materialSummary=[];
+    doc.outputSummary=[];
+    doc.process.forEach((e)=>{
+        e.input.forEach((e1)=>{
+            var bFound=false;
+            doc.materialSummary.forEach((e2)=>{
+                if(e2.item==e1.item){
+                    bFound=true;
+                    e2.quantity +=e1.quantity;
+                    return;
+                }
+            });
+            if(bFound==false){
+                doc.materialSummary.push({item:e1.item,quantity:e1.quantity,unitCode:e1.unitCode});
+            }
+        })
+        e.output.forEach((e1)=>{
+            var bFound=false;
+            doc.outputSummary.forEach((e2)=>{
+                if(e2.item==e1.item){
+                    bFound=true;
+                    e2.quantity +=e1.quantity;
+                    return;
+                }
+            });
+            if(bFound==false){
+                doc.outputSummary.push({item:e1.item,quantity:e1.quantity,unitCode:e1.unitCode});
+            }
+        })
+    });
+
+    return doc;
 }
 
 function defaultReceteAyarla(activeDb,doc,callback){

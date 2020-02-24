@@ -26,6 +26,8 @@ module.exports=function(conn){
         }],
         supplyDuration:dbType.numberValueType,
         tags:{type: String, trim:true, default: ''},
+        exceptInventory: {type: Boolean, default: false},
+        recipe: {type: mongoose.Schema.Types.ObjectId, ref: 'recipes'},
         localDocumentId: {type: String, default: ''},
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},
