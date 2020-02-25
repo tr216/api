@@ -5,6 +5,7 @@ module.exports=function(conn){
         description: {type: String, trim:true},
         minCapacity:{type: Number, default:0},
         maxCapacity:{type: Number, default:0},
+        power:{type: Number, default:0},
         machineParameters:[{
             name:{type: String, trim:true},
             value:{type: String, trim:true}

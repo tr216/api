@@ -66,11 +66,27 @@ function getOne(activeDb,member,req,res,callback){
         { path:'process.step', select:'_id name useMaterial'},
         { path:'process.input.item', select:'_id itemType name'},
         { path:'process.output.item', select:'_id itemType name'},
-        { path:'materialSummary.item', select:'_id itemType name'}
+        { path:'materialSummary.item', select:'_id itemType name'},
+        { path:'outputSummary.item', select:'_id itemType name'}
     ]
     activeDb.recipes.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if(dberr(err,callback)) {
-            callback({success: true,data: doc});
+            if(!req.query.print){
+                callback({success: true,data: doc});
+            }else{
+                doc.populate('item').execPopulate((err,doc2)=>{
+                    if(dberr(err,callback)) {
+                        printHelper.print(activeDb,'recipe',doc2,(err,html)=>{
+                            if(!err){
+                                callback({file: {data:html}});
+                            }else{
+                                callback({success:false,error:{code:(err.code || err.name || 'PRINT_ERROR'),message:err.message}})
+                            }
+                        });
+                    }
+                })
+                
+            }
         }
     });
 }
@@ -94,7 +110,8 @@ function post(activeDb,member,req,res,callback){
                             { path:'process.step', select:'_id name useMaterial'},
                             { path:'process.input.item', select:'_id itemType name'},
                             { path:'process.output.item', select:'_id itemType name'},
-                            { path:'materialSummary.item', select:'_id itemType name'}
+                            { path:'materialSummary.item', select:'_id itemType name'},
+                            { path:'outputSummary.item', select:'_id itemType name'}
                         ]
                         activeDb.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
                             if(dberr(err,callback)) {

@@ -33,6 +33,7 @@ global.fs=require('fs');
 
 global.dbType=require('./lib/db_object_types.js');
 global.mrutil = require('./lib/mrutil.js');
+global.printHelper = require('./lib/print_helper.js');
 
 
 
