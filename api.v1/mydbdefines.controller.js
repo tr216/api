@@ -16,13 +16,15 @@ module.exports = function(member, req, res, callback) {
     }
 }
 
+
+
 function getList(member,req,res,callback){
     db.dbdefines.find({deleted:false, passive:false, $or:[{owner:member._id},{'authorizedMembers.memberId':member._id}]}).populate('owner','_id username name lastName modules').exec((err,docs)=>{
         if(!err){
             var data=[];
             for(var d=0;d<docs.length;d++){
                 var auth={owner:false,canRead:false,canWrite:false,canDelete:false};
-
+               
                 if(docs[d].owner._id==member._id){
                     auth.owner=true;
                     auth.canRead=true;

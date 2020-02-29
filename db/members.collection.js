@@ -52,10 +52,17 @@ var schema = mongoose.Schema({
     modifiedDate:{ type: Date,default: Date.now},
     modules:{
         eInvoice: {type: Boolean, default: false},
+        eDespatch: {type: Boolean, default: false},
         eLedger: {type: Boolean, default: false},
+        eDocument: {type: Boolean, default: false},
         erp: {type: Boolean, default: false},
         mrp: {type: Boolean, default: false},
         mrp2: {type: Boolean, default: false},
+        inventory: {type: Boolean, default: false},
+        finance: {type: Boolean, default: false},
+        sales: {type: Boolean, default: false},
+        purchase: {type: Boolean, default: false},
+        accounting: {type: Boolean, default: false},
         cargoIntegrations: {
             all:{type: Boolean, default: false},
             suratkargo:{type: Boolean, default: false},

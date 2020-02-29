@@ -1,0 +1,19 @@
+db.getCollection('members').find({}).forEach(function(e){
+    if(e.modules!=undefined){
+        e.modules['eInvoice']=false;
+        e.modules['eDespatch']=false;
+        e.modules['eLedger']=false;
+        e.modules['eDocument']=false;
+        e.modules['inventory']=false;
+        e.modules['finance']=false;
+        e.modules['accounting']=false;
+        e.modules['purchase']=false;
+        e.modules['sales']=false;
+        e.modules['mrp']=false;
+        e.modules['mrp2']=false;
+        
+        db.getCollection('members').updateOne({_id:e._id},{$set:{modules:e.modules}});
+    }
+        
+});
+

@@ -9,7 +9,7 @@ module.exports=function(conn){
         uuid: dbType.valueType,
         issueDate: {value :{ type: String,  required: [true,'Fatura tarihi gereklidir']}},
         issueTime: {value :{ type: String,default: '00:00:00.0000000+03:00'}},
-        despatchAdviceTypeCode: dbType.codeType,
+        despatchAdviceTypeCode: {value: { type: String,default: '', trim:true, enum:['SEVK','MAKBUDAN'], required: true}},
         despatchPeriod: dbType.periodType,
         note:[dbType.valueType],
         additionalDocumentReference:[dbType.documentReferenceType],

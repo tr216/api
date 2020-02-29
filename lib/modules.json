@@ -1,54 +1,32 @@
 {
-	"program":"default",
-	"pos-device":{
-		"allow":false,
-		"pos-device":{"canRead":false,"canWrite":false,"canDelete":false},
-		"pos-device-service":{"canRead":false,"canWrite":false,"canDelete":false},
-		"pos-device-zreports":{"canRead":false,"canWrite":false,"canDelete":false}
-	},
-	"e-invoice":{
-		"allow":false,
-		"inbox":{"canRead":false,"canWrite":false,"canDelete":false},
-		"outbox":{"canRead":false,"canWrite":false,"canDelete":false}
-	},
-	"e-archive":{
-		"allow":false,
-		"inbox":{"canRead":false,"canWrite":false,"canDelete":false},
-		"outbox":{"canRead":false,"canWrite":false,"canDelete":false}
-	},
-	"e-ledger":{
-		"allow":false,
-		"e-ledger":{"canRead":false,"canWrite":false,"canDelete":false}
-	},
-	"inventory":{
-		"allow":false,
-		"dispatch":{"canRead":false,"canWrite":false,"canDelete":false},
-		"order":{"canRead":false,"canWrite":false,"canDelete":false},
-		"transfer":{"canRead":false,"canWrite":false,"canDelete":false},
-		"locations":{"canRead":false,"canWrite":false,"canDelete":false},
-		"items":{"canRead":false,"canWrite":false,"canDelete":false}
-	},
-	"sales":{
-		"allow":false,
-		"dispatch":{"canRead":false,"canWrite":false,"canDelete":false},
-		"order":{"canRead":false,"canWrite":false,"canDelete":false},
-		"invoice":{"canRead":false,"canWrite":false,"canDelete":false},
-		"customers":{"canRead":false,"canWrite":false,"canDelete":false}
-	},
-	"purchase":{
-		"allow":false,
-		"dispatch":{"canRead":false,"canWrite":false,"canDelete":false},
-		"order":{"canRead":false,"canWrite":false,"canDelete":false},
-		"invoice":{"canRead":false,"canWrite":false,"canDelete":false},
-		"vendors":{"canRead":false,"canWrite":false,"canDelete":false}
-	},
-	"finance":{
-		"allow":false,
-		"cash":{"canRead":false,"canWrite":false,"canDelete":false},
-		"cheque":{"canRead":false,"canWrite":false,"canDelete":false},
-		"bank":{"canRead":false,"canWrite":false,"canDelete":false},
-		"customers":{"canRead":false,"canWrite":false,"canDelete":false},
-		"vendors":{"canRead":false,"canWrite":false,"canDelete":false}
-	}
+    "eInvoice": false,
+    "eLedger": false,
+    "erp": false,
+    "mrp": false,
+    "mrp2": false,
+    "inventory": false,
+    "finance": false,
+    "accounting": false,
+    "cargoIntegrations": {
+        "all":false,
+        "suratkargo":false,
+        "yurticikargo":false,
+        "mngkargo":false,
+        "pttkargo":false
+    },
+    "bankIntegrations": {
+        "all":false,
+        "garantibbva":false,
+        "yapikredi":false,
+        "finansbank":false
+    },
+    "webIntegrations": {
+        "all":false,
+        "opencart":false,
+        "n11":false,
+        "sahibinden":false,
+        "gittigidiyor":false,
+        "hepsiburada":false
+    },
+    "posDevice": false
 }
-

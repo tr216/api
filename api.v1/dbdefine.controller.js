@@ -25,10 +25,12 @@ module.exports = function(member, req, res, callback) {
 
 
 function getOne(member,req,res,callback){
+    
     var filter = {owner: member._id, deleted:false};
     filter._id=req.params.param1;
     db.dbdefines.findOne(filter, function(err, doc) {
         if (!err) {
+
             callback({success: true,data: doc});
         } else {
             callback({success: false, error: {code: err.name, message: err.message}});
