@@ -14,54 +14,20 @@ module.exports=function(conn){
             }
         },
         account: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts'},
-        websiteURI:{value:{ type: String, trim:true, default: ''}},
-        partyIdentification:[{
-            ID:{ 
-                value:{ type: String, trim:true, default: ''},
-                attr: {
-                    schemeID: { type: String}
-                }
-            }
-        }],
+        websiteURI:dbType.valueType,
+        partyIdentification:[dbType.partyIdentificationType],
         partyName:{
             name:{value:{ type: String, trim:true, required:[true,'Isim gereklidir'], default: ''}}
         },
-        postalAddress:{
-            room:{ value:{ type: String, trim:true, default: ''}},
-            streetName:{ value:{ type: String, trim:true, default: ''}},
-            blockName:{ value:{ type: String, trim:true, default: ''}},
-            buildingName:{ value:{ type: String, trim:true, default: ''}},
-            buildingNumber:{ value:{ type: String, trim:true, default: ''}},
-            citySubdivisionName:{ value:{ type: String, trim:true, default: ''}},
-            cityName:{ value:{ type: String, trim:true, default: ''}},
-            postalZone:{ value:{ type: String, trim:true, default: ''}},
-            postbox:{ value:{ type: String, trim:true, default: ''}},
-            region:{ value:{ type: String, trim:true, default: ''}},
-            district:{ value:{ type: String, trim:true, default: ''}},
-            province:{ value:{ type: String, trim:true, default: ''}},
-            country:{
-                identificationCode:{ value:{ type: String, trim:true, default: 'TR'}},
-                name:{value:{ type: String, trim:true, default: 'Türkiye'}}
-            }
-        },
+        postalAddress:dbType.addressType,
         partyTaxScheme:{
             taxScheme:{
-                name:{ value:{ type: String, trim:true, default: ''}},
-                taxTypeCode:{ value:{ type: String, trim:true, default: ''}}
+                name:dbType.valueType,
+                taxTypeCode:dbType.valueType
             }
         },
-        contact:{
-            telephone:{ value:{ type: String, trim:true, default: ''}},
-            telefax:{ value:{ type: String, trim:true, default: ''}},
-            electronicMail:{ value:{ type: String, trim:true, default: ''}}
-        },
-        person:{
-            firstName:{ value:{ type: String, trim:true, default: ''}},
-            middleName:{ value:{ type: String, trim:true, default: ''}},
-            familyName:{ value:{ type: String, trim:true, default: ''}},
-            nameSuffix:{ value:{ type: String, trim:true, default: ''}},
-            title:{ value:{ type: String, trim:true, default: ''}}
-        },
+        contact:dbType.contactType,
+        person:dbType.personType,
         tags:{ type: String, trim:true, default: ''},
         passive:{type:Boolean , default:false},
         createdDate: { type: Date,default: Date.now},

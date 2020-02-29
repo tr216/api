@@ -1,6 +1,6 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
-        module: {type :String, trim:true, enum:['recipe','recipe-list','items','items-list','items-product'], required: true},
+        module: {type :String, trim:true, enum:['recipe','recipe-list','item','item-list','item-product'], required: true},
         name: {type :String, trim:true, default:''},
         design: {type :String, default:''},
         createdDate: { type: Date,default: Date.now},

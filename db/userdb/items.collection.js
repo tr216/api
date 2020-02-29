@@ -3,20 +3,21 @@ module.exports=function(conn){
         itemType: {type: String, trim:true, required: [true,'itemType gereklidir'], default: 'item', enum:['item','raw-material','helper-material','product','semi-product','sales-service','purchasing-service','asset','expense']},
         name:dbType.valueType,
         description:dbType.valueType,
-        additionalItemIdentification:[{ID:dbType.valueType}],
+        additionalItemIdentification:[{ID:dbType.idType}],
         brandName:dbType.valueType,
-        buyersItemIdentification:{ID:dbType.valueType},
+        buyersItemIdentification:{ID:dbType.idType},
         commodityClassification:[
             {
-                itemClassificationCode:dbType.valueType
+                itemClassificationCode:dbType.codeType
             }
         ],
         keyword:dbType.valueType,
-        manufacturersItemIdentification:{ID:dbType.valueType},
+        manufacturersItemIdentification:{ID:dbType.idType},
         modelName:dbType.valueType,
-        sellersItemIdentification:{ID:dbType.valueType},
+        sellersItemIdentification:{ID:dbType.idType},
         originCountry:dbType.countryType,
         itemInstance:[dbType.itemInstanceType],
+        
         account: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts'},
         similar:[{type: mongoose.Schema.Types.ObjectId, ref: 'items'}],
         vendors:[{

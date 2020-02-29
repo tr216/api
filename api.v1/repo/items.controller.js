@@ -88,7 +88,25 @@ function getList(activeDb,member,req,res,callback){
 function getOne(activeDb,member,req,res,callback){
     activeDb.items.findOne({_id:req.params.param1},(err,doc)=>{
         if(dberr(err,callback)) {
-            callback({success: true,data: doc});
+            if(dbnull(doc,callback)) {
+                if(!req.query.print){
+                    callback({success: true,data: doc});
+                }else{
+                    if(dberr(err,callback)) {
+                        var moduleType='item';
+                        if(doc.itemType=='product' || doc.itemType=='semi-product') moduleType='item-product';
+                        
+                        printHelper.print(activeDb,moduleType,doc,(err,html)=>{
+                            if(!err){
+                                callback({file: {data:html}});
+                            }else{
+                                callback({success:false,error:{code:(err.code || err.name || 'PRINT_ERROR'),message:err.message}})
+                            }
+                        });
+                    }
+                    
+                }
+            }
         }
     });
 }
