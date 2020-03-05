@@ -391,32 +391,32 @@ function downloadInboxInvoices(dbModel,eIntegratorDoc,cb){
 
 exports.sendToGib=function(dbModel,eInvoice,cb){
 	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).populate('invoiceXslt').exec((err,eIntegratorDoc)=>{
+		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).populate('eInvoice.xslt').exec((err,eIntegratorDoc)=>{
 			if(!err){
 				var xsltEkle=false;
-				if(eIntegratorDoc.invoiceXslt)
-					if(eIntegratorDoc.invoiceXslt.data){
+				if(eIntegratorDoc.eInvoice.xslt)
+					if(eIntegratorDoc.eInvoice.xslt.data){
 						xsltEkle=true;
-						if(eInvoice.additionalDocumentReference.length>0){
-							if(eInvoice.additionalDocumentReference[0].attachment)
-								if(eInvoice.additionalDocumentReference[0].attachment.embeddedDocumentBinaryObject)
-									if(eInvoice.additionalDocumentReference[0].attachment.value){
-										xsltEkle=false;
-									}
-						}
+						// if(eInvoice.additionalDocumentReference.length>0){
+						// 	if(eInvoice.additionalDocumentReference[0].attachment)
+						// 		if(eInvoice.additionalDocumentReference[0].attachment.embeddedDocumentBinaryObject)
+						// 			if(eInvoice.additionalDocumentReference[0].attachment.value){
+						// 				xsltEkle=false;
+						// 			}
+						// }
 					}
 				if(xsltEkle){
 					var value='';
-					if(eIntegratorDoc.invoiceXslt.data.indexOf('base64,')>-1){
-						value=eIntegratorDoc.invoiceXslt.data.split('base64,')[1];
+					if(eIntegratorDoc.eInvoice.xslt.data.indexOf('base64,')>-1){
+						value=eIntegratorDoc.eInvoice.xslt.data.split('base64,')[1];
 					}else{
-						value=eIntegratorDoc.invoiceXslt.data;
+						value=eIntegratorDoc.eInvoice.xslt.data;
 					}
 					eInvoice.additionalDocumentReference=[{
 						ID:{value:'1'},
 						issueDate:{ value:eInvoice.issueDate.value},
-						documentTypeCode:{ value:'XSLT'},
-						documentType:{ value:'XSLT'},
+						//documentTypeCode:{ value:'XSLT'},
+						documentType:{ value:'Xslt'},
 						attachment:{
 							embeddedDocumentBinaryObject:{
 								attr : {
@@ -429,7 +429,7 @@ exports.sendToGib=function(dbModel,eInvoice,cb){
 							}
 						}
 					}];
-				}	
+				}		
 			}
 			switch(eInvoice.eIntegrator.eIntegrator){
 				case 'uyumsoft':

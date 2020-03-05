@@ -10,11 +10,8 @@ module.exports=function(conn){
             prefix: {type: String, trim:true, default: 'AAA',minlength:3,maxlength:3,required: [true,'3 Karakter Fatura Ön Ek gereklidir']},
             postboxAlias: {type: String, trim:true, default: ''},
             senderboxAlias: {type: String, trim:true, default: ''},
-            xslt:[{
-                fileName:{type: String, trim:true, default: ''},
-                isDefault: {type: Boolean, default: false},
-                design:{type: String, trim:true, default: ''}
-            }],
+            xslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
+            xsltFiles:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
             localConnector:{
                 import:{ //sqlserver to tr216
                     localConnector:{type: mongoose.Schema.Types.ObjectId, ref: 'local_connectors' , default:null}, 
@@ -36,11 +33,8 @@ module.exports=function(conn){
             prefix: {type: String, trim:true, default: 'AAA',minlength:3,maxlength:3,required: [true,'3 Karakter Irsaliye Ön Ek gereklidir']},
             postboxAlias: {type: String, trim:true, default: ''},
             senderboxAlias: {type: String, trim:true, default: ''},
-            xslt:[{
-                fileName:{type: String, trim:true, default: ''},
-                isDefault: {type: Boolean, default: false},
-                design:{type: String, trim:true, default: ''}
-            }],
+            xslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
+            xsltFiles:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
             localConnector:{
                 import:{ //sqlserver to tr216
                     localConnector:{type: mongoose.Schema.Types.ObjectId, ref: 'local_connectors' , default:null}, 
@@ -62,11 +56,8 @@ module.exports=function(conn){
             prefix: {type: String, trim:true, default: 'AAA',minlength:3,maxlength:3,required: [true,'3 Karakter dokuman Ön Ek gereklidir']},
             postboxAlias: {type: String, trim:true, default: ''},
             senderboxAlias: {type: String, trim:true, default: ''},
-            xslt:[{
-                fileName:{type: String, trim:true, default: ''},
-                isDefault: {type: Boolean, default: false},
-                design:{type: String, trim:true, default: ''}
-            }],
+            xslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
+            xsltFiles:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
             localConnector:{
                 import:{ //sqlserver to tr216
                     localConnector:{type: mongoose.Schema.Types.ObjectId, ref: 'local_connectors' , default:null}, 

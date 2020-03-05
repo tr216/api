@@ -145,7 +145,9 @@ function einvoice_decline(dbModel,taskDoc,cb){
 }
 
 function einvoice_send_to_gib(dbModel,taskDoc,cb){
+	console.log('einvoice_send_to_gib calisti');
 	if(!taskDoc['document']){
+		console.log('einvoice_send_to_gib taskHelper.setCancelled(taskDoc,cb);')
 		return taskHelper.setCancelled(taskDoc,cb);
 	}
 	if(taskDoc['document']['eIntegrator'] && dbModel){
@@ -176,6 +178,8 @@ function einvoice_send_to_gib(dbModel,taskDoc,cb){
 			}
 		})
 	}else{
+		console.log('document.eIntegrator :' ,taskDoc['document']['eIntegrator']);
+		console.log('einvoice_send_to_gib 2 taskHelper.setCancelled(taskDoc,cb);')
 		taskHelper.setCancelled(taskDoc,cb);
 	}
 }

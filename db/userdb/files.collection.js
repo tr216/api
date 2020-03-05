@@ -1,10 +1,10 @@
+//, enum:['ejs','json','xml','xslt','xls','xlsx','doc','docx','txt','pdf','html','js','sh','bat','cmd','jpg','jpeg','csv','sql','xsl','png']
+
 module.exports=function(conn){
     var schema = mongoose.Schema({
-        name: {type :String, required:[true,'Dosya ismi gereklidir.']},
-        extension: {type :String, required:[true,'Dosya uzantisi gereklidir.'], default: 'ejs',
-            enum:['ejs','json','xml','xslt','xls','xlsx','doc','docx','txt','pdf','html','js','sh','bat','cmd','jpg','jpeg','csv','sql','xsl','png']
-        },
-        fileName: {type :String, default:''},
+        name: {type :String, trim:true, default:'' },
+        extension: {type :String,  trim:true, default: ''},
+        fileName: {type :String,  trim:true, default:''},
         type: {type :String, default:'text/plain'},
         data: {type: Object, default: null},
         size: {type: Number ,default: 0},
@@ -13,7 +13,19 @@ module.exports=function(conn){
     });
 
     schema.pre('save', function(next) {
-       this.fileName=this.name + '.' + this.extension;
+      if(this.name=='' && this.fileName==''){
+        this.fileName='file000001';
+        this.name='file000001';
+      }
+       if(this.fileName==''){
+          this.fileName=this.name + '.' + this.extension;
+       }else if (this.name==''){
+           this.name=this.fileName.split('.')[0];
+           if(this.fileName.split('.').length>1){
+               this.extension=this.fileName.split('.')[1];
+           }
+       }
+       
        this.size=sizeOf(this.data);
        this.modifiedDate=new Date();
        next();

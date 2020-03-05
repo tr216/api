@@ -128,7 +128,7 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 										
 										files.html=resultHtml.doc.html;
 									}
-									api.getInboxInvoicePdf(eIntegratorDoc,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
+									api.getInboxInvoicePdf(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
 										if(!err){
 											files.pdf=resultPdf.doc.pdf
 											
@@ -659,7 +659,7 @@ function insertEInvoiceUsers(docs,callback){
 
 exports.sendToGib=function(dbModel,eInvoice,callback){
 	try{
-		var options=JSON.parse(JSON.stringify(eInvoice.eIntegrator));
+		var options=JSON.parse(JSON.stringify(eInvoice.eIntegrator.eInvoice));
 		var isTestPlatform=false;
 		if(options.url.indexOf('test')>-1) isTestPlatform=true;
 
