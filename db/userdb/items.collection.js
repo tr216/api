@@ -17,7 +17,8 @@ module.exports=function(conn){
         sellersItemIdentification:{ID:dbType.idType},
         originCountry:dbType.countryType,
         itemInstance:[dbType.itemInstanceType],
-        
+        taxTotal:[dbType.taxTotalType],
+        withholdingTaxTotal:[dbType.taxTotalType],
         account: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts'},
         similar:[{type: mongoose.Schema.Types.ObjectId, ref: 'items'}],
         vendors:[{
@@ -25,6 +26,7 @@ module.exports=function(conn){
             vendor:{type: mongoose.Schema.Types.ObjectId, ref: 'parties'},
             supplyDuration:dbType.numberValueType
         }],
+
         supplyDuration:dbType.numberValueType,
         tags:{type: String, trim:true, default: ''},
         exceptInventory: {type: Boolean, default: false},

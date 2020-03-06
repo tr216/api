@@ -29,7 +29,7 @@ function getList(activeDb,member,req,res,callback){
     if(!req.query.page){
         options.limit=50000;
     }
-    var filter = {itemType:'item'};
+    var filter = {};
 
     for(var i=0;i<100;i++){
         if(req.query['order'+i]!=undefined){
@@ -50,9 +50,16 @@ function getList(activeDb,member,req,res,callback){
         }
     }
 
-    if((req.query.itemType || req.query.itemtype || req.query.type || '')!=''){
-        filter['itemType']=(req.query.itemType || req.query.itemtype || req.query.type);
+    if(req.query.itemType!='all'){
+        if((req.query.itemType || req.query.itemtype || req.query.type || '')!=''){
+            filter['itemType']=(req.query.itemType || req.query.itemtype || req.query.type);
+        }else{
+            filter['itemType']='item';
+        }
+    }else{
+        
     }
+    
 
     filter['passive']=false;
     if((req.query.passive || '')!=''){
