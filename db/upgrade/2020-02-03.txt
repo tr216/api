@@ -1,0 +1,36 @@
+db.getCollection('members').find({}).forEach(function(e){
+    if(e.modules==undefined){
+        var modules={
+            eInvoice: true,
+            eLedger: false,
+            erp: false,
+            mrp: false,
+            mrp2: false,
+            cargoIntegrations: {
+                all:false,
+                suratkargo:false,
+                yurticikargo:false,
+                mngkargo:false,
+                pttkargo:false
+            },
+            bankIntegrations: {
+                all:false,
+                garantibbva:false,
+                yapikredi:false,
+                finansbank:false
+            },
+            webIntegrations: {
+                all:false,
+                opencart:false,
+                n11:false,
+                sahibinden:false,
+                gittigidiyor:false,
+                hepsiburada:false,
+            },
+            posDevice: true
+        }
+        db.getCollection('members').updateOne({_id:e._id},{$set:{modules:modules}});
+    }
+        
+});
+

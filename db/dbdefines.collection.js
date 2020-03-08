@@ -12,6 +12,7 @@ var schema = mongoose.Schema({
     ],
     createdDate: { type: Date,default: Date.now},
     modifiedDate:{ type: Date,default: Date.now},
+    version:{type: String, default: ""},
     deleted: {type: Boolean, default: false},
     passive: {type: Boolean, default: false}
 });
