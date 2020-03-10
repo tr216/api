@@ -21,6 +21,7 @@ module.exports=function(conn){
         withholdingTaxTotal:[dbType.taxTotalType],
         account: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts'},
         similar:[{type: mongoose.Schema.Types.ObjectId, ref: 'items'}],
+        unitPacks:[{type: Number, default: 0}],
         vendors:[{
             sequenceNumeric:dbType.numberValueType,
             vendor:{type: mongoose.Schema.Types.ObjectId, ref: 'parties'},

@@ -9,7 +9,12 @@ module.exports = function(activeDb, member, req, res, callback) {
         }
         break;
         case 'POST':
-        post(activeDb,member,req,res,callback);
+        if(req.params.param1=='copy'){
+            copy(activeDb,member,req,res,callback);
+        }else{
+            post(activeDb,member,req,res,callback);
+        }
+        
         break;
         case 'PUT':
         put(activeDb,member,req,res,callback);
@@ -22,6 +27,92 @@ module.exports = function(activeDb, member, req, res, callback) {
         break;
     }
 
+}
+
+function copy(activeDb,member,req,res,callback){
+    var _id=req.params.param2 || req.body['_id'] || '';
+    var newName=req.body['newName'] || req.body['name'] || '';
+
+    if(_id=='') return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    
+    activeDb.items.findOne({ _id: _id},(err,doc)=>{
+        if(dberr(err,callback)) {
+            if(dbnull(doc,callback)) {
+                var data=doc.toJSON();
+                data._id=undefined;
+                delete data._id;
+                if(newName!=''){
+                    data.name.value=newName;
+                }else{
+                    data.name.value +=' copy';
+                }
+                data.passive=true;
+
+                var newdoc = new activeDb.items(data);
+                var err=epValidateSync(newdoc);
+                if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+
+                newdoc.save(function(err, newdoc2) {
+                    if(dberr(err,callback)) {
+                        receteleriKaydet(activeDb,doc,newdoc2,(err,newdoc3)=>{
+                            if(!err){
+                                callback({success: true,data: newdoc3});
+                            }else{
+                                activeDb.items.deleteOne({_id:newdoc2._id},(err2)=>{
+                                    return ;dberr(err,callback)
+                                });
+                            }
+                        });
+                        
+                    } 
+                });
+            }
+        }
+    });
+}
+
+function receteleriKaydet(activeDb,itemDoc,newItemDoc,callback){
+    activeDb.recipes.find({item:itemDoc._id},(err,docs)=>{
+        if(!err){
+            if(docs.length==0) return callback(null,newItemDoc);
+
+            var index=0;
+
+            function kaydet(cb){
+                if(index>=docs.length) return cb(null);
+                var data=docs[index].toJSON();
+                data._id=undefined;
+                delete data._id;
+                data['item']=newItemDoc._id;
+                var yeniReceteDoc=new activeDb.recipes(data);
+                yeniReceteDoc.save((err,yeniReceteDoc2)=>{
+                    if(!err){
+                        if(itemDoc.recipe.toString()==docs[index]._id.toString()){
+                            newItemDoc.recipe=yeniReceteDoc2._id;
+                        }
+                        index++;
+                        setTimeout(kaydet,0,cb);
+                    }else{
+                        cb(err);
+                    }
+                });
+            }
+
+            kaydet((err)=>{
+                if(!err){
+                    newItemDoc.save((err,newItemDoc2)=>{
+                        callback(err,newItemDoc2);
+                    });
+                }else{
+                    callback(err);
+                }
+                
+            });
+
+        }else{
+            callback(err);
+        }
+    });
 }
 
 function getList(activeDb,member,req,res,callback){
@@ -142,18 +233,18 @@ function put(activeDb,member,req,res,callback){
         data.modifiedDate = new Date();
         
         activeDb.items.findOne({ _id: data._id},(err,doc)=>{
-            if(dberr(err,callback)) {
-                if(doc==null) return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
-
-                var doc2 = Object.assign(doc, data);
-                var newdoc = new activeDb.items(doc2);
-                var err=epValidateSync(newdoc);
-                if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-                newdoc.save(function(err, newdoc2) {
-                    if(dberr(err,callback)) {
-                        callback({success: true,data: newdoc2});
-                    } 
-                });
+            if(dberr(err,callback)){
+                if(dbnull(doc,callback)) {
+                    var doc2 = Object.assign(doc, data);
+                    var newdoc = new activeDb.items(doc2);
+                    var err=epValidateSync(newdoc);
+                    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+                    newdoc.save(function(err, newdoc2) {
+                        if(dberr(err,callback)) {
+                            callback({success: true,data: newdoc2});
+                        } 
+                    });
+                }
             }
         });
     }
