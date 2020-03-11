@@ -8,63 +8,60 @@ exports.download=(dbModel,serviceDoc,posDeviceDocs,callback)=>{
 
 		function zRaporIndir(cb){
 			eventLog('zRaporIndir ' + (index+1).toString() + '/' + posDeviceDocs.length )
-			if(index>=posDeviceDocs.length){
-				cb(null);
-			}else{
-				if(posDeviceDocs[index].deviceSerialNo!=''){
-					generateReqOption(dbModel,posDeviceDocs[index],(err,reqOpt)=>{
-						if(!err){
-							//eventLog('reqOpt:',reqOpt);
-							api.getZReport(serviceDoc,reqOpt,(err,resp)=>{
-								if(!err){
-									eventLog('resp.ZReportItems.length:',resp.ZReportItems.length.toString());
-									
-									insertZReports(dbModel,posDeviceDocs[index],resp.ZReportItems,(err)=>{
-										if(!err){
-											index++;
-											
-											setTimeout(zRaporIndir,1000,cb);
-										}else{
-											
-											errorLog('insertZReports Error:' ,err);
-											index++;
-											setTimeout(zRaporIndir,1000,cb);
-										}
-									});
-								}else{
-									
-									eventLog('download getZReport Error:' , err);
-									if(err.errno!=undefined){
-										if(err.errno=='ETIMEDOUT'){
-											eventLog('download getZReport Error: 30sn sonra yeniden deniyoruz' , {});
-											setTimeout(zRaporIndir,30000,cb);
-										}else{
-											index++;
-											errorLog('getZReport Error:' ,err);
-											setTimeout(zRaporIndir,1000,cb);
-											//cb(err);
-										}
+			if(index>=posDeviceDocs.length) return cb(null);
+			if(posDeviceDocs[index].deviceSerialNo!=''){
+				generateReqOption(dbModel,posDeviceDocs[index],(err,reqOpt)=>{
+					if(!err){
+						//eventLog('reqOpt:',reqOpt);
+						api.getZReport(serviceDoc,reqOpt,(err,resp)=>{
+							if(!err){
+								eventLog('resp.ZReportItems.length:',resp.ZReportItems.length.toString());
+								
+								insertZReports(dbModel,posDeviceDocs[index],resp.ZReportItems,(err)=>{
+									if(!err){
+										index++;
+										
+										setTimeout(zRaporIndir,1000,cb);
+									}else{
+										
+										errorLog('insertZReports Error:' ,err);
+										index++;
+										setTimeout(zRaporIndir,1000,cb);
+									}
+								});
+							}else{
+								
+								eventLog('download getZReport Error:' , err);
+								if(err.errno!=undefined){
+									if(err.errno=='ETIMEDOUT'){
+										eventLog('download getZReport Error: 30sn sonra yeniden deniyoruz' , {});
+										setTimeout(zRaporIndir,30000,cb);
 									}else{
 										index++;
-										eventLog('getZReport Error:' ,err);
+										errorLog('getZReport Error:' ,err);
 										setTimeout(zRaporIndir,1000,cb);
 										//cb(err);
 									}
-									
+								}else{
+									index++;
+									eventLog('getZReport Error:' ,err);
+									setTimeout(zRaporIndir,1000,cb);
+									//cb(err);
 								}
-							});
-						}else{
-							index++;
-							errorLog('generateReqOption Error:' , err);
-							setTimeout(zRaporIndir,1000,cb);
-							//cb(err);
-						}
-					});
-				}else{
-					eventLog('posDeviceDocs[index].deviceSerialNo==""');
-					index++;
-					setTimeout(zRaporIndir,1000,cb);
-				}
+								
+							}
+						});
+					}else{
+						index++;
+						errorLog('generateReqOption Error:' , err);
+						setTimeout(zRaporIndir,1000,cb);
+						//cb(err);
+					}
+				});
+			}else{
+				eventLog('posDeviceDocs[index].deviceSerialNo==""');
+				index++;
+				setTimeout(zRaporIndir,1000,cb);
 			}
 		}
 	

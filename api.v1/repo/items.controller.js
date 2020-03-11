@@ -30,7 +30,7 @@ module.exports = function(activeDb, member, req, res, callback) {
 }
 
 function copy(activeDb,member,req,res,callback){
-    var _id=req.params.param2 || req.body['_id'] || '';
+    var _id=req.params.param2 || req.body['_id'] || req.query._id || '';
     var newName=req.body['newName'] || req.body['name'] || '';
 
     if(_id=='') return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
@@ -87,7 +87,7 @@ function receteleriKaydet(activeDb,itemDoc,newItemDoc,callback){
                 var yeniReceteDoc=new activeDb.recipes(data);
                 yeniReceteDoc.save((err,yeniReceteDoc2)=>{
                     if(!err){
-                        if(itemDoc.recipe.toString()==docs[index]._id.toString()){
+                        if(itemDoc.recipe==docs[index]._id){
                             newItemDoc.recipe=yeniReceteDoc2._id;
                         }
                         index++;
@@ -152,7 +152,7 @@ function getList(activeDb,member,req,res,callback){
     }
     
 
-    filter['passive']=false;
+    //filter['passive']=false;
     if((req.query.passive || '')!=''){
         filter['passive']=req.query.passive;
     }

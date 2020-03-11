@@ -24,21 +24,6 @@ exports.run=function(dbModel){
 	},12000);
 }
 
-// setTimeout(()=>{
-// 	eventLog(('Pos-Device Service Scheduled Task').green + ' started');
-// 	Object.keys(repoDb).forEach((e)=>{
-// 		repoDb[e].posDevice_checkDbAndDownload=function(){
-// 			eventLog('posDevice_checkDbAndDownload started.',e);
-// 			checkDbAndDownload(this,(err)=>{
-// 				eventLog('posDevice_checkDbAndDownload ended.',e);
-// 				setTimeout(repoDb[e].posDevice_checkDbAndDownload,10000);
-// 			});
-// 		}
-// 		repoDb[e].posDevice_checkDbAndDownload();
-// 	});
-
-// },10000*1);
-
 
 function checkDbAndDownload(dbModel,callback){
 
