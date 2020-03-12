@@ -123,18 +123,18 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 								
 								var files={html:'',pdf:null};
 
-								api.getInboxInvoiceHtml(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
-									if(!err){
+								// api.getInboxInvoiceHtml(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
+								// 	if(!err){
 										
-										files.html=resultHtml.doc.html;
-									}
-									api.getInboxInvoicePdf(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
-										if(!err){
-											files.pdf=resultPdf.doc.pdf
+								// 		files.html=resultHtml.doc.html;
+								// 	}
+								// 	api.getInboxInvoicePdf(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
+								// 		if(!err){
+								// 			files.pdf=resultPdf.doc.pdf
 											
-										}else{
-											eventLog('api.getInboxInvoicePdf Error:',err);
-										}
+								// 		}else{
+								// 			eventLog('api.getInboxInvoicePdf Error:',err);
+								// 		}
 										insertInvoice(dbModel, eIntegratorDoc,1, invoice,files,(err)=>{
 											if(err){
 												eventLog('insertInboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
@@ -148,8 +148,8 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 											}
 											
 										});
-									});
-								});
+								// 	});
+								// });
 							}else{
 								index++;
 								setTimeout(faturaIndir,500,cb);
@@ -304,18 +304,18 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 								
 								var files={html:'',pdf:null};
 
-								api.getOutboxInvoiceHtml(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
-									if(!err){
-										files.html=resultHtml.doc.html;
-									}
+								// api.getOutboxInvoiceHtml(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
+								// 	if(!err){
+								// 		files.html=resultHtml.doc.html;
+								// 	}
 									
-									api.getOutboxInvoicePdf(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
-										if(!err){
-											files.pdf=resultPdf.doc.pdf
+								// 	api.getOutboxInvoicePdf(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
+								// 		if(!err){
+								// 			files.pdf=resultPdf.doc.pdf
 											
-										}else{
-											errorLog('api.getOutboxInvoicePdf Error:',err);
-										}
+								// 		}else{
+								// 			errorLog('api.getOutboxInvoicePdf Error:',err);
+								// 		}
 										insertInvoice(dbModel, eIntegratorDoc,0, invoice,files,(err)=>{
 											if(err){
 												errorLog('insertOutboxInvoice error: uuid: ' + indirilecekFaturalar[index].uuid,err);
@@ -329,8 +329,8 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 											}
 											
 										});
-									});
-								});
+								// 	});
+								// });
 						
 							}else{
 								index++;

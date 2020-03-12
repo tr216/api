@@ -5,29 +5,29 @@ module.exports = function(activeDb, member, req, res, callback) {
 		case 'GET':
 			switch(req.params.param1.lcaseeng()){
 				
-				case 'inboxinvoicelist':
-				return getInvoiceList(1,activeDb,member,req,res,callback);
+				case 'inboxorderlist':
+				return getOrderList(1,activeDb,member,req,res,callback);
 				break;
-				case 'outboxinvoicelist':
-				return getInvoiceList(0,activeDb,member,req,res,callback);
+				case 'outboxorderlist':
+				return getOrderList(0,activeDb,member,req,res,callback);
 				break;
-				case 'invoice':
-				return getInvoice(activeDb,member,req,res,callback);
+				case 'order':
+				return getOrder(activeDb,member,req,res,callback);
 				break;
-				case 'invoiceview':
-				return invoiceView(activeDb,member,req,res,callback);
+				case 'orderview':
+				return orderView(activeDb,member,req,res,callback);
 				break;
-				case 'invoicepdf':
-				return invoicePdf(activeDb,member,req,res,callback);
+				case 'orderpdf':
+				return orderPdf(activeDb,member,req,res,callback);
 				break;
-				case 'invoicexmlxslt':
-				case 'invoicexml':
-				case 'invoicexslt':
-				case 'invoicexsltxml':
-				return getInvoiceXmlXslt(activeDb,member,req,res,callback);
+				case 'orderxmlxslt':
+				case 'orderxml':
+				case 'orderxslt':
+				case 'orderxsltxml':
+				return getOrderXmlXslt(activeDb,member,req,res,callback);
 				break;
-				case 'einvoiceuserlist':
-				return getEInvoiceUserList(activeDb,member,req,res,callback);
+				case 'eorderuserlist':
+				return getEOrderUserList(activeDb,member,req,res,callback);
 				case 'errors':
 				return getErrors(activeDb,member,req,res,callback);
 
@@ -50,17 +50,17 @@ module.exports = function(activeDb, member, req, res, callback) {
 				case 'sendtogib':
 					return sendToGib(activeDb,member,req,res,callback);
 				case 'approve':
-					return approveDeclineInvoice('approve', activeDb,member,req,res,callback);
+					return approveDeclineOrder('approve', activeDb,member,req,res,callback);
 				case 'decline':
-					return approveDeclineInvoice('decline', activeDb,member,req,res,callback);
-				case 'saveinboxinvoice':
-				case 'saveoutboxinvoice':
-				case 'invoice':
+					return approveDeclineOrder('decline', activeDb,member,req,res,callback);
+				case 'saveinboxorder':
+				case 'saveoutboxorder':
+				case 'order':
 					return post(activeDb,member,req,res,callback);
 				case 'findgtipno':
 				return findGTIPNO(activeDb,member,req,res,callback);
-				case 'importoutboxinvoice':
-					return importOutboxInvoice(activeDb,member,req,res,callback);
+				case 'importoutboxorder':
+					return importOutboxOrder(activeDb,member,req,res,callback);
 				default:
 					return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
 				break;
@@ -71,9 +71,9 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 			switch(req.params.param1.lcaseeng()){
 				
-				case 'saveinboxinvoice':
-				case 'saveoutboxinvoice':
-				case 'invoice':
+				case 'saveinboxorder':
+				case 'saveoutboxorder':
+				case 'order':
 					return put(activeDb,member,req,res,callback);
 				
 				default:
@@ -89,10 +89,10 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 function findGTIPNO(activeDb,member,req,res,callback){
 	var data = req.body || {};
-	if(data.invoiceLine==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'invoiceLine elemani bulunamadi'}});
-	if(!Array.isArray(data.invoiceLine)) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'invoiceLine array olmalidir'}});
+	if(data.orderLine==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'orderLine elemani bulunamadi'}});
+	if(!Array.isArray(data.orderLine)) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'orderLine array olmalidir'}});
 
-	// data.invoiceLine.forEach((line)=>{
+	// data.orderLine.forEach((line)=>{
 
 	// });
 	callback({success: true,data:'ok'});
@@ -100,10 +100,10 @@ function findGTIPNO(activeDb,member,req,res,callback){
 
 function getErrors(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
-	var select='_id profileId ID invoiceTypeCode localDocumentId issueDate ioType eIntegrator invoiceErrors localErrors invoiceStatus localStatus';
+	var select='_id profileId ID orderTypeCode localDocumentId issueDate ioType eIntegrator orderErrors localErrors orderStatus localStatus';
 	
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id},select).exec((err,doc)=>{
+	activeDb.orders.findOne({_id:_id},select).exec((err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				var data=doc.toJSON();
@@ -115,26 +115,26 @@ function getErrors(activeDb,member,req,res,callback){
 function post(activeDb,member,req,res,callback){
 	var data = req.body || {};
 	data=mrutil.amountValueFixed2Digit(data,'');
-	var newDoc = new activeDb.e_invoices(data);
+	var newDoc = new activeDb.orders(data);
 	var err=epValidateSync(newDoc);
 	if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 	newDoc.uuid.value=uuid.v4();
-	newDoc=calculateInvoiceTotals(newDoc);
-	activeDb.e_integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
-		if(dberr(err,callback)){
-			if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Faturada entegrator bulanamadi.'}});
-			eInvoiceHelper.yeniFaturaNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
+	newDoc=calculateOrderTotals(newDoc);
+	//activeDb.e_integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
+		//if(dberr(err,callback)){
+			//if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Sipariste entegrator bulanamadi.'}});
+			// eOrderHelper.yeniFaturaNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
 				newDoc.save(function(err, newDoc2) {
 					if(dberr(err,callback)){
 						callback({success:true,data:newDoc2});
 					}
 				});  
-			});
-		}
-	});
+			// });
+		//}
+	//});
 }
 
-function importOutboxInvoice(activeDb,member,req,res,callback){
+function importOutboxOrder(activeDb,member,req,res,callback){
 	var data = req.body || {};
 	
 	if(!data.files) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'files elemani bulunamadi'}});
@@ -149,9 +149,9 @@ function importOutboxInvoice(activeDb,member,req,res,callback){
 
 	fileImporter.run(activeDb,(data.fileImporter || ''),data,(err,results)=>{
 		if(!err){
-			eInvoiceHelper.findDefaultEIntegrator(activeDb,(data.eIntegrator || ''),(err,eIntegratorDoc)=>{
+			eOrderHelper.findDefaultEIntegrator(activeDb,(data.eIntegrator || ''),(err,eIntegratorDoc)=>{
 				if(!err){
-					eInvoiceHelper.insertEInvoice(activeDb,eIntegratorDoc,results,(err)=>{
+					eOrderHelper.insertEOrder(activeDb,eIntegratorDoc,results,(err)=>{
 						if(!err){
 							callback({success:true,data:'ok'})
 						}else{
@@ -177,7 +177,7 @@ function put(activeDb,member,req,res,callback){
 	data._id = req.params.param2;
 	data.modifiedDate = new Date();
 	eventLog('put sonra buraya geldi');
-	activeDb.e_invoices.findOne({ _id: data._id},(err,doc)=>{
+	activeDb.orders.findOne({ _id: data._id},(err,doc)=>{
 		if (!err) {
 			if(doc==null){
 				eventLog('doc==null');
@@ -186,10 +186,10 @@ function put(activeDb,member,req,res,callback){
 				eventLog('Before taxtotal:',doc.taxTotal);
 				data=mrutil.amountValueFixed2Digit(data,'');
 				var doc2 = Object.assign(doc, data);
-				var newDoc = new activeDb.e_invoices(doc2);
+				var newDoc = new activeDb.orders(doc2);
 				var err=epValidateSync(newDoc);
 				if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-				newDoc=calculateInvoiceTotals(newDoc);
+				newDoc=calculateOrderTotals(newDoc);
 				newDoc.save(function(err, newDoc2) {
 					if(dberr(err,callback)){
 						eventLog('After taxtotal:',doc.taxTotal);
@@ -205,27 +205,27 @@ function put(activeDb,member,req,res,callback){
 	});
 }
 
-function calculateInvoiceTotals(invoice){
+function calculateOrderTotals(order){
 	var bSatirdaVergiVar=false;
-	if(invoice.invoiceLine!=undefined){
-	    if(invoice.invoiceLine.length>0){
-	        invoice.invoiceLine.forEach(function(line){
+	if(order.orderLine!=undefined){
+	    if(order.orderLine.length>0){
+	        order.orderLine.forEach(function(line){
 	            if(line.taxTotal!=undefined)
 	                if(line.taxTotal.taxAmount.value>0){
 	                    bSatirdaVergiVar=true;
 	                }
 	        });
 	    }
-	    invoice.lineCountNumeric.value=invoice.invoiceLine.length;
+	    order.lineCountNumeric.value=order.orderLine.length;
 	}
     if(bSatirdaVergiVar){
-        invoice.taxTotal=[];
-        invoice.withholdingTaxTotal=[];
-        invoice.invoiceLine.forEach(function(line){
+        order.taxTotal=[];
+        order.withholdingTaxTotal=[];
+        order.orderLine.forEach(function(line){
             if(line.taxTotal!=undefined)
                 if(line.taxTotal.taxAmount.value>0 && line.taxTotal.taxSubtotal.length>0){
                     var bAyniVergiTuruBulundu=false;
-                    invoice.taxTotal.forEach(function(e){
+                    order.taxTotal.forEach(function(e){
                         if(e.taxSubtotal.length>0)
                             if(e.taxSubtotal[0].percent==line.taxTotal.taxSubtotal[0].percent && e.taxSubtotal[0].taxCategory.taxScheme.taxTypeCode.value==line.taxTotal.taxSubtotal[0].taxCategory.taxScheme.taxTypeCode.value){
                                 e.taxAmount.value +=line.taxTotal.taxAmount.value;
@@ -236,14 +236,14 @@ function calculateInvoiceTotals(invoice){
                             }
                     });
                     if(bAyniVergiTuruBulundu==false){
-                        invoice.taxTotal.push(JSON.parse(JSON.stringify(line.taxTotal)))
+                        order.taxTotal.push(JSON.parse(JSON.stringify(line.taxTotal)))
                     }
                 }
             if(line.withholdingTaxTotal!=undefined)
                 if(line.withholdingTaxTotal.length>0)
                     if(line.withholdingTaxTotal[0].taxAmount.value>0 && line.withholdingTaxTotal[0].taxSubtotal.length>0){
                         var bAyniVergiTuruBulundu=false;
-                        invoice.withholdingTaxTotal.forEach(function(e){
+                        order.withholdingTaxTotal.forEach(function(e){
                             if(e.taxSubtotal.length>0)
                                 if(e.taxSubtotal[0].percent==line.withholdingTaxTotal[0].taxSubtotal[0].percent && e.taxSubtotal[0].taxCategory.taxScheme.taxTypeCode.value==line.withholdingTaxTotal[0].taxSubtotal[0].taxCategory.taxScheme.taxTypeCode.value){
                                     e.taxAmount.value +=line.withholdingTaxTotal[0].taxAmount.value;
@@ -254,24 +254,24 @@ function calculateInvoiceTotals(invoice){
                                 }
                         });
                         if(bAyniVergiTuruBulundu==false){
-                            invoice.withholdingTaxTotal.push(JSON.parse(JSON.stringify(line.withholdingTaxTotal[0])))
+                            order.withholdingTaxTotal.push(JSON.parse(JSON.stringify(line.withholdingTaxTotal[0])))
                         }
                     }
         });
     }
 
     var vergiToplam=0;
-    invoice.taxTotal.forEach((e)=>{
+    order.taxTotal.forEach((e)=>{
     	vergiToplam +=e.taxAmount.value;
     })
 	var tevkifatToplam=0;
-    invoice.withholdingTaxTotal.forEach((e)=>{
+    order.withholdingTaxTotal.forEach((e)=>{
     	tevkifatToplam +=e.taxAmount.value;
     })
 
     var toplamIndirim=0;
     var toplamMasraf=0;
-    invoice.allowanceCharge.forEach((e)=>{
+    order.allowanceCharge.forEach((e)=>{
     	if(e.chargeIndicator.value){
     		toplamMasraf +=e.amount.value;
     	}else{
@@ -279,7 +279,7 @@ function calculateInvoiceTotals(invoice){
     	}
     })
 
-    invoice.legalMonetaryTotal={
+    order.anticipatedMonetaryTotal={
     	lineExtensionAmount:{value:0},
     	allowanceTotalAmount:{value:toplamIndirim},
     	chargeTotalAmount:{value:toplamMasraf},
@@ -290,22 +290,22 @@ function calculateInvoiceTotals(invoice){
     }
 
 
-    if(invoice.invoiceLine!=undefined){
-	    invoice.invoiceLine.forEach(function(line){
-	    	invoice.legalMonetaryTotal.lineExtensionAmount.value += line.lineExtensionAmount.value;
+    if(order.orderLine!=undefined){
+	    order.orderLine.forEach(function(line){
+	    	order.anticipatedMonetaryTotal.lineExtensionAmount.value += line.lineExtensionAmount.value;
 	    });
 	}
-	invoice.legalMonetaryTotal.taxExclusiveAmount.value=invoice.legalMonetaryTotal.lineExtensionAmount.value - toplamIndirim + toplamMasraf;
-	invoice.legalMonetaryTotal.taxInclusiveAmount.value=invoice.legalMonetaryTotal.taxExclusiveAmount.value + vergiToplam - tevkifatToplam;
-	invoice.legalMonetaryTotal.payableRoundingAmount.value=invoice.legalMonetaryTotal.taxInclusiveAmount.value;
-	invoice.legalMonetaryTotal.payableAmount.value=invoice.legalMonetaryTotal.taxInclusiveAmount.value;
+	order.anticipatedMonetaryTotal.taxExclusiveAmount.value=order.anticipatedMonetaryTotal.lineExtensionAmount.value - toplamIndirim + toplamMasraf;
+	order.anticipatedMonetaryTotal.taxInclusiveAmount.value=order.anticipatedMonetaryTotal.taxExclusiveAmount.value + vergiToplam - tevkifatToplam;
+	order.anticipatedMonetaryTotal.payableRoundingAmount.value=order.anticipatedMonetaryTotal.taxInclusiveAmount.value;
+	order.anticipatedMonetaryTotal.payableAmount.value=order.anticipatedMonetaryTotal.taxInclusiveAmount.value;
 
 
-	return invoice;
+	return order;
 }
 function transferImport(activeDb,member,req,res,callback){
 	
-	activeDb.e_integrators.find({passive:false,'localConnectorImportInvoice.localConnector':{$ne:null}}).populate(['localConnectorImportInvoice.localConnector']).exec((err,docs)=>{
+	activeDb.e_integrators.find({passive:false,'localConnectorImportOrder.localConnector':{$ne:null}}).populate(['localConnectorImportOrder.localConnector']).exec((err,docs)=>{
 		if (dberr(err,callback)) {
 			if(docs.length==0){
 				return callback({success:false,error:{code:'NOT_DEFINED',message:'Local connectoru tanimlanmis aktif bir entegrator bulunmamaktadir.'}})
@@ -319,27 +319,27 @@ function transferImport(activeDb,member,req,res,callback){
 				if(index>=docs.length){
 					cb(null);
 				}else{
-					activeDb.tasks.findOne({taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
+					activeDb.tasks.findOne({taskType:'connector_import_eorder',collectionName:'e_integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
 						if (dberr(err,callback)) {
 							if(doc==null){
-								var taskdata={taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id,document:docs[index]}
+								var taskdata={taskType:'connector_import_eorder',collectionName:'e_integrators',documentId:docs[index]._id,document:docs[index]}
 								taskHelper.newTask(activeDb,taskdata,(err,taskDoc)=>{
 									if(!err){
 										switch(taskDoc.status){
 											case 'running':
-												docs[index].localConnectorImportInvoice['status']='transferring';
+												docs[index].localConnectorImportOrder['status']='transferring';
 												break;
 											case 'pending':
-												docs[index].localConnectorImportInvoice['status']='pending';
+												docs[index].localConnectorImportOrder['status']='pending';
 												break;
 											case 'completed':
-												docs[index].localConnectorImportInvoice['status']='transferred';
+												docs[index].localConnectorImportOrder['status']='transferred';
 												break;
 											case 'error':
-												docs[index].localConnectorImportInvoice['status']='error';
+												docs[index].localConnectorImportOrder['status']='error';
 												break;
 											default:
-												 docs[index].localConnectorImportInvoice['status']='';
+												 docs[index].localConnectorImportOrder['status']='';
 												 break;
 										}
 										docs[index].save((err,newDoc)=>{
@@ -383,14 +383,14 @@ function transferImport(activeDb,member,req,res,callback){
 	})
 }
 
-function getInvoiceList(ioType,activeDb,member,req,res,callback){
+function getOrderList(ioType,activeDb,member,req,res,callback){
 	var options={page: (req.query.page || 1), 
 		populate:[
 		{path:'eIntegrator',select:'_id eIntegrator name username'}
 		],
 		limit:10
 		,
-		select:'_id eIntegrator profileId ID uuid issueDate issueTime invoiceTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal invoiceStatus invoiceErrors localStatus localErrors',
+		select:'_id eIntegrator profileId ID salesOrderId uuid issueDate issueTime orderTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate accountingBuyerParty accountingSellerParty anticipatedMonetaryTotal taxTotal withholdingTaxTotal orderStatus orderErrors localStatus localErrors',
 		sort:{'issueDate.value':'desc' , 'ID.value':'desc'}
 	}
 
@@ -406,19 +406,19 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 	if((req.query.ID || '')!=''){
 		filter['ID.value']={ $regex: '.*' + req.query.ID + '.*' ,$options: 'i' };
 	}
-	if((req.query.invoiceNo || '')!=''){
+	if((req.query.orderNo || '')!=''){
 		if(filter['$or']==undefined) filter['$or']=[];
-		filter['$or'].push({'ID.value':{ '$regex': '.*' + req.query.invoiceNo + '.*' , '$options': 'i' }})
-		filter['$or'].push({'localDocumentId':{ '$regex': '.*' + req.query.invoiceNo + '.*' ,'$options': 'i' }})
+		filter['$or'].push({'ID.value':{ '$regex': '.*' + req.query.orderNo + '.*' , '$options': 'i' }})
+		filter['$or'].push({'localDocumentId':{ '$regex': '.*' + req.query.orderNo + '.*' ,'$options': 'i' }})
 	}
-	if(req.query.invoiceStatus){
-		filter['invoiceStatus']=req.query.invoiceStatus;
+	if(req.query.orderStatus){
+		filter['orderStatus']=req.query.orderStatus;
 	}
 	if((req.query.profileId || '')!=''){
 		filter['profileId.value']=req.query.profileId;
 	}
-	if((req.query.invoiceTypeCode || '')!=''){
-		filter['invoiceTypeCode.value']=req.query.invoiceTypeCode;
+	if((req.query.orderTypeCode || '')!=''){
+		filter['orderTypeCode.value']=req.query.orderTypeCode;
 	}
 
 	if((req.query.documentCurrencyCode || '')!=''){
@@ -437,7 +437,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 		}
 	}
 	
-	activeDb.e_invoices.paginate(filter,options,(err, resp)=>{
+	activeDb.orders.paginate(filter,options,(err, resp)=>{
 		if (dberr(err,callback)) {
 			var liste=[]
 			resp.docs.forEach((e,index)=>{
@@ -448,15 +448,16 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 				obj['ioType']=e['ioType'];
 				obj['profileId']=e['profileId'].value;
 				obj['ID']=e.ID.value;
+				obj['salesOrderId']=e['salesOrderId'].value;
 				obj['uuid']=e['uuid'].value;
 				obj['issueDate']=e['issueDate'].value;
 				obj['issueTime']=e['issueTime'].value;
-				obj['invoiceTypeCode']=e['invoiceTypeCode'].value;
+				obj['orderTypeCode']=e['orderTypeCode'].value;
 				
 				obj['accountingParty']={title:'',vknTckn:''}
 				if(ioType==0){
-					obj['accountingParty']['title']=e.accountingCustomerParty.party.partyName.name.value || (e.accountingCustomerParty.party.person.firstName.value + ' ' + e.accountingCustomerParty.party.person.familyName.value);;
-					e.accountingCustomerParty.party.partyIdentification.forEach((e2)=>{
+					obj['accountingParty']['title']=e.accountingBuyerParty.party.partyName.name.value || (e.accountingBuyerParty.party.person.firstName.value + ' ' + e.accountingBuyerParty.party.person.familyName.value);;
+					e.accountingBuyerParty.party.partyIdentification.forEach((e2)=>{
 						var schemeID='';
 						if(e2.ID.attr!=undefined){
 							schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
@@ -467,8 +468,8 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 						}
 					});
 				}else{
-					obj['accountingParty']['title']=e.accountingSupplierParty.party.partyName.name.value || (e.accountingSupplierParty.party.person.firstName.value + ' ' + e.accountingSupplierParty.party.person.familyName.value);
-					e.accountingSupplierParty.party.partyIdentification.forEach((e2)=>{
+					obj['accountingParty']['title']=e.accountingSellerParty.party.partyName.name.value || (e.accountingSellerParty.party.person.firstName.value + ' ' + e.accountingSellerParty.party.person.familyName.value);
+					e.accountingSellerParty.party.partyIdentification.forEach((e2)=>{
 						var schemeID='';
 						if(e2.ID.attr!=undefined){
 							schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
@@ -481,8 +482,8 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 
 					});
 				}
-				obj['payableAmount']=e['legalMonetaryTotal'].payableAmount.value;
-				obj['taxExclusiveAmount']=e['legalMonetaryTotal'].taxExclusiveAmount.value;
+				obj['payableAmount']=e['anticipatedMonetaryTotal'].payableAmount.value;
+				obj['taxExclusiveAmount']=e['anticipatedMonetaryTotal'].taxExclusiveAmount.value;
 				obj['taxSummary']={
 					vat1:0,vat8:0,vat18:0,
 					vat0TaxableAmount:0,
@@ -523,8 +524,8 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 
 				obj['lineCountNumeric']=e['lineCountNumeric'].value;
 				obj['localDocumentId']=e['localDocumentId'];
-				obj['invoiceStatus']=e['invoiceStatus'];
-				obj['invoiceErrors']=e['invoiceErrors'];
+				obj['orderStatus']=e['orderStatus'];
+				obj['orderErrors']=e['orderErrors'];
 				obj['localStatus']=e['localStatus'];
 				obj['localErrors']=e['localErrors'];
 				
@@ -539,14 +540,14 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 	});
 }
 
-function getInvoice(activeDb,member,req,res,callback){
+function getOrder(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
 	var includeAdditionalDocumentReference= req.query.includeAdditionalDocumentReference || false;
 	var select='-additionalDocumentReference';
 	if(includeAdditionalDocumentReference==true) select='';
 	
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id},select).exec((err,doc)=>{
+	activeDb.orders.findOne({_id:_id},select).exec((err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				var data=doc.toJSON();
@@ -555,10 +556,10 @@ function getInvoice(activeDb,member,req,res,callback){
 	});
 }
 
-function invoiceView(activeDb,member,req,res,callback){
+function orderView(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
+	activeDb.orders.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				callback({file: doc.html});
@@ -566,10 +567,10 @@ function invoiceView(activeDb,member,req,res,callback){
 		});
 }
 
-function invoicePdf(activeDb,member,req,res,callback){
+function orderPdf(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
+	activeDb.orders.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				
@@ -578,21 +579,21 @@ function invoicePdf(activeDb,member,req,res,callback){
 		});
 }
 
-function getInvoiceXmlXslt(activeDb,member,req,res,callback){
+function getOrderXmlXslt(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id},(err,doc)=>{
+	activeDb.orders.findOne({_id:_id},(err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
-				var invoice=doc.toJSON();
-				var xml=btoa(mrutil.e_invoice2xml(invoice));
-				var xslt=mrutil.e_invoiceXslt(invoice);
+				var order=doc.toJSON();
+				var xml=btoa(mrutil.e_order2xml(order));
+				var xslt=mrutil.e_orderXslt(order);
 				callback({success: true,data: {xml:xml,xslt:xslt}});
 			}
 		});
 }
 
-function getEInvoiceUserList(activeDb,member,req,res,callback){
+function getEOrderUserList(activeDb,member,req,res,callback){
 	var options={page: (req.query.page || 1), 
 		limit:10
 	}
@@ -619,7 +620,7 @@ function getEInvoiceUserList(activeDb,member,req,res,callback){
 	}
 	
 	
-	db.einvoice_users.paginate(filter,options,(err, resp)=>{
+	db.eorder_users.paginate(filter,options,(err, resp)=>{
 		if (dberr(err,callback)) {
 			callback({success: true,data: resp});
 		} 
@@ -633,7 +634,7 @@ function sendToGib(activeDb,member,req,res,callback){
 	}
 	var populate={
 		path:'eIntegrator'
-		//select:'_id eIntegrator name url username password firmNo invoicePrefix dispatchPrefix postboxAlias senderboxAlias passive'
+		//select:'_id eIntegrator name url username password firmNo orderPrefix dispatchPrefix postboxAlias senderboxAlias passive'
 	}
 
 	var idList=[];
@@ -650,9 +651,9 @@ function sendToGib(activeDb,member,req,res,callback){
 			idList.push(e);
 		}
 	});
-	var filter={invoiceStatus:{$in:['Draft','Error']},_id:{$in:idList}};
+	var filter={orderStatus:{$in:['Draft','Error']},_id:{$in:idList}};
 
-	activeDb.e_invoices.find(filter).populate(populate).exec((err,docs)=>{
+	activeDb.orders.find(filter).populate(populate).exec((err,docs)=>{
 		if (dberr(err,callback)) {
 			var index=0;
 
@@ -661,7 +662,7 @@ function sendToGib(activeDb,member,req,res,callback){
 					cb(null);
 				}else{
 					
-					var taskdata={taskType:'einvoice_send_to_gib',collectionName:'e_invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
+					var taskdata={taskType:'eorder_send_to_gib',collectionName:'orders',documentId:docs[index]._id,document:docs[index].toJSON()}
 					taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
 						if(!err){
 							switch(taskDoc.status){
@@ -669,16 +670,16 @@ function sendToGib(activeDb,member,req,res,callback){
 									docs[index].status='Processing';
 									break;
 								case 'pending':
-									docs[index].invoiceStatus='Pending';
+									docs[index].orderStatus='Pending';
 									break;
 								case 'completed':
-									docs[index].invoiceStatus='Processing';
+									docs[index].orderStatus='Processing';
 									break;
 								case 'error':
-									docs[index].invoiceStatus='Error';
+									docs[index].orderStatus='Error';
 									break;
 								default:
-									 //docs[index].invoiceStatus='';
+									 //docs[index].orderStatus='';
 									 break;
 							}
 							docs[index].save((err,newDoc)=>{
@@ -712,7 +713,7 @@ function sendToGib(activeDb,member,req,res,callback){
 }
 
 
-function approveDeclineInvoice(type, activeDb,member,req,res,callback){
+function approveDeclineOrder(type, activeDb,member,req,res,callback){
 	var data = req.body || {};
 	if(data.list==undefined){
 		return callback({success: false, error: {code: 'ERROR', message: 'list is required.'}});
@@ -720,10 +721,10 @@ function approveDeclineInvoice(type, activeDb,member,req,res,callback){
 	var taskType='';
 	switch(type){
 		case 'approve':
-			taskType='einvoice_approve';
+			taskType='eorder_approve';
 		break;
 		case 'decline':
-			taskType='einvoice_decline';
+			taskType='eorder_decline';
 		break;
 	}
 	var populate={
@@ -746,9 +747,9 @@ function approveDeclineInvoice(type, activeDb,member,req,res,callback){
 		}
 	});
 
-	var filter={invoiceStatus:'WaitingForAprovement',_id:{$in:idList}};
+	var filter={orderStatus:'WaitingForAprovement',_id:{$in:idList}};
 
-	activeDb.e_invoices.find(filter).select(select).populate(populate).exec((err,docs)=>{
+	activeDb.orders.find(filter).select(select).populate(populate).exec((err,docs)=>{
 		if (dberr(err,callback)) {
 			var index=0;
 			
@@ -759,7 +760,7 @@ function approveDeclineInvoice(type, activeDb,member,req,res,callback){
 					cb(null);
 				}else{
 					
-					var taskdata={taskType: taskType,collectionName:'e_invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
+					var taskdata={taskType: taskType,collectionName:'orders',documentId:docs[index]._id,document:docs[index].toJSON()}
 					taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
 						if(!err){
 							
