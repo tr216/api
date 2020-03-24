@@ -65,12 +65,9 @@ module.exports = function(activeDb, member, req, res, callback) {
 					return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
 				break;
 			}
-
 		break;
 		case 'PUT':
-
 			switch(req.params.param1.lcaseeng()){
-				
 				case 'saveinboxorder':
 				case 'saveoutboxorder':
 				case 'order':
@@ -120,18 +117,19 @@ function post(activeDb,member,req,res,callback){
 	if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 	newDoc.uuid.value=uuid.v4();
 	newDoc=calculateOrderTotals(newDoc);
-	//activeDb.e_integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
-		//if(dberr(err,callback)){
-			//if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Sipariste entegrator bulanamadi.'}});
-			// eOrderHelper.yeniFaturaNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
+	activeDb.e_integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
+		if(dberr(err,callback)){
+			if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Sipariste entegrator bulanamadi.'}});
+			documentHelper.yeniSiparisNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
+				console.log('newDoc.ID.value:',newDoc.ID.value);
 				newDoc.save(function(err, newDoc2) {
 					if(dberr(err,callback)){
 						callback({success:true,data:newDoc2});
 					}
 				});  
-			// });
-		//}
-	//});
+			});
+		}
+	});
 }
 
 function importOutboxOrder(activeDb,member,req,res,callback){
@@ -149,15 +147,9 @@ function importOutboxOrder(activeDb,member,req,res,callback){
 
 	fileImporter.run(activeDb,(data.fileImporter || ''),data,(err,results)=>{
 		if(!err){
-			eOrderHelper.findDefaultEIntegrator(activeDb,(data.eIntegrator || ''),(err,eIntegratorDoc)=>{
+			documentHelper.findDefaultEIntegrator(activeDb,(data.eIntegrator || ''),(err,eIntegratorDoc)=>{
 				if(!err){
-					eOrderHelper.insertEOrder(activeDb,eIntegratorDoc,results,(err)=>{
-						if(!err){
-							callback({success:true,data:'ok'})
-						}else{
-							callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
-						}
-					})
+					callback({success:true,data:'ok'})
 				}else{
 					callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
 				}
@@ -167,23 +159,20 @@ function importOutboxOrder(activeDb,member,req,res,callback){
 			callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
 		}
 	});
-	
 }
 
 function put(activeDb,member,req,res,callback){
-	eventLog('put buraya geldi');
+	
 	if(req.params.param2==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
 	var data = req.body || {};
 	data._id = req.params.param2;
 	data.modifiedDate = new Date();
-	eventLog('put sonra buraya geldi');
 	activeDb.orders.findOne({ _id: data._id},(err,doc)=>{
 		if (!err) {
 			if(doc==null){
 				eventLog('doc==null');
 				callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
 			}else{
-				eventLog('Before taxtotal:',doc.taxTotal);
 				data=mrutil.amountValueFixed2Digit(data,'');
 				var doc2 = Object.assign(doc, data);
 				var newDoc = new activeDb.orders(doc2);
@@ -196,7 +185,6 @@ function put(activeDb,member,req,res,callback){
 						callback({success: true,data: newDoc2});
 					}
 				});
-			   
 			}
 		}else{
 			eventLog('put error:',err);
@@ -289,7 +277,6 @@ function calculateOrderTotals(order){
     	payableAmount:{value:0},
     }
 
-
     if(order.orderLine!=undefined){
 	    order.orderLine.forEach(function(line){
 	    	order.anticipatedMonetaryTotal.lineExtensionAmount.value += line.lineExtensionAmount.value;
@@ -300,9 +287,9 @@ function calculateOrderTotals(order){
 	order.anticipatedMonetaryTotal.payableRoundingAmount.value=order.anticipatedMonetaryTotal.taxInclusiveAmount.value;
 	order.anticipatedMonetaryTotal.payableAmount.value=order.anticipatedMonetaryTotal.taxInclusiveAmount.value;
 
-
 	return order;
 }
+
 function transferImport(activeDb,member,req,res,callback){
 	
 	activeDb.e_integrators.find({passive:false,'localConnectorImportOrder.localConnector':{$ne:null}}).populate(['localConnectorImportOrder.localConnector']).exec((err,docs)=>{
@@ -390,7 +377,7 @@ function getOrderList(ioType,activeDb,member,req,res,callback){
 		],
 		limit:10
 		,
-		select:'_id eIntegrator profileId ID salesOrderId uuid issueDate issueTime orderTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate accountingBuyerParty accountingSellerParty anticipatedMonetaryTotal taxTotal withholdingTaxTotal orderStatus orderErrors localStatus localErrors',
+		select:'_id eIntegrator profileId ID salesOrderId uuid issueDate issueTime orderTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate buyerCustomerParty sellerSupplierParty anticipatedMonetaryTotal taxTotal withholdingTaxTotal orderStatus orderErrors localStatus localErrors',
 		sort:{'issueDate.value':'desc' , 'ID.value':'desc'}
 	}
 
@@ -400,7 +387,7 @@ function getOrderList(ioType,activeDb,member,req,res,callback){
 
 	var filter = {ioType:ioType}
 	
-	if(req.query.eIntegrator){
+	if((req.query.eIntegrator || '')!=''){
 		filter['eIntegrator']=req.query.eIntegrator;
 	}
 	if((req.query.ID || '')!=''){
@@ -411,7 +398,8 @@ function getOrderList(ioType,activeDb,member,req,res,callback){
 		filter['$or'].push({'ID.value':{ '$regex': '.*' + req.query.orderNo + '.*' , '$options': 'i' }})
 		filter['$or'].push({'localDocumentId':{ '$regex': '.*' + req.query.orderNo + '.*' ,'$options': 'i' }})
 	}
-	if(req.query.orderStatus){
+	
+	if((req.query.orderStatus || '')!=''){
 		filter['orderStatus']=req.query.orderStatus;
 	}
 	if((req.query.profileId || '')!=''){
@@ -454,29 +442,29 @@ function getOrderList(ioType,activeDb,member,req,res,callback){
 				obj['issueTime']=e['issueTime'].value;
 				obj['orderTypeCode']=e['orderTypeCode'].value;
 				
-				obj['accountingParty']={title:'',vknTckn:''}
+				obj['party']={title:'',vknTckn:''}
 				if(ioType==0){
-					obj['accountingParty']['title']=e.accountingBuyerParty.party.partyName.name.value || (e.accountingBuyerParty.party.person.firstName.value + ' ' + e.accountingBuyerParty.party.person.familyName.value);;
-					e.accountingBuyerParty.party.partyIdentification.forEach((e2)=>{
+					obj['party']['title']=e.buyerCustomerParty.party.partyName.name.value || (e.buyerCustomerParty.party.person.firstName.value + ' ' + e.buyerCustomerParty.party.person.familyName.value);;
+					e.buyerCustomerParty.party.partyIdentification.forEach((e2)=>{
 						var schemeID='';
 						if(e2.ID.attr!=undefined){
 							schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
 						}
 						if(schemeID.indexOf('vkn')>-1 || schemeID.indexOf('tckn')>-1){
-							obj['accountingParty']['vknTckn']=e2.ID.value || '';
+							obj['party']['vknTckn']=e2.ID.value || '';
 							return;
 						}
 					});
 				}else{
-					obj['accountingParty']['title']=e.accountingSellerParty.party.partyName.name.value || (e.accountingSellerParty.party.person.firstName.value + ' ' + e.accountingSellerParty.party.person.familyName.value);
-					e.accountingSellerParty.party.partyIdentification.forEach((e2)=>{
+					obj['party']['title']=e.sellerSupplierParty.party.partyName.name.value || (e.sellerSupplierParty.party.person.firstName.value + ' ' + e.sellerSupplierParty.party.person.familyName.value);
+					e.sellerSupplierParty.party.partyIdentification.forEach((e2)=>{
 						var schemeID='';
 						if(e2.ID.attr!=undefined){
 							schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
 						}
 						
 						if(schemeID.indexOf('vkn')>-1 || schemeID.indexOf('tckn')>-1){
-							obj['accountingParty']['vknTckn']=e2.ID.value || '';
+							obj['party']['vknTckn']=e2.ID.value || '';
 							return;
 						}
 
@@ -586,8 +574,8 @@ function getOrderXmlXslt(activeDb,member,req,res,callback){
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				var order=doc.toJSON();
-				var xml=btoa(mrutil.e_order2xml(order));
-				var xslt=mrutil.e_orderXslt(order);
+				var xml=btoa(mrutil.order2xml(order));
+				var xslt=mrutil.orderXslt(order);
 				callback({success: true,data: {xml:xml,xslt:xslt}});
 			}
 		});
@@ -711,7 +699,6 @@ function sendToGib(activeDb,member,req,res,callback){
 		}
 	})
 }
-
 
 function approveDeclineOrder(type, activeDb,member,req,res,callback){
 	var data = req.body || {};

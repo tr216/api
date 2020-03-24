@@ -30,12 +30,12 @@ module.exports = function(activeDb, member, req, res, callback) {
 }
 
 function copy(activeDb,member,req,res,callback){
-    var _id=req.params.param2 || req.body['_id'] || req.query._id || '';
+    var id=req.params.param2 || req.body['id'] || req.query.id || '';
     var newName=req.body['newName'] || req.body['name'] || '';
 
-    if(_id=='') return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    if(id=='') return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
     
-    activeDb.items.findOne({ _id: _id},(err,doc)=>{
+    activeDb.items.findOne({ _id: id},(err,doc)=>{
         if(dberr(err,callback)) {
             if(dbnull(doc,callback)) {
                 var data=doc.toJSON();

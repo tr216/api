@@ -9,7 +9,11 @@ module.exports = function(activeDb, member, req, res, callback) {
         }
         break;
         case 'POST':
-        post(activeDb,member,req,res,callback);
+        if(req.params.param1=='copy'){
+            copy(activeDb,member,req,res,callback);
+        }else{
+            post(activeDb,member,req,res,callback);
+        }
         break;
         case 'PUT':
         put(activeDb,member,req,res,callback);
@@ -22,6 +26,58 @@ module.exports = function(activeDb, member, req, res, callback) {
         break;
     }
 
+}
+
+function copy(activeDb,member,req,res,callback){
+    var id=req.params.param2 || req.body['id'] || req.query.id || '';
+    var newName=req.body['newName'] || req.body['name'] || '';
+   
+    if(id=='') return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    
+    activeDb.accounts.findOne({ _id: id},(err,doc)=>{
+        if(dberr(err,callback)) {
+            if(dbnull(doc,callback)) {
+                var data=doc.toJSON();
+                data._id=undefined;
+                delete data._id;
+                if(newName!=''){
+                    data.name=newName;
+                }else{
+                    data.name +=' copy';
+                }
+                yeniHesapKodu(activeDb,doc,(err,yeniKod)=>{
+                    if(!err){
+                        data.code=yeniKod;
+                        var newdoc = new activeDb.accounts(data);
+                        var err=epValidateSync(newdoc);
+                        if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+
+                        newdoc.save(function(err, newdoc2) {
+                            if(dberr(err,callback)) {
+                                callback({success: true,data: newdoc2});
+                            } 
+                        });
+                    }else{
+                       callback({success: false, error: {code: err.name, message: err.message}});
+                    }
+                })
+                
+            }
+        }
+    });
+}
+
+function yeniHesapKodu(activeDb,sourceDoc,callback){
+    activeDb.accounts.find({parentAccount: (sourceDoc.parentAccount || null), code:{$ne:''}}).sort({code:-1}).limit(1).exec((err,docs)=>{
+        if(!err){
+            if(docs.length==0) return callback(null,'001');
+            
+            var yeniKod=mrutil.incString(docs[0].code);
+            callback(null,yeniKod);
+        }else{
+            callback(err);
+        }
+    });
 }
 
 function getList(activeDb,member,req,res,callback){
@@ -40,7 +96,7 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.name || '')!=''){
         filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };
     }
-    console.log('filter:',filter);
+
     activeDb.accounts.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: resp});

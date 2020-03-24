@@ -41,8 +41,8 @@ global.ttext = require('./lib/language.js');
 global.passport = require('./lib/passport.js');
 global.passportRepo = require('./lib/passport_repo.js');
 global.rootPath=__dirname;
-global.eInvoiceHelper=require('./lib/einvoice_helper.js');
-global.eDespatchHelper=require('./lib/edespatch_helper.js');
+global.documentHelper=require('./lib/document_helper.js');
+// global.eDespatchHelper=require('./lib/edespatch_helper.js');
 global.fileImporter=require('./lib/file_importer.js');
 
 var app = express();

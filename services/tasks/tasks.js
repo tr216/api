@@ -306,7 +306,7 @@ function connector_import_einvoice_calistir(dbModel,taskDoc,cb){
 				eventLog('Local connectorId:',eIntegratorDoc.localConnectorExportInvoice.localConnector.connectorId);
 				services.tr216LocalConnector.run(eIntegratorDoc.localConnectorExportInvoice.localConnector,eIntegratorDoc,(err,result)=>{
 					if(!err){
-						eInvoiceHelper.insertEInvoice(dbModel,eIntegratorDoc,result.data,(err,docs)=>{
+						documentHelper.insertEInvoice(dbModel,eIntegratorDoc,result.data,(err,docs)=>{
 							if(!err){
 								dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'transferred','localConnectorExportInvoice.error':null}},(err)=>{
 									taskHelper.setCompleted(taskDoc,cb);

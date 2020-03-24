@@ -48,6 +48,29 @@ module.exports=function(conn){
                 },
             }
         },
+        order:{
+            url: {type: String, trim:true, default: ''},
+            firmNo: {type: Number, default: 0},
+            username: {type: String, trim:true, default: ''},
+            password: {type: String, default: ''},
+            prefix: {type: String, trim:true, default: 'AAA',minlength:3,maxlength:3,required: [true,'3 Karakter Irsaliye Ön Ek gereklidir']},
+            postboxAlias: {type: String, trim:true, default: ''},
+            senderboxAlias: {type: String, trim:true, default: ''},
+            xslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
+            xsltFiles:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
+            localConnector:{
+                import:{ //sqlserver to tr216
+                    localConnector:{type: mongoose.Schema.Types.ObjectId, ref: 'local_connectors' , default:null}, 
+                    status: {type: String, trim:true, default: ''},
+                    error:{code:'',message:''}
+                },
+                export:{ //tr216 to sqlserver
+                    localConnector:{type: mongoose.Schema.Types.ObjectId, ref: 'local_connectors' , default:null}, 
+                    status: {type: String, trim:true, default: ''},
+                    error:{code:'',message:''}
+                },
+            }
+        },
         eDocument:{
             url: {type: String, trim:true, default: ''},
             firmNo: {type: Number, default: 0},

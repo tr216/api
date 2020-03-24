@@ -111,7 +111,7 @@ function post(activeDb,member,req,res,callback){
     activeDb.e_integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
         if(dberr(err,callback)){
             if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Faturada entegrator bulanamadi.'}});
-            eInvoiceHelper.yeniFaturaNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
+            documentHelper.yeniFaturaNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
                 newDoc.save(function(err, newDoc2) {
                     if(dberr(err,callback)){
                         callback({success:true,data:newDoc2});
