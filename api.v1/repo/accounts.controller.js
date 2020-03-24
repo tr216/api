@@ -119,7 +119,10 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
-    if((data.parentAccount || '')=='') data.parentAccount=undefined;
+    if((data.parentAccount || '')==''){
+        data.parentAccount=undefined;
+    }
+   
 
     var newdoc = new activeDb.accounts(data);
 
