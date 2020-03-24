@@ -1,11 +1,11 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
-        parentAccount: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts'},
-        accountCode: {type: String, trim:true, unique:true},
-        code: {type: String, trim:true, required: true},
-        name: {type: String, trim:true, required: true},
-        balanceAmount:{ type: Number,default: 0},
-        balanceQuantity:{ type: Number,default: 0},
+        parentAccount: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts' },
+        accountCode: {type: String, trim:true, index:true  },
+        code: {type: String, trim:true, required: true, index:true },
+        name: {type: String, trim:true, required: true, index:true },
+        balanceAmount:{ type: Number,default: 0 , index:true },
+        balanceQuantity:{ type: Number,default: 0, index:true },
         balanceQuantity2:{ type: Number,default: 0},
         balanceQuantity3:{ type: Number,default: 0},
         balanceReports:[
@@ -17,10 +17,11 @@ module.exports=function(conn){
                 balanceQuantity3:{ type: Number,default: 0},
             }
         ],
-        createdDate: { type: Date,default: Date.now},
-        modifiedDate:{ type: Date,default: Date.now}
+        createdDate: { type: Date,default: Date.now, index:true },
+        modifiedDate:{ type: Date,default: Date.now, index:true }
     });
 
+   
     schema.pre('save', function(next) {
         if(this.parentAccount){
             conn.model('accounts').findOne({_id:this.parentAccount},(err,parentDoc)=>{
@@ -29,16 +30,18 @@ module.exports=function(conn){
                         this.accountCode=parentDoc.accountCode + '.' + this.code;
                     }
                 }else{
-                    console.error('schema.save error:',err);
+                    return next(new Error({name:err.name,message:err.message}));
                 }
                 next();
+                
             });
 
         }else{
             this.accountCode=this.code;
             next();
         }
-        
+
+
         //bir seyler ters giderse 
         // next(new Error('ters giden birseyler var'));
     });
@@ -65,7 +68,9 @@ module.exports=function(conn){
         "balanceQuantity":1,
         "createdDate":1
     });
-
+    schema.index({
+        "accountCode":1
+    },{unique:true});
     var collectionName='accounts';
     var model=conn.model(collectionName, schema);
     

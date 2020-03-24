@@ -77,9 +77,10 @@ function getList(activeDb,member,req,res,callback){
 
 function getOne(activeDb,member,req,res,callback){
     var populate=[
-        {path:'eInvoice.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'},
-        {path:'eDespatch.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'},
-        {path:'eDocument.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'}
+        {path:'invoice.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'},
+        {path:'despatch.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'},
+        {path:'order.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'},
+        {path:'document.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'}
     ]
         
     activeDb.e_integrators.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
@@ -165,17 +166,21 @@ function put(activeDb,member,req,res,callback){
 }
 
 function saveFiles(activeDb,data,callback){
-    xsltKaydet(activeDb,data.eInvoice.xsltFiles,(err,array1)=>{
-        data.eInvoice.xsltFiles=array1;
-        if(array1.length>0) data.eInvoice['xslt']=array1[0];
+    xsltKaydet(activeDb,data.invoice.xsltFiles,(err,array1)=>{
+        data.invoice.xsltFiles=array1;
+        if(array1.length>0) data.invoice['xslt']=array1[0];
 
-        xsltKaydet(activeDb,data.eDespatch.xsltFiles,(err,array2)=>{
-            data.eDespatch.xsltFiles=array2;
-            if(array2.length>0) data.eDespatch['xslt']=array2[0];
-            xsltKaydet(activeDb,data.eDocument.xsltFiles,(err,array3)=>{
-                data.eDocument.xsltFiles=array3;
-                if(array3.length>0) data.eDocument['xslt']=array3[0];
-                callback(null,data);
+        xsltKaydet(activeDb,data.despatch.xsltFiles,(err,array2)=>{
+            data.despatch.xsltFiles=array2;
+            if(array2.length>0) data.despatch['xslt']=array2[0];
+            xsltKaydet(activeDb,data.document.xsltFiles,(err,array3)=>{
+                data.document.xsltFiles=array3;
+                if(array3.length>0) data.document['xslt']=array3[0];
+                xsltKaydet(activeDb,data.order.xsltFiles,(err,array4)=>{
+                    data.order.xsltFiles=array4;
+                    if(array4.length>0) data.order['xslt']=array4[0];
+                    callback(null,data);
+                })
             })
         })
     })
@@ -257,48 +262,76 @@ function xsltKaydet(activeDb,xsltFiles,callback){
 }
 
 function cleanDataEmptyLocalConnector(data){
-    if(data['eInvoice'])
-        if(data['eInvoice']['localConnector'])
-            if(data['eInvoice']['localConnector']['import'])
-                if(data['eInvoice']['localConnector']['import'].localConnector==''){
-                    data['eInvoice']['localConnector']['import'].localConnector=undefined;
-                    delete data['eInvoice']['localConnector']['import'].localConnector;
+    if(data['invoice'])
+        if(data['invoice']['localConnector'])
+            if(data['invoice']['localConnector']['import'])
+                if(data['invoice']['localConnector']['import'].localConnector==''){
+                    data['invoice']['localConnector']['import'].localConnector=undefined;
+                    delete data['invoice']['localConnector']['import'].localConnector;
                 }
-    if(data['eInvoice'])
-        if(data['eInvoice']['localConnector'])
-            if(data['eInvoice']['localConnector']['export'])
-                if(data['eInvoice']['localConnector']['export'].localConnector==''){
-                    data['eInvoice']['localConnector']['export'].localConnector=undefined;
-                    delete data['eInvoice']['localConnector']['export'].localConnector;
+    if(data['invoice'])
+        if(data['invoice']['localConnector'])
+            if(data['invoice']['localConnector']['export'])
+                if(data['invoice']['localConnector']['export'].localConnector==''){
+                    data['invoice']['localConnector']['export'].localConnector=undefined;
+                    delete data['invoice']['localConnector']['export'].localConnector;
                 }
-    if(data['eDespatch'])
-        if(data['eDespatch']['localConnector'])
-            if(data['eDespatch']['localConnector']['import'])
-                if(data['eDespatch']['localConnector']['import'].localConnector==''){
-                    data['eDespatch']['localConnector']['import'].localConnector=undefined;
-                    delete data['eDespatch']['localConnector']['import'].localConnector;
+    if(data['despatch'])
+        if(data['despatch']['localConnector'])
+            if(data['despatch']['localConnector']['import'])
+                if(data['despatch']['localConnector']['import'].localConnector==''){
+                    data['despatch']['localConnector']['import'].localConnector=undefined;
+                    delete data['despatch']['localConnector']['import'].localConnector;
                 }
-    if(data['eDespatch'])
-        if(data['eDespatch']['localConnector'])
-            if(data['eDespatch']['localConnector']['export'])
-                if(data['eDespatch']['localConnector']['export'].localConnector==''){
-                    data['eDespatch']['localConnector']['export'].localConnector=undefined;
-                    delete data['eDespatch']['localConnector']['export'].localConnector;
+    if(data['despatch'])
+        if(data['despatch']['localConnector'])
+            if(data['despatch']['localConnector']['export'])
+                if(data['despatch']['localConnector']['export'].localConnector==''){
+                    data['despatch']['localConnector']['export'].localConnector=undefined;
+                    delete data['despatch']['localConnector']['export'].localConnector;
                 }
-    if(data['eDocument'])
-        if(data['eDocument']['localConnector'])
-            if(data['eDocument']['localConnector']['import'])
-                if(data['eDocument']['localConnector']['import'].localConnector==''){
-                    data['eDocument']['localConnector']['import'].localConnector=undefined;
-                    delete data['eDocument']['localConnector']['import'].localConnector;
+    if(data['document'])
+        if(data['document']['localConnector'])
+            if(data['document']['localConnector']['import'])
+                if(data['document']['localConnector']['import'].localConnector==''){
+                    data['document']['localConnector']['import'].localConnector=undefined;
+                    delete data['document']['localConnector']['import'].localConnector;
                 }
-    if(data['eDocument'])
-        if(data['eDocument']['localConnector'])
-            if(data['eDocument']['localConnector']['export'])
-                if(data['eDocument']['localConnector']['export'].localConnector==''){
-                    data['eDocument']['localConnector']['export'].localConnector=undefined;
-                    delete data['eDocument']['localConnector']['export'].localConnector;
+    if(data['document'])
+        if(data['document']['localConnector'])
+            if(data['document']['localConnector']['export'])
+                if(data['document']['localConnector']['export'].localConnector==''){
+                    data['document']['localConnector']['export'].localConnector=undefined;
+                    delete data['document']['localConnector']['export'].localConnector;
                 }
+    if(data['order'])
+        if(data['order']['localConnector'])
+            if(data['order']['localConnector']['import'])
+                if(data['order']['localConnector']['import'].localConnector==''){
+                    data['order']['localConnector']['import'].localConnector=undefined;
+                    delete data['order']['localConnector']['import'].localConnector;
+                }
+    if(data['order'])
+        if(data['order']['localConnector'])
+            if(data['order']['localConnector']['export'])
+                if(data['order']['localConnector']['export'].localConnector==''){
+                    data['order']['localConnector']['export'].localConnector=undefined;
+                    delete data['order']['localConnector']['export'].localConnector;
+                }
+    if(data['ledger'])
+        if(data['ledger']['localConnector'])
+            if(data['ledger']['localConnector']['import'])
+                if(data['ledger']['localConnector']['import'].localConnector==''){
+                    data['ledger']['localConnector']['import'].localConnector=undefined;
+                    delete data['ledger']['localConnector']['import'].localConnector;
+                }
+    if(data['ledger'])
+        if(data['ledger']['localConnector'])
+            if(data['order']['localConnector']['export'])
+                if(data['ledger']['localConnector']['export'].localConnector==''){
+                    data['ledger']['localConnector']['export'].localConnector=undefined;
+                    delete data['ledger']['localConnector']['export'].localConnector;
+                } 
     return data;
 }
 

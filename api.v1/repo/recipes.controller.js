@@ -217,7 +217,7 @@ function defaultReceteAyarla(activeDb,doc,callback){
         
     }else{
         activeDb.recipes.find({ item:doc.item, isDefault:true }).count((err,countQuery)=>{
-            console.log('countQuery2:',countQuery)
+            
             if(countQuery>0) return callback(null,doc);
             doc.isDefault=true;
             doc.save((err,doc2)=>{

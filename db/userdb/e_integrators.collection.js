@@ -2,12 +2,13 @@ module.exports=function(conn){
     var schema = mongoose.Schema({
         eIntegrator: {type: String, trim:true, required: [true,'Entegrator seciniz'], default: 'uyumsoft', enum:['uyumsoft','finansbank','innova','logo','turkcell','ingbank']},
         name: {type: String,  trim:true, required: [true,'Kisa bir isim (Sube vs) gereklidir']},
-        eInvoice:{
+        invoice:{
             url: {type: String, trim:true, default: ''},
             firmNo: {type: Number, default: 0},
             username: {type: String, trim:true, default: ''},
             password: {type: String, default: ''},
-            prefix: {type: String, trim:true, default: 'AAA',minlength:3,maxlength:3,required: [true,'3 Karakter Fatura Ön Ek gereklidir']},
+            prefixOutbox: {type: String, trim:true, default: 'FAT',minlength:3,maxlength:3,required: [true,'3 Karakter Fatura Ön Ek gereklidir']},
+            prefixInbox: {type: String, trim:true, default: 'AFT'},
             postboxAlias: {type: String, trim:true, default: ''},
             senderboxAlias: {type: String, trim:true, default: ''},
             xslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
@@ -25,12 +26,13 @@ module.exports=function(conn){
                 },
             }
         },
-        eDespatch:{
+        despatch:{
             url: {type: String, trim:true, default: ''},
             firmNo: {type: Number, default: 0},
             username: {type: String, trim:true, default: ''},
             password: {type: String, default: ''},
-            prefix: {type: String, trim:true, default: 'AAA',minlength:3,maxlength:3,required: [true,'3 Karakter Irsaliye Ön Ek gereklidir']},
+            prefixOutbox: {type: String, trim:true, default: 'IRS',minlength:3,maxlength:3,required: [true,'3 Karakter Irsaliye Ön Ek gereklidir']},
+            prefixInbox: {type: String, trim:true, default: 'AIR',minlength:3,maxlength:3,required: [true,'3 Karakter Alim Irsaliye Ön Ek gereklidir']},
             postboxAlias: {type: String, trim:true, default: ''},
             senderboxAlias: {type: String, trim:true, default: ''},
             xslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
@@ -53,7 +55,8 @@ module.exports=function(conn){
             firmNo: {type: Number, default: 0},
             username: {type: String, trim:true, default: ''},
             password: {type: String, default: ''},
-            prefix: {type: String, trim:true, default: 'AAA',minlength:3,maxlength:3,required: [true,'3 Karakter Irsaliye Ön Ek gereklidir']},
+            prefixOutbox: {type: String, trim:true, default: 'SIP',minlength:3,maxlength:3,required: [true,'3 Karakter Siparis Ön Ek gereklidir']},
+            prefixInbox: {type: String, trim:true, default: 'ASP',minlength:3,maxlength:3,required: [true,'3 Karakter Alim Siparis Ön Ek gereklidir']},
             postboxAlias: {type: String, trim:true, default: ''},
             senderboxAlias: {type: String, trim:true, default: ''},
             xslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
@@ -71,12 +74,13 @@ module.exports=function(conn){
                 },
             }
         },
-        eDocument:{
+        document:{
             url: {type: String, trim:true, default: ''},
             firmNo: {type: Number, default: 0},
             username: {type: String, trim:true, default: ''},
             password: {type: String, default: ''},
-            prefix: {type: String, trim:true, default: 'AAA',minlength:3,maxlength:3,required: [true,'3 Karakter dokuman Ön Ek gereklidir']},
+            prefixOutbox: {type: String, trim:true, default: 'BEL',minlength:3,maxlength:3,required: [true,'3 Karakter dokuman Ön Ek gereklidir']},
+            prefixInbox: {type: String, trim:true, default: 'GBE',minlength:3,maxlength:3,required: [true,'3 Karakter gelen dokuman Ön Ek gereklidir']},
             postboxAlias: {type: String, trim:true, default: ''},
             senderboxAlias: {type: String, trim:true, default: ''},
             xslt:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
@@ -94,7 +98,7 @@ module.exports=function(conn){
                 },
             }
         },
-        eLedger:{
+        ledger:{
             url: {type: String, trim:true, default: ''},
             firmNo: {type: Number, default: 0},
             username: {type: String, trim:true, default: ''},

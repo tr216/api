@@ -73,6 +73,7 @@ function yeniHesapKodu(activeDb,sourceDoc,callback){
             if(docs.length==0) return callback(null,'001');
             
             var yeniKod=mrutil.incString(docs[0].code);
+            
             callback(null,yeniKod);
         }else{
             callback(err);
@@ -119,6 +120,7 @@ function getOne(activeDb,member,req,res,callback){
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
     if((data.parentAccount || '')=='') data.parentAccount=undefined;
+
     var newdoc = new activeDb.accounts(data);
 
     var err=epValidateSync(newdoc);

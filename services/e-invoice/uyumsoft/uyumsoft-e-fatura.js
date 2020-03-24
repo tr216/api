@@ -4,7 +4,7 @@ var api=require('./api.js');
 exports.downloadInboxInvoices=function(dbModel,eIntegratorDoc,callback){
 	try{
 		if(!eIntegratorDoc) return callback(null);
-		var isTestPlatform=eIntegratorDoc.eInvoice.url.indexOf('test')>-1?true:false;
+		var isTestPlatform=eIntegratorDoc.invoice.url.indexOf('test')>-1?true:false;
 		if(isTestPlatform) eventLog('uyumsoft test platform');
 		eventLog('downloadInboxInvoices dbId:',dbModel._id);
 		dbModel.e_invoices.find({eIntegrator:eIntegratorDoc._id, ioType:1}).sort({'issueDate.value':-1}).limit(1).exec((err,docs)=>{
@@ -36,7 +36,7 @@ exports.downloadInboxInvoices=function(dbModel,eIntegratorDoc,callback){
 				var indirilecekFaturalar=[];
 
 				function listeIndir(cb){
-						api.getInboxInvoiceList(eIntegratorDoc.eInvoice,JSON.parse(JSON.stringify(query)),(err,result)=>{
+						api.getInboxInvoiceList(eIntegratorDoc.invoice,JSON.parse(JSON.stringify(query)),(err,result)=>{
 							if(!err){
 								eventLog('inbox invoices pageIndex:',(result.page +1) + '/' + result.pageCount);
 								if(result.docs.length>0){
@@ -114,7 +114,7 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 					}
 				}
 				
-				api.getInboxInvoice(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,result)=>{
+				api.getInboxInvoice(eIntegratorDoc.invoice,indirilecekFaturalar[index].uuid,(err,result)=>{
 					if(!err){
 						if(result.doc){
 							if(result.doc.invoice){
@@ -123,12 +123,12 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 								
 								var files={html:'',pdf:null};
 
-								// api.getInboxInvoiceHtml(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
+								// api.getInboxInvoiceHtml(eIntegratorDoc.invoice,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
 								// 	if(!err){
 										
 								// 		files.html=resultHtml.doc.html;
 								// 	}
-								// 	api.getInboxInvoicePdf(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
+								// 	api.getInboxInvoicePdf(eIntegratorDoc.invoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
 								// 		if(!err){
 								// 			files.pdf=resultPdf.doc.pdf
 											
@@ -181,7 +181,7 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 exports.downloadOutboxInvoices=function(dbModel,eIntegratorDoc,callback){
 	try{
 		if(!eIntegratorDoc) return callback(null);
-		var isTestPlatform=eIntegratorDoc.eInvoice.url.indexOf('test')>-1?true:false;
+		var isTestPlatform=eIntegratorDoc.invoice.url.indexOf('test')>-1?true:false;
 		if(isTestPlatform) eventLog('uyumsoft test platform');
 		eventLog('downloadOutboxInvoices dbId:',dbModel._id);
 		dbModel.e_invoices.find({eIntegrator:eIntegratorDoc._id, ioType:0}).sort({'issueDate.value':-1}).limit(1).exec((err,docs)=>{
@@ -214,7 +214,7 @@ exports.downloadOutboxInvoices=function(dbModel,eIntegratorDoc,callback){
 				var indirilecekFaturalar=[];
 
 				function listeIndir(cb){
-					api.getOutboxInvoiceList(eIntegratorDoc.eInvoice,JSON.parse(JSON.stringify(query)),(err,result)=>{
+					api.getOutboxInvoiceList(eIntegratorDoc.invoice,JSON.parse(JSON.stringify(query)),(err,result)=>{
 						if(!err){
 							if(result.docs.length>0){
 								for(var i=0;i<result.docs.length;i++){
@@ -294,7 +294,7 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 					}
 				}
 				
-				api.getOutboxInvoice(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,result)=>{
+				api.getOutboxInvoice(eIntegratorDoc.invoice,indirilecekFaturalar[index].uuid,(err,result)=>{
 					if(!err){
 						if(result.doc){
 							if(result.doc.invoice){
@@ -304,12 +304,12 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 								
 								var files={html:'',pdf:null};
 
-								// api.getOutboxInvoiceHtml(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
+								// api.getOutboxInvoiceHtml(eIntegratorDoc.invoice,indirilecekFaturalar[index].uuid,(err,resultHtml)=>{
 								// 	if(!err){
 								// 		files.html=resultHtml.doc.html;
 								// 	}
 									
-								// 	api.getOutboxInvoicePdf(eIntegratorDoc.eInvoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
+								// 	api.getOutboxInvoicePdf(eIntegratorDoc.invoice,indirilecekFaturalar[index].uuid,(err,resultPdf)=>{
 								// 		if(!err){
 								// 			files.pdf=resultPdf.doc.pdf
 											
@@ -807,7 +807,7 @@ exports.sendDocumentResponse=function(responseStatus, dbModel,eInvoice,callback)
 
 exports.checkInboxInvoicesStatus=function(dbModel,eIntegratorDoc,invoiceList,callback){
 	try{
-		var options=JSON.parse(JSON.stringify(eIntegratorDoc.eInvoice));
+		var options=JSON.parse(JSON.stringify(eIntegratorDoc.invoice));
 		var isTestPlatform=false;
 		if(options.url.indexOf('test')>-1) isTestPlatform=true;
 		var query={
@@ -824,7 +824,7 @@ exports.checkInboxInvoicesStatus=function(dbModel,eIntegratorDoc,invoiceList,cal
 		var guncellenmisInvoiceList=[];
 
 		function listeIndir(cb){
-			api.getInboxInvoiceList(eIntegratorDoc.eInvoice,JSON.parse(JSON.stringify(query)),(err,result)=>{
+			api.getInboxInvoiceList(eIntegratorDoc.invoice,JSON.parse(JSON.stringify(query)),(err,result)=>{
 				if(!err){
 					
 					if(result.docs.length>0){
@@ -882,7 +882,7 @@ exports.checkInboxInvoicesStatus=function(dbModel,eIntegratorDoc,invoiceList,cal
 
 exports.checkOutboxInvoicesStatus=function(dbModel,eIntegratorDoc,invoiceList,callback){
 	try{
-		var options=JSON.parse(JSON.stringify(eIntegratorDoc.eInvoice));
+		var options=JSON.parse(JSON.stringify(eIntegratorDoc.invoice));
 		var isTestPlatform=false;
 		if(options.url.indexOf('test')>-1) isTestPlatform=true;
 		var query={
@@ -899,7 +899,7 @@ exports.checkOutboxInvoicesStatus=function(dbModel,eIntegratorDoc,invoiceList,ca
 		var guncellenmisInvoiceList=[];
 
 		function listeIndir(cb){
-			api.getOutboxInvoiceList(eIntegratorDoc.eInvoice,JSON.parse(JSON.stringify(query)),(err,result)=>{
+			api.getOutboxInvoiceList(eIntegratorDoc.invoice,JSON.parse(JSON.stringify(query)),(err,result)=>{
 				if(!err){
 					
 					if(result.docs.length>0){
