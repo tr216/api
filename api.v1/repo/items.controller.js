@@ -217,9 +217,12 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
-    
+    console.log('data.accountGroup:',data.accountGroup);
+    if((data.accountGroup || '')=='') data.accountGroup=undefined;
+    data._id=undefined;
+    console.log('data.accountGroup2:',data.accountGroup);
     var newdoc = new activeDb.items(data);
-    newdoc.partyType='Customer';
+
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
@@ -237,7 +240,8 @@ function put(activeDb,member,req,res,callback){
         var data=req.body || {};
         data._id = req.params.param1;
         data.modifiedDate = new Date();
-        
+        if((data.accountGroup || '')=='') data.accountGroup=undefined;
+
         activeDb.items.findOne({ _id: data._id},(err,doc)=>{
             if(dberr(err,callback)){
                 if(dbnull(doc,callback)) {
