@@ -116,7 +116,9 @@ function receteleriKaydet(activeDb,itemDoc,newItemDoc,callback){
 }
 
 function getList(activeDb,member,req,res,callback){
-    var options={page: (req.query.page || 1)}
+    var options={page: (req.query.page || 1)
+
+    }
     if(!req.query.page){
         options.limit=50000;
     }
@@ -175,6 +177,10 @@ function getList(activeDb,member,req,res,callback){
         filter['commodityClassification.itemClassificationCode.value']={ $regex: '.*' + req.query.itemClassificationCode + '.*' ,$options: 'i' };
     }
     
+    if((req.query.accountGroup || '')!=''){
+        filter['accountGroup']=req.query.accountGroup;
+    }
+
 
     activeDb.items.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {

@@ -19,7 +19,7 @@ module.exports=function(conn){
         itemInstance:[dbType.itemInstanceType],
         taxTotal:[dbType.taxTotalType],
         withholdingTaxTotal:[dbType.taxTotalType],
-        account: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts'},
+        accountGroup: {type: mongoose.Schema.Types.ObjectId, ref: 'account_groups', default:null},
         similar:[{type: mongoose.Schema.Types.ObjectId, ref: 'items'}],
         unitPacks:[{type: Number, default: 0}],
         vendors:[{
