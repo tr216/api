@@ -52,7 +52,8 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.item || '')!=''){
         filter['item']=req.query.item;
     }
-
+    console.log('filter:',filter);
+    
     activeDb.recipes.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
@@ -93,6 +94,8 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
+    data._id=undefined;
+    
     if((data.item || '')=='') return callback({success: false, error: {code: 'WRONG_PARAMETER', message: 'item gereklidir'}});
     activeDb.items.findOne({_id:data.item},(err,itemDoc)=>{
         if(dberr(err,callback)){

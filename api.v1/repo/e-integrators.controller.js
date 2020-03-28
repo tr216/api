@@ -97,6 +97,8 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
+    data._id=undefined;
+    
     data=cleanDataEmptyLocalConnector(data);
     saveFiles(activeDb,data,(err,data)=>{
         var newdoc = new activeDb.e_integrators(data);

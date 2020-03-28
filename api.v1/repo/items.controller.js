@@ -217,10 +217,10 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
-    console.log('data.accountGroup:',data.accountGroup);
-    if((data.accountGroup || '')=='') data.accountGroup=undefined;
     data._id=undefined;
-    console.log('data.accountGroup2:',data.accountGroup);
+
+    if((data.accountGroup || '')=='') data.accountGroup=undefined;
+   
     var newdoc = new activeDb.items(data);
 
     var err=epValidateSync(newdoc);

@@ -75,6 +75,8 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
+    data._id=undefined;
+    
     var newdoc = new activeDb.shifts(data);
 
     var err=epValidateSync(newdoc);

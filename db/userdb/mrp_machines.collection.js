@@ -10,6 +10,7 @@ module.exports=function(conn){
             name:{type: String, trim:true},
             value:{type: String, trim:true}
         }],
+        account: {type: mongoose.Schema.Types.ObjectId, ref: 'accounts', default:null },
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},
         passive: {type: Boolean, default: false}

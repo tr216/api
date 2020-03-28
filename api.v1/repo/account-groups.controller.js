@@ -105,6 +105,7 @@ function getOne(activeDb,member,req,res,callback){
 
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
+    data._id=undefined;
     
     if((data.account || '')=='') data.account=undefined;
     if((data.salesAccount || '')=='') data.salesAccount=undefined;

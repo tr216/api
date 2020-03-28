@@ -74,17 +74,9 @@ module.exports=function(conn){
     schema.plugin(mongooseAggregatePaginate);
     
     schema.index({
-        "name.value":1,
-        "description.value":1,
-        "brandName.value":1,
-        "keyword.value":1,
-        "itemInstance.serialId.value":1,
-        "itemInstance.lotIdentification.lotNumberId.value":1,
-        "buyersItemIdentification.ID.value":1,
-        "sellersItemIdentification.ID.value":1,
-        "buyersItemIdentification.ID.value":1,
-        "localDocumentId":1,
-        "tags":1,
+        "item":1,
+        "name":1,
+        "description":1,
         "createdDate":1
     });
 
