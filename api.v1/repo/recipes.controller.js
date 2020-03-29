@@ -1,5 +1,6 @@
 module.exports = function(activeDb, member, req, res, callback) {
-   
+   console.log('api/recipes');
+   console.log('req.method:',req.method);
     switch(req.method){
         case 'GET':
         if(req.params.param1!=undefined){
@@ -130,6 +131,7 @@ function post(activeDb,member,req,res,callback){
 }
 
 function put(activeDb,member,req,res,callback){
+    console.log('recipes put function');
     if(req.params.param1==undefined){
         callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
     }else{
