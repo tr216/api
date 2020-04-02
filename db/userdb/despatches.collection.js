@@ -94,7 +94,7 @@ module.exports=function(conn){
     });
 
 
-    var collectionName='e_despatch';
+    var collectionName='despatches';
     var model=conn.model(collectionName, schema);
     
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }

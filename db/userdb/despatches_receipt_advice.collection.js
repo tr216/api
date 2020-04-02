@@ -91,7 +91,7 @@ module.exports=function(conn){
     });
 
 
-    var collectionName='e_despatches_receipt_advice';
+    var collectionName='despatches_receipt_advice';
     var model=conn.model(collectionName, schema);
     
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }

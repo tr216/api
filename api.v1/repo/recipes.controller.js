@@ -1,6 +1,4 @@
 module.exports = function(activeDb, member, req, res, callback) {
-   console.log('api/recipes');
-   console.log('req.method:',req.method);
     switch(req.method){
         case 'GET':
         if(req.params.param1!=undefined){
@@ -53,7 +51,7 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.item || '')!=''){
         filter['item']=req.query.item;
     }
-    console.log('filter:',filter);
+   
     
     activeDb.recipes.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
@@ -101,6 +99,9 @@ function post(activeDb,member,req,res,callback){
     activeDb.items.findOne({_id:data.item},(err,itemDoc)=>{
         if(dberr(err,callback)){
             if(itemDoc==null) return callback({success: false, error: {code: 'ITEM_NOT_FOUND', message: 'item bulunamadi.'}});
+            if(data.process){
+                //data.process.forEach()
+            }
             var newdoc = new activeDb.recipes(data);
 
             var err=epValidateSync(newdoc);

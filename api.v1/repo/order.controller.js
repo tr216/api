@@ -84,17 +84,6 @@ module.exports = function(activeDb, member, req, res, callback) {
 	}
 }
 
-function findGTIPNO(activeDb,member,req,res,callback){
-	var data = req.body || {};
-	if(data.orderLine==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'orderLine elemani bulunamadi'}});
-	if(!Array.isArray(data.orderLine)) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'orderLine array olmalidir'}});
-
-	// data.orderLine.forEach((line)=>{
-
-	// });
-	callback({success: true,data:'ok'});
-}
-
 function getErrors(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
 	var select='_id profileId ID orderTypeCode localDocumentId issueDate ioType eIntegrator orderErrors localErrors orderStatus localStatus';

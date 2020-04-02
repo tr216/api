@@ -118,7 +118,8 @@ function salesOrders(activeDb,member,req,res,callback){
 function getList(activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1), 
         populate:[
-            {path:'location',select:'_id locationName'}
+            {path:'item',select:'_id name'},
+            {path:'sourceRecipe',select:'_id name'},
         ]
     }
 
@@ -153,7 +154,15 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.production_orders.findOne({_id:req.params.param1},(err,doc)=>{
+    var populate=[
+        { path:'process.station', select:'_id name'},
+        { path:'process.step', select:'_id name useMaterial'},
+        { path:'process.input.item', select:'_id itemType name'},
+        { path:'process.output.item', select:'_id itemType name'},
+        { path:'materialSummary.item', select:'_id itemType name'},
+        { path:'outputSummary.item', select:'_id itemType name'}
+    ]
+    activeDb.production_orders.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: doc});
         }
@@ -163,18 +172,17 @@ function getOne(activeDb,member,req,res,callback){
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
     data._id=undefined;
+    documentHelper.yeniUretimNumarasi(activeDb,data,(err,data)=>{
+        var newdoc = new activeDb.production_orders(data);
+        var err=epValidateSync(newdoc);
+        if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
-    var newdoc = new activeDb.production_orders(data);
-    var err=epValidateSync(newdoc);
-    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-
-    newdoc.save(function(err, newdoc2) {
-        if (dberr(err,callback)) {
-            callback({success:true,data:newdoc2});
-        } 
-    });
-
-       
+        newdoc.save(function(err, newdoc2) {
+            if (dberr(err,callback)) {
+                callback({success:true,data:newdoc2});
+            } 
+        });
+    })
 }
 
 function put(activeDb,member,req,res,callback){

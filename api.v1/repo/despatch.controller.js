@@ -27,13 +27,13 @@ module.exports = function(activeDb, member, req, res, callback) {
         case 'POST':
             switch(req.params.param1.lcaseeng()){
                 case 'transfer':
-                    if(req.params.param2.lcaseeng()=='import'){
-                        transferImport(activeDb,member,req,res,callback)
-                    }else if(req.params.param2.lcaseeng()=='export'){
+                    // if(req.params.param2.lcaseeng()=='import'){
+                    //     transferImport(activeDb,member,req,res,callback)
+                    // }else if(req.params.param2.lcaseeng()=='export'){
                         return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
-                    }else{
-                        return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
-                    }
+                    // }else{
+                    //     return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
+                    // }
                 break;
                 case 'sendtogib':
                     return sendToGib(activeDb,member,req,res,callback);
@@ -45,10 +45,7 @@ module.exports = function(activeDb, member, req, res, callback) {
                 case 'saveoutboxdespatch':
                 case 'despatch':
                     return post(activeDb,member,req,res,callback);
-                case 'findgtipno':
-                return findGTIPNO(activeDb,member,req,res,callback);
-                case 'importoutboxdespatch':
-                    return importOutboxDespatch(activeDb,member,req,res,callback);
+                
                 default:
                     return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
                 break;
@@ -59,9 +56,9 @@ module.exports = function(activeDb, member, req, res, callback) {
 
             switch(req.params.param1.lcaseeng()){
                 
-                case 'saveinboxinvoice':
-                case 'saveoutboxinvoice':
-                case 'invoice':
+                case 'saveinboxdespatch':
+                case 'saveoutboxdespatch':
+                case 'despatch':
                     return put(activeDb,member,req,res,callback);
                 
                 default:
@@ -75,23 +72,13 @@ module.exports = function(activeDb, member, req, res, callback) {
     }
 }
 
-function findGTIPNO(activeDb,member,req,res,callback){
-    var data = req.body || {};
-    if(data.invoiceLine==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'invoiceLine elemani bulunamadi'}});
-    if(!Array.isArray(data.invoiceLine)) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'invoiceLine array olmalidir'}});
-
-    // data.invoiceLine.forEach((line)=>{
-
-    // });
-    callback({success: true,data:'ok'});
-}
 
 function getErrors(activeDb,member,req,res,callback){
     var _id= req.params.param2 || req.query._id || '';
     var select='_id profileId ID despatchTypeCode localDocumentId issueDate ioType eIntegrator despatchErrors localErrors despatchStatus localStatus';
     
     if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    activeDb.e_despatches.findOne({_id:_id},select).exec((err,doc)=>{
+    activeDb.despatches.findOne({_id:_id},select).exec((err,doc)=>{
         if(dberr(err,callback))
             if(dbnull(doc,callback)){
                 var data=doc.toJSON();
@@ -105,7 +92,7 @@ function post(activeDb,member,req,res,callback){
     data._id=undefined;
     
     data=mrutil.amountValueFixed2Digit(data,'');
-    var newDoc = new activeDb.e_despatches(data);
+    var newDoc = new activeDb.despatches(data);
     var err=epValidateSync(newDoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
     newDoc.uuid.value=uuid.v4();
@@ -113,7 +100,7 @@ function post(activeDb,member,req,res,callback){
     activeDb.e_integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
         if(dberr(err,callback)){
             if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Faturada entegrator bulanamadi.'}});
-            documentHelper.yeniFaturaNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
+            documentHelper.yeniIrsaliyeNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
                 newDoc.save(function(err, newDoc2) {
                     if(dberr(err,callback)){
                         callback({success:true,data:newDoc2});
@@ -124,41 +111,6 @@ function post(activeDb,member,req,res,callback){
     });
 }
 
-function importOutboxDespatch(activeDb,member,req,res,callback){
-    var data = req.body || {};
-    
-    if(!data.files) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'files elemani bulunamadi'}});
-    if(!Array.isArray(data.files)) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'files elemani array olmak zorundadir'}});
-    if(data.files.length==0) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'files elemani bos olamaz'}});
-    data.files.forEach((e)=>{
-        if(e.base64Data){
-            e['data']=atob(e.base64Data);
-        }
-    });
-    
-
-    fileImporter.run(activeDb,(data.fileImporter || ''),data,(err,results)=>{
-        if(!err){
-            eInvoiceHelper.findDefaultEIntegrator(activeDb,(data.eIntegrator || ''),(err,eIntegratorDoc)=>{
-                if(!err){
-                    eInvoiceHelper.insertEInvoice(activeDb,eIntegratorDoc,results,(err)=>{
-                        if(!err){
-                            callback({success:true,data:'ok'})
-                        }else{
-                            callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
-                        }
-                    })
-                }else{
-                    callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
-                }
-            });
-            
-        }else{
-            callback({success:false,error:{code:err.code || err.name || 'ERROR',message:err.message }})
-        }
-    });
-    
-}
 
 function put(activeDb,member,req,res,callback){
     eventLog('put buraya geldi');
@@ -167,19 +119,18 @@ function put(activeDb,member,req,res,callback){
     data._id = req.params.param2;
     data.modifiedDate = new Date();
     eventLog('put sonra buraya geldi');
-    activeDb.e_despatches.findOne({ _id: data._id},(err,doc)=>{
+    activeDb.despatches.findOne({ _id: data._id},(err,doc)=>{
         if (!err) {
             if(doc==null){
                 eventLog('doc==null');
                 callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
             }else{
-                eventLog('Before taxtotal:',doc.taxTotal);
                 data=mrutil.amountValueFixed2Digit(data,'');
                 var doc2 = Object.assign(doc, data);
-                var newDoc = new activeDb.e_despatches(doc2);
+                var newDoc = new activeDb.despatches(doc2);
                 var err=epValidateSync(newDoc);
                 if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-                newDoc=calculateInvoiceTotals(newDoc);
+                //newDoc=calculateInvoiceTotals(newDoc);
                 newDoc.save(function(err, newDoc2) {
                     if(dberr(err,callback)){
                         eventLog('After taxtotal:',doc.taxTotal);
@@ -193,86 +144,6 @@ function put(activeDb,member,req,res,callback){
             callback({success: false, error: {code: err.name, message: err.message}});
         }
     });
-}
-
-function transferImport(activeDb,member,req,res,callback){
-    
-    activeDb.e_integrators.find({passive:false,'localConnectorImportInvoice.localConnector':{$ne:null}}).populate(['localConnectorImportInvoice.localConnector']).exec((err,docs)=>{
-        if (dberr(err,callback)) {
-            if(docs.length==0){
-                return callback({success:false,error:{code:'NOT_DEFINED',message:'Local connectoru tanimlanmis aktif bir entegrator bulunmamaktadir.'}})
-            }
-            var index=0;
-            var kuyrugaAlinan=0;
-            var zatenKuyrukta=0;
-            
-
-            function pushTask(cb){
-                if(index>=docs.length){
-                    cb(null);
-                }else{
-                    activeDb.tasks.findOne({taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
-                        if (dberr(err,callback)) {
-                            if(doc==null){
-                                var taskdata={taskType:'connector_import_einvoice',collectionName:'e_integrators',documentId:docs[index]._id,document:docs[index]}
-                                taskHelper.newTask(activeDb,taskdata,(err,taskDoc)=>{
-                                    if(!err){
-                                        switch(taskDoc.status){
-                                            case 'running':
-                                                docs[index].localConnectorImportInvoice['status']='transferring';
-                                                break;
-                                            case 'pending':
-                                                docs[index].localConnectorImportInvoice['status']='pending';
-                                                break;
-                                            case 'completed':
-                                                docs[index].localConnectorImportInvoice['status']='transferred';
-                                                break;
-                                            case 'error':
-                                                docs[index].localConnectorImportInvoice['status']='error';
-                                                break;
-                                            default:
-                                                 docs[index].localConnectorImportInvoice['status']='';
-                                                 break;
-                                        }
-                                        docs[index].save((err,newDoc)=>{
-                                            if(!err){
-                                                kuyrugaAlinan++;
-                                                index++;
-                                                setTimeout(pushTask,0,cb);
-                                            }else{
-                                                cb(err);
-                                                // index++;
-                                                // setTimeout(pushTask,0,cb);
-                                            }
-                                        });
-                                    }else{
-                                        cb(err);
-                                        // index++;
-                                        // setTimeout(pushTask,0,cb);
-                                    }
-                                });
-                            }else{
-                                zatenKuyrukta++;
-                                index++;
-                                setTimeout(pushTask,0,cb);
-                            }
-                        }
-                    });
-                    
-                }
-            }
-            pushTask((err)=>{
-                if(dberr(err,callback)){
-                    if(kuyrugaAlinan==0 && zatenKuyrukta>0){
-                        callback({success:false,error:{code:'ALREADY_IN_PROCESSING',message:'Islem gorev yoneticisine alinmis. Birazdan tamamlanir.'}})
-                    }else{
-                        callback({success: true,data:'Gorev yoneticisine ' + kuyrugaAlinan.toString() + ' adet gorev alindi'});
-                    }
-                    
-                }
-            });
-        }
-    })
 }
 
 function getDespatchList(ioType,activeDb,member,req,res,callback){
@@ -329,7 +200,7 @@ function getDespatchList(ioType,activeDb,member,req,res,callback){
         }
     }
     
-    activeDb.e_despatches.paginate(filter,options,(err, resp)=>{
+    activeDb.despatches.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             var liste=[]
             resp.docs.forEach((e,index)=>{
@@ -438,7 +309,7 @@ function getDespatch(activeDb,member,req,res,callback){
     if(includeAdditionalDocumentReference==true) select='';
     
     if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    activeDb.e_despatches.findOne({_id:_id},select).exec((err,doc)=>{
+    activeDb.despatches.findOne({_id:_id},select).exec((err,doc)=>{
         if(dberr(err,callback))
             if(dbnull(doc,callback)){
                 var data=doc.toJSON();
@@ -450,7 +321,7 @@ function getDespatch(activeDb,member,req,res,callback){
 function invoiceView(activeDb,member,req,res,callback){
     var _id= req.params.param2 || req.query._id || '';
     if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    activeDb.e_despatches.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
+    activeDb.despatches.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
         if(dberr(err,callback))
             if(dbnull(doc,callback)){
                 callback({file: doc.html});
@@ -461,7 +332,7 @@ function invoiceView(activeDb,member,req,res,callback){
 function invoicePdf(activeDb,member,req,res,callback){
     var _id= req.params.param2 || req.query._id || '';
     if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    activeDb.e_despatches.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
+    activeDb.despatches.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
         if(dberr(err,callback))
             if(dbnull(doc,callback)){
                 
@@ -473,7 +344,7 @@ function invoicePdf(activeDb,member,req,res,callback){
 function getDespatchXmlXslt(activeDb,member,req,res,callback){
     var _id= req.params.param2 || req.query._id || '';
     if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    activeDb.e_despatches.findOne({_id:_id},(err,doc)=>{
+    activeDb.despatches.findOne({_id:_id},(err,doc)=>{
         if(dberr(err,callback))
             if(dbnull(doc,callback)){
                 var invoice=doc.toJSON();
@@ -558,7 +429,7 @@ function sendToGib(activeDb,member,req,res,callback){
     });
     var filter={despatchStatus:{$in:['Draft','Error']},_id:{$in:idList}};
 
-    activeDb.e_despatches.find(filter).populate(populate).exec((err,docs)=>{
+    activeDb.despatches.find(filter).populate(populate).exec((err,docs)=>{
         if (dberr(err,callback)) {
             var index=0;
 
@@ -567,7 +438,7 @@ function sendToGib(activeDb,member,req,res,callback){
                     cb(null);
                 }else{
                     
-                    var taskdata={taskType:'einvoice_send_to_gib',collectionName:'e_despatches',documentId:docs[index]._id,document:docs[index].toJSON()}
+                    var taskdata={taskType:'einvoice_send_to_gib',collectionName:'despatches',documentId:docs[index]._id,document:docs[index].toJSON()}
                     taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
                         if(!err){
                             switch(taskDoc.status){
@@ -626,10 +497,10 @@ function approveDeclineDespatch(type, activeDb,member,req,res,callback){
     var taskType='';
     switch(type){
         case 'approve':
-            taskType='einvoice_approve';
+            taskType='despatch_approve';
         break;
         case 'decline':
-            taskType='einvoice_decline';
+            taskType='despatch_decline';
         break;
     }
     var populate={
@@ -654,7 +525,7 @@ function approveDeclineDespatch(type, activeDb,member,req,res,callback){
 
     var filter={despatchStatus:'WaitingForAprovement',_id:{$in:idList}};
 
-    activeDb.e_despatches.find(filter).select(select).populate(populate).exec((err,docs)=>{
+    activeDb.despatches.find(filter).select(select).populate(populate).exec((err,docs)=>{
         if (dberr(err,callback)) {
             var index=0;
             
@@ -665,7 +536,7 @@ function approveDeclineDespatch(type, activeDb,member,req,res,callback){
                     cb(null);
                 }else{
                     
-                    var taskdata={taskType: taskType,collectionName:'e_despatches',documentId:docs[index]._id,document:docs[index].toJSON()}
+                    var taskdata={taskType: taskType,collectionName:'despatches',documentId:docs[index]._id,document:docs[index].toJSON()}
                     taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
                         if(!err){
                             
