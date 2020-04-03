@@ -7,9 +7,9 @@ module.exports=function(conn){
         },
         ID: dbType.idType,
         uuid: dbType.valueType,
-        issueDate: {value :{ type: String,  required: [true,'Fatura tarihi gereklidir']}},
+        issueDate: {value :{ type: String,  required: [true,'Irsaliye tarihi gereklidir']}},
         issueTime: {value :{ type: String,default: '00:00:00.0000000+03:00'}},
-        despatchAdviceTypeCode: {value: { type: String,default: '', trim:true, enum:['SEVK','MAKBUDAN'], required: true}},
+        despatchAdviceTypeCode: {value: { type: String,default: '', trim:true, enum:['SEVK','MATBUDAN'], required: true}},
         despatchPeriod: dbType.periodType,
         note:[dbType.valueType],
         additionalDocumentReference:[dbType.documentReferenceType],
@@ -41,8 +41,8 @@ module.exports=function(conn){
         localDocumentId: {type: String, default: ''},
         despatchStatus: {type: String, default: 'Draft',enum:['Draft','Pending','Queued', 'Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
         despatchErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
-        despatchStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
-        despatchErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
+        localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
+        localErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now}
     });

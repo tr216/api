@@ -113,12 +113,12 @@ function post(activeDb,member,req,res,callback){
 
 
 function put(activeDb,member,req,res,callback){
-    eventLog('put buraya geldi');
+    
     if(req.params.param2==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
     var data = req.body || {};
     data._id = req.params.param2;
     data.modifiedDate = new Date();
-    eventLog('put sonra buraya geldi');
+    
     activeDb.despatches.findOne({ _id: data._id},(err,doc)=>{
         if (!err) {
             if(doc==null){
@@ -153,7 +153,7 @@ function getDespatchList(ioType,activeDb,member,req,res,callback){
         ],
         limit:10
         ,
-        select:'_id eIntegrator profileId ID uuid issueDate issueTime despatchTypeCode documentCurrencyCode lineCountNumeric localDocumentId pricingExchangeRate accountingCustomerParty accountingSupplierParty legalMonetaryTotal taxTotal withholdingTaxTotal despatchStatus despatchErrors localStatus localErrors',
+        select:'_id eIntegrator profileId ID uuid issueDate issueTime despatchAdviceTypeCode lineCountNumeric localDocumentId deliveryCustomerParty despatchSupplierParty despatchStatus despatchErrors localStatus localErrors',
         sort:{'issueDate.value':'desc' , 'ID.value':'desc'}
     }
 
@@ -169,10 +169,10 @@ function getDespatchList(ioType,activeDb,member,req,res,callback){
     if((req.query.ID || '')!=''){
         filter['ID.value']={ $regex: '.*' + req.query.ID + '.*' ,$options: 'i' };
     }
-    if((req.query.invoiceNo || '')!=''){
+    if((req.query.despatchNo || '')!=''){
         if(filter['$or']==undefined) filter['$or']=[];
-        filter['$or'].push({'ID.value':{ '$regex': '.*' + req.query.invoiceNo + '.*' , '$options': 'i' }})
-        filter['$or'].push({'localDocumentId':{ '$regex': '.*' + req.query.invoiceNo + '.*' ,'$options': 'i' }})
+        filter['$or'].push({'ID.value':{ '$regex': '.*' + req.query.despatchNo + '.*' , '$options': 'i' }})
+        filter['$or'].push({'localDocumentId':{ '$regex': '.*' + req.query.despatchNo + '.*' ,'$options': 'i' }})
     }
     if(req.query.despatchStatus){
         filter['despatchStatus']=req.query.despatchStatus;
@@ -180,12 +180,8 @@ function getDespatchList(ioType,activeDb,member,req,res,callback){
     if((req.query.profileId || '')!=''){
         filter['profileId.value']=req.query.profileId;
     }
-    if((req.query.despatchTypeCode || '')!=''){
-        filter['despatchTypeCode.value']=req.query.despatchTypeCode;
-    }
-
-    if((req.query.documentCurrencyCode || '')!=''){
-        filter['documentCurrencyCode.value']=req.query.documentCurrencyCode;
+    if((req.query.despatchAdviceTypeCode || '')!=''){
+        filter['despatchAdviceTypeCode.value']=req.query.despatchAdviceTypeCode;
     }
 
     if((req.query.date1 || '')!=''){
@@ -214,76 +210,37 @@ function getDespatchList(ioType,activeDb,member,req,res,callback){
                 obj['uuid']=e['uuid'].value;
                 obj['issueDate']=e['issueDate'].value;
                 obj['issueTime']=e['issueTime'].value;
-                obj['despatchTypeCode']=e['despatchTypeCode'].value;
+                obj['despatchAdviceTypeCode']=e['despatchAdviceTypeCode'].value;
                 
-                obj['accountingParty']={title:'',vknTckn:''}
+                obj['party']={title:'',vknTckn:''}
                 if(ioType==0){
-                    obj['accountingParty']['title']=e.accountingCustomerParty.party.partyName.name.value || (e.accountingCustomerParty.party.person.firstName.value + ' ' + e.accountingCustomerParty.party.person.familyName.value);;
-                    e.accountingCustomerParty.party.partyIdentification.forEach((e2)=>{
+                    obj['party']['title']=e.deliveryCustomerParty.party.partyName.name.value || (e.deliveryCustomerParty.party.person.firstName.value + ' ' + e.deliveryCustomerParty.party.person.familyName.value);;
+                    e.deliveryCustomerParty.party.partyIdentification.forEach((e2)=>{
                         var schemeID='';
                         if(e2.ID.attr!=undefined){
                             schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
                         }
                         if(schemeID.indexOf('vkn')>-1 || schemeID.indexOf('tckn')>-1){
-                            obj['accountingParty']['vknTckn']=e2.ID.value || '';
+                            obj['party']['vknTckn']=e2.ID.value || '';
                             return;
                         }
                     });
                 }else{
-                    obj['accountingParty']['title']=e.accountingSupplierParty.party.partyName.name.value || (e.accountingSupplierParty.party.person.firstName.value + ' ' + e.accountingSupplierParty.party.person.familyName.value);
-                    e.accountingSupplierParty.party.partyIdentification.forEach((e2)=>{
+                    obj['party']['title']=e.despatchSupplierParty.party.partyName.name.value || (e.despatchSupplierParty.party.person.firstName.value + ' ' + e.despatchSupplierParty.party.person.familyName.value);
+                    e.despatchSupplierParty.party.partyIdentification.forEach((e2)=>{
                         var schemeID='';
                         if(e2.ID.attr!=undefined){
                             schemeID=(e2.ID.attr.schemeID || '').toLowerCase();
                         }
                         
                         if(schemeID.indexOf('vkn')>-1 || schemeID.indexOf('tckn')>-1){
-                            obj['accountingParty']['vknTckn']=e2.ID.value || '';
+                            obj['party']['vknTckn']=e2.ID.value || '';
                             return;
                         }
 
                     });
                 }
-                obj['payableAmount']=e['legalMonetaryTotal'].payableAmount.value;
-                obj['taxExclusiveAmount']=e['legalMonetaryTotal'].taxExclusiveAmount.value;
-                obj['taxSummary']={
-                    vat1:0,vat8:0,vat18:0,
-                    vat0TaxableAmount:0,
-                    vat1TaxableAmount:0,
-                    vat8TaxableAmount:0,
-                    vat18TaxableAmount:0
-                }
-                var taxTotal=0,withholdingTaxTotal=0;
-                e['taxTotal'].forEach((e2)=>{
-                    taxTotal=taxTotal + e2.taxAmount.value;
-                    e2.taxSubtotal.forEach((e3)=>{
-                        switch(e3.percent.value){
-                            case 1:
-                                obj['taxSummary'].vat1+=e3.taxAmount.value;
-                                obj['taxSummary'].vat1TaxableAmount+=e3.taxableAmount.value;
-                            break;
-                            case 8:
-                                obj['taxSummary'].vat8+=e3.taxAmount.value;
-                                obj['taxSummary'].vat8TaxableAmount+=e3.taxableAmount.value;
-                            break;
-                            case 18:
-                                obj['taxSummary'].vat18+=e3.taxAmount.value;
-                                obj['taxSummary'].vat0TaxableAmount+=e3.taxableAmount.value;
-                            break;
-                            default:
-                                obj['taxSummary'].vat18TaxableAmount+=e3.taxableAmount.value;
-                            break;
-                        }
-                    });
-                });
-                e['withholdingTaxTotal'].forEach((e2)=>{
-                    withholdingTaxTotal=withholdingTaxTotal + e2.taxAmount.value;
-                });
-                obj['taxTotal']=taxTotal;
-                obj['withholdingTaxTotal']=withholdingTaxTotal;
-                obj['documentCurrencyCode']=e['documentCurrencyCode'].value;
-                obj['exchangeRate']=e['pricingExchangeRate'].calculationRate.value;
-
+                
                 obj['lineCountNumeric']=e['lineCountNumeric'].value;
                 obj['localDocumentId']=e['localDocumentId'];
                 obj['despatchStatus']=e['despatchStatus'];
@@ -318,43 +275,6 @@ function getDespatch(activeDb,member,req,res,callback){
     });
 }
 
-function invoiceView(activeDb,member,req,res,callback){
-    var _id= req.params.param2 || req.query._id || '';
-    if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    activeDb.despatches.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
-        if(dberr(err,callback))
-            if(dbnull(doc,callback)){
-                callback({file: doc.html});
-            }
-        });
-}
-
-function invoicePdf(activeDb,member,req,res,callback){
-    var _id= req.params.param2 || req.query._id || '';
-    if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    activeDb.despatches.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
-        if(dberr(err,callback))
-            if(dbnull(doc,callback)){
-                
-                callback({file: doc.pdf});
-            }
-        });
-}
-
-function getDespatchXmlXslt(activeDb,member,req,res,callback){
-    var _id= req.params.param2 || req.query._id || '';
-    if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-    activeDb.despatches.findOne({_id:_id},(err,doc)=>{
-        if(dberr(err,callback))
-            if(dbnull(doc,callback)){
-                var invoice=doc.toJSON();
-                var xml=btoa(mrutil.e_invoice2xml(invoice));
-                var xslt=mrutil.e_invoiceXslt(invoice);
-                callback({success: true,data: {xml:xml,xslt:xslt}});
-            }
-        });
-}
-
 function getEDespatchUserList(activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1), 
         limit:10
@@ -387,20 +307,6 @@ function getEDespatchUserList(activeDb,member,req,res,callback){
             callback({success: true,data: resp});
         } 
     });
-}
-
-function isEInvoiceUser(activeDb,member,req,res,callback){
-    callback({success:true,data:{value:'ok'}});
-  // var vknTckn=req.query.vknTckn || req.query.vkntckn || '';
-  // if(vknTckn.trim()=='') return callback({success:false,error:{code:'MISSING_PARAM',message:'\'vknTckn\' query parametresi bos olamaz.'}})
-  // switch(eIntegratorDoc.eIntegrator){
-  //   case 'uyumsoft':
-  //     uyumsoft.isEInvoiceUser(eIntegratorDoc,vknTckn,callback);
-  //   break;
-  //   default:
-  //     callback({success:false,error:{code:'INTEGRATOR_ERROR',message:'Integrator function not completed or unknown.'}})
-  //   break;
-  // }
 }
 
 function sendToGib(activeDb,member,req,res,callback){
@@ -528,8 +434,6 @@ function approveDeclineDespatch(type, activeDb,member,req,res,callback){
     activeDb.despatches.find(filter).select(select).populate(populate).exec((err,docs)=>{
         if (dberr(err,callback)) {
             var index=0;
-            
-
             function pushTask(cb){
                 eventLog('docs.length:',docs.length);
                 if(index>=docs.length){
@@ -539,7 +443,6 @@ function approveDeclineDespatch(type, activeDb,member,req,res,callback){
                     var taskdata={taskType: taskType,collectionName:'despatches',documentId:docs[index]._id,document:docs[index].toJSON()}
                     taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
                         if(!err){
-                            
                             docs[index].save((err,newDoc)=>{
                                 if(!err){
                                     index++;
