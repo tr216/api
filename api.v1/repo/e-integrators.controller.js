@@ -189,8 +189,8 @@ function saveFiles(activeDb,data,callback){
 }
 
 function xsltKaydet(activeDb,xsltFiles,callback){
-    if(xsltFiles==undefined) return [];
-    if(xsltFiles.length==0) return [];
+    if(xsltFiles==undefined) return callback(null,[]);
+    if(xsltFiles.length==0) return callback(null,[]);
 
     var dizi=[];
     var index=0;

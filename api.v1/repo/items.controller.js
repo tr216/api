@@ -190,7 +190,11 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.items.findOne({_id:req.params.param1},(err,doc)=>{
+    var populate=[
+        {path:'images',select:'_id name extension fileName data type size createdDate modifiedDate'},
+        {path:'files',select:'_id name extension fileName data type size createdDate modifiedDate'}
+    ]
+    activeDb.items.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if(dberr(err,callback)) {
             if(dbnull(doc,callback)) {
                 if(!req.query.print){
@@ -220,16 +224,17 @@ function post(activeDb,member,req,res,callback){
     data._id=undefined;
 
     if((data.accountGroup || '')=='') data.accountGroup=undefined;
-   
-    var newdoc = new activeDb.items(data);
+    saveFiles(activeDb,data,(err,data)=>{
+        var newdoc = new activeDb.items(data);
 
-    var err=epValidateSync(newdoc);
-    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+        var err=epValidateSync(newdoc);
+        if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
-    newdoc.save(function(err, newdoc2) {
-        if(dberr(err,callback)) {
-            callback({success:true,data:newdoc2});
-        } 
+        newdoc.save(function(err, newdoc2) {
+            if(dberr(err,callback)) {
+                callback({success:true,data:newdoc2});
+            } 
+        });
     });
 }
 
@@ -245,14 +250,16 @@ function put(activeDb,member,req,res,callback){
         activeDb.items.findOne({ _id: data._id},(err,doc)=>{
             if(dberr(err,callback)){
                 if(dbnull(doc,callback)) {
-                    var doc2 = Object.assign(doc, data);
-                    var newdoc = new activeDb.items(doc2);
-                    var err=epValidateSync(newdoc);
-                    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-                    newdoc.save(function(err, newdoc2) {
-                        if(dberr(err,callback)) {
-                            callback({success: true,data: newdoc2});
-                        } 
+                    saveFiles(activeDb,data,(err,data)=>{
+                        var doc2 = Object.assign(doc, data);
+                        var newdoc = new activeDb.items(doc2);
+                        var err=epValidateSync(newdoc);
+                        if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+                        newdoc.save(function(err, newdoc2) {
+                            if(dberr(err,callback)) {
+                                callback({success: true,data: newdoc2});
+                            } 
+                        });
                     });
                 }
             }
@@ -272,4 +279,90 @@ function deleteItem(activeDb,member,req,res,callback){
             }
         });
     }
+}
+
+
+function saveFiles(activeDb,data,callback){
+    dosyaKaydet(activeDb,data.images,(err,array1)=>{
+        data.images=array1;
+        dosyaKaydet(activeDb,data.files,(err,array2)=>{
+            data.files=array2;
+            callback(null,data);
+        })
+    })
+}
+
+function dosyaKaydet(activeDb,files,callback){
+    if(files==undefined) return callback(null,[]);
+    if(files.length==0) return callback(null,[]);
+
+    var dizi=[];
+    var index=0;
+    function kaydet(cb){
+        if(index>=files.length) return cb(null);
+        var data={ 
+            data:files[index].data,
+            fileName:(files[index].fileName || ''),
+            name:(files[index].name || ''),
+            extension:(files[index].extension || ''),
+            type:(files[index].type || 'text/plain')
+        }
+        if(data.fileName=='' && data.name==''){
+            index++;
+            setTimeout(kaydet,0,cb);
+            return;
+        }
+        if((files[index]._id || '')!=''){
+            activeDb.files.findOne({_id:files[index]._id},(err,doc)=>{
+                if(!err){
+                    if(doc!=null){
+                        doc.data=data.data;
+                        doc.fileName=data.fileName;
+                        doc.name=data.name;
+                        doc.extension=data.extension;
+                        doc.type=data.type;
+                        doc.save((err,doc2)=>{
+                            if(!err){
+                                dizi.push(doc2._id);
+                            }else{
+                                errorLog(err);
+                            }
+                            index++;
+                            setTimeout(kaydet,0,cb);
+                        });
+                    }else{
+                        var newFile=new activeDb.files(data);
+                        newFile.save((err,doc2)=>{
+                            if(!err){
+                                dizi.push(doc2._id);
+                            }else{
+                                errorLog(err);
+                            }
+                            index++;
+                            setTimeout(kaydet,0,cb);
+                        });
+                    }
+                }else{
+                    index++;
+                    setTimeout(kaydet,0,cb);
+                }
+            });
+        }else{
+            var newFile=new activeDb.files(data);
+            newFile.save((err,doc2)=>{
+                if(!err){
+                    dizi.push(doc2._id);
+                }else{
+                    errorLog(err);
+                }
+                index++;
+                setTimeout(kaydet,0,cb);
+            });
+        }
+    }
+    
+    kaydet((err)=>{
+        
+        callback(null,dizi);
+    })
 }

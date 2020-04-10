@@ -30,6 +30,8 @@ module.exports=function(conn){
 
         supplyDuration:dbType.numberValueType,
         tags:{type: String, trim:true, default: ''},
+        images:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
+        files:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
         exceptInventory: {type: Boolean, default: false},
         exceptRecipeCalculation: {type: Boolean, default: false},
         recipe: {type: mongoose.Schema.Types.ObjectId, ref: 'recipes'},
