@@ -1,20 +1,18 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
-        name: {type: String, trim:true, required: [true,'isim gereklidir'], unique:true},
-        useMaterialInput: {type: Boolean, default: false},
-        useMaterialOutput: {type: Boolean, default: false},
-        useMachine: {type: Boolean, default: false},
-        useMold: {type: Boolean, default: false},
-        useParameters: {type: Boolean, default: false},
+        name:{type: String, trim:true, default:''},
+        machines:[{
+            machine: {type: mongoose.Schema.Types.ObjectId, ref: 'mrp_machines',default:null}
+        }],
         createdDate: { type: Date,default: Date.now},
-        modifiedDate:{ type: Date,default: Date.now},
-        passive: {type: Boolean, default: false}
+        modifiedDate:{ type: Date,default: Date.now}
     });
 
     schema.pre('save', function(next) {
         next();
         //bir seyler ters giderse 
         // next(new Error('ters giden birseyler var'));
+        
     });
     schema.pre('remove', function(next) {
         next();
@@ -29,14 +27,21 @@ module.exports=function(conn){
     schema.on('init', function(model) {
 
     });
-    schema.plugin(mongoosePaginate);
- 
+    
 
-    var collectionName='mrp_process_steps';
+    schema.plugin(mongoosePaginate);
+    schema.plugin(mongooseAggregatePaginate);
+    
+    schema.index({
+        "name":1,
+        "createdDate":1
+    });
+
+
+    var collectionName='item_groups';
     var model=conn.model(collectionName, schema);
     
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
-    // model.removeMany=(member, filter,cb)=>{ sendToTrashMany(conn,collectionName,member,filter,cb); }
-    //model.relations={mrp_machines:'station'}
+    
     return model;
 }

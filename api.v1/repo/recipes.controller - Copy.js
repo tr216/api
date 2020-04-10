@@ -64,8 +64,6 @@ function getOne(activeDb,member,req,res,callback){
     var populate=[
         { path:'process.station', select:'_id name'},
         { path:'process.step', select:'_id name useMaterial'},
-        { path:'process.machines.machineGroup', select:'_id name'},
-        { path:'process.machines.mold', select:'_id name'},
         { path:'process.input.item', select:'_id itemType name'},
         { path:'process.output.item', select:'_id itemType name'},
         { path:'materialSummary.item', select:'_id itemType name'},
@@ -101,15 +99,9 @@ function post(activeDb,member,req,res,callback){
     activeDb.items.findOne({_id:data.item},(err,itemDoc)=>{
         if(dberr(err,callback)){
             if(itemDoc==null) return callback({success: false, error: {code: 'ITEM_NOT_FOUND', message: 'item bulunamadi.'}});
-            if(data.process)
-                if(data.process.machines){
-                    data.process.machines.forEach((e)=>{
-                        if((e.machineGroup || '')=='') e.machineGroup=undefined;
-                        if((e.mold || '')=='') e.mold=undefined;
-                    });
-                }
-                
-            
+            if(data.process){
+                //data.process.forEach()
+            }
             var newdoc = new activeDb.recipes(data);
 
             var err=epValidateSync(newdoc);
@@ -121,8 +113,6 @@ function post(activeDb,member,req,res,callback){
                         var populate=[
                             { path:'process.station', select:'_id name'},
                             { path:'process.step', select:'_id name useMaterial'},
-                            { path:'process.machines.machineGroup', select:'_id name'},
-                            { path:'process.machines.mold', select:'_id name'},
                             { path:'process.input.item', select:'_id itemType name'},
                             { path:'process.output.item', select:'_id itemType name'},
                             { path:'materialSummary.item', select:'_id itemType name'},
@@ -142,6 +132,7 @@ function post(activeDb,member,req,res,callback){
 }
 
 function put(activeDb,member,req,res,callback){
+    console.log('recipes put function');
     if(req.params.param1==undefined){
         callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
     }else{
@@ -155,15 +146,7 @@ function put(activeDb,member,req,res,callback){
                 activeDb.recipes.findOne({ _id: data._id},(err,doc)=>{
                     if(dberr(err,callback)) {
                         if(doc==null) return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
-                        if(data.process)
-                            if(data.process.machines){
-                                data.process.machines.forEach((e)=>{
-                                    if((e.machineGroup || '')=='') e.machineGroup=undefined;
-                                    if((e.mold || '')=='') e.mold=undefined;
 
-                                });
-                            }
-                        doc.process=[];
                         var doc2 = Object.assign(doc, data);
                         var newdoc = new activeDb.recipes(doc2);
                         var err=epValidateSync(newdoc);
@@ -174,8 +157,6 @@ function put(activeDb,member,req,res,callback){
                                 var populate=[
                                     { path:'process.station', select:'_id name'},
                                     { path:'process.step', select:'_id name useMaterial'},
-                                    { path:'process.machines.machineGroup', select:'_id name'},
-                                    { path:'process.machines.mold', select:'_id name'},
                                     { path:'process.input.item', select:'_id itemType name'},
                                     { path:'process.output.item', select:'_id itemType name'},
                                     { path:'materialSummary.item', select:'_id itemType name'}

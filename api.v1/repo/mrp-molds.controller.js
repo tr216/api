@@ -46,8 +46,8 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.station || '')!=''){
         filter['station']=req.query.station;
     }
-    if((req.query.machineType || '')!=''){
-        filter['machineType']=req.query.machineType;
+    if((req.query.moldGroup || '')!=''){
+        filter['moldGroup']=req.query.moldGroup;
     }
     if((req.query.machineGroup || '')!=''){
         filter['machineGroup']=req.query.machineGroup;
@@ -63,13 +63,13 @@ function getList(activeDb,member,req,res,callback){
                     recipeDoc.process.forEach((e,index)=>{
                         if(processIndex<0 || processIndex==index){
                             e.machines.forEach((e2)=>{
-                                dizi.push(e2.machineGroup);    
+                                dizi.push(e2.mold);    
                             });
                         }
                     });
                     
-                    filter['machineGroup']={$in:dizi};
-                    activeDb.mrp_machines.paginate(filter,options,(err, resp)=>{
+                    filter['_id']={$in:dizi};
+                    activeDb.mrp_molds.paginate(filter,options,(err, resp)=>{
                         if (dberr(err,callback)) {
                             callback({success: true,data: resp});
                         }
@@ -80,18 +80,18 @@ function getList(activeDb,member,req,res,callback){
         })
         
     }else{
-        activeDb.mrp_machines.paginate(filter,options,(err, resp)=>{
+        activeDb.mrp_molds.paginate(filter,options,(err, resp)=>{
             if (dberr(err,callback)) {
                 callback({success: true,data: resp});
             }
         });
     }
 
-    
+   
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.mrp_machines.findOne({_id:req.params.param1},(err,doc)=>{
+    activeDb.mrp_molds.findOne({_id:req.params.param1},(err,doc)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: doc});
         }
@@ -102,9 +102,9 @@ function post(activeDb,member,req,res,callback){
     var data = req.body || {};
     data._id=undefined;
     if((data.account || '')=='') data.account=undefined;
-    // if((data.machineGroup || '')=='') return callback({success: false,error: {code: 'ERROR', message: 'Makine grubu secilmemis'}});
-
-    var newdoc = new activeDb.mrp_machines(data);
+    
+    
+    var newdoc = new activeDb.mrp_molds(data);
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
@@ -113,9 +113,6 @@ function post(activeDb,member,req,res,callback){
             callback({success:true,data:newdoc2});
         } 
     });
-    
-
-       
 }
 
 function put(activeDb,member,req,res,callback){
@@ -125,15 +122,15 @@ function put(activeDb,member,req,res,callback){
     
     data._id = req.params.param1;
     data.modifiedDate = new Date();
-
-   
-    activeDb.mrp_machines.findOne({ _id: data._id},(err,doc)=>{
+    if((data.account || '')=='') data.account=undefined;
+    
+    activeDb.mrp_molds.findOne({ _id: data._id},(err,doc)=>{
         if (dberr(err,callback)) {
             if(doc==null){
                 callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
             }else{
                 var doc2 = Object.assign(doc, data);
-                var newdoc = new activeDb.mrp_machines(doc2);
+                var newdoc = new activeDb.mrp_molds(doc2);
                 var err=epValidateSync(newdoc);
                 if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
@@ -146,16 +143,13 @@ function put(activeDb,member,req,res,callback){
             }
         }
     });
-           
-        
-    
 }
 
 function deleteItem(activeDb,member,req,res,callback){
     if(req.params.param1==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Parametre hatali'}});
     var data = req.body || {};
     data._id = req.params.param1;
-    activeDb.mrp_machines.removeOne(member,{ _id: data._id},(err,doc)=>{
+    activeDb.mrp_molds.removeOne(member,{ _id: data._id},(err,doc)=>{
         if (dberr(err,callback)) {
             callback({success: true});
         }

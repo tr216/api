@@ -157,8 +157,6 @@ function getOne(activeDb,member,req,res,callback){
     var populate=[
         { path:'process.station', select:'_id name'},
         { path:'process.step', select:'_id name useMaterial'},
-        { path:'process.machines.machine', select:'_id name'},
-        { path:'process.machines.mold', select:'_id name'},
         { path:'process.input.item', select:'_id itemType name'},
         { path:'process.output.item', select:'_id itemType name'},
         { path:'materialSummary.item', select:'_id itemType name'},
@@ -181,21 +179,7 @@ function post(activeDb,member,req,res,callback){
 
         newdoc.save(function(err, newdoc2) {
             if (dberr(err,callback)) {
-                var populate=[
-                    { path:'process.station', select:'_id name'},
-                    { path:'process.step', select:'_id name useMaterial'},
-                    { path:'process.machines.machine', select:'_id name'},
-                    { path:'process.machines.mold', select:'_id name'},
-                    { path:'process.input.item', select:'_id itemType name'},
-                    { path:'process.output.item', select:'_id itemType name'},
-                    { path:'materialSummary.item', select:'_id itemType name'},
-                    { path:'outputSummary.item', select:'_id itemType name'}
-                ]
-                activeDb.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
-                    if(dberr(err,callback)) {
-                        callback({success: true,data: newdoc3});
-                    }
-                });
+                callback({success:true,data:newdoc2});
             } 
         });
     })
@@ -215,8 +199,6 @@ function put(activeDb,member,req,res,callback){
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
-                    doc.orderLineReference=[];
-                    doc.process=[];
                     var doc2 = Object.assign(doc, data);
                     var newdoc = new activeDb.production_orders(doc2);
                     var err=epValidateSync(newdoc);
@@ -224,21 +206,7 @@ function put(activeDb,member,req,res,callback){
 
                     newdoc.save(function(err, newdoc2) {
                         if (dberr(err,callback)) {
-                            var populate=[
-                                { path:'process.station', select:'_id name'},
-                                { path:'process.step', select:'_id name useMaterial'},
-                                { path:'process.machines.machine', select:'_id name'},
-                                { path:'process.machines.mold', select:'_id name'},
-                                { path:'process.input.item', select:'_id itemType name'},
-                                { path:'process.output.item', select:'_id itemType name'},
-                                { path:'materialSummary.item', select:'_id itemType name'},
-                                { path:'outputSummary.item', select:'_id itemType name'}
-                            ]
-                            activeDb.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
-                                if(dberr(err,callback)) {
-                                    callback({success: true,data: newdoc3});
-                                }
-                            });
+                            callback({success: true,data: newdoc2});
                         } 
                     });
                    

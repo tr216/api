@@ -34,9 +34,20 @@ function getList(activeDb,member,req,res,callback){
 
     var filter = {};
 
-    if((req.query.useMaterial || '')!=''){
-        filter['useMaterial']=req.query.useMaterial;
+    if((req.query.useMaterialInput || '')!=''){
+        filter['useMaterialInput']=req.query.useMaterialInput;
     }
+    if((req.query.useMaterialOutput || '')!=''){
+        filter['useMaterialOutput']=req.query.useMaterialOutput;
+    }
+    if((req.query.useMachine || '')!=''){
+        filter['useMachine']=req.query.useMachine;
+    }
+
+    if((req.query.useMold || '')!=''){
+        filter['useMold']=req.query.useMold;
+    }
+
     if((req.query.passive || '')!=''){
         filter['passive']=req.query.passive;
     }

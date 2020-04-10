@@ -49,11 +49,10 @@ module.exports=function(conn){
             station: {type: mongoose.Schema.Types.ObjectId, ref: 'mrp_stations'},
             step: {type: mongoose.Schema.Types.ObjectId, ref: 'mrp_process_steps'},
             machines: [ {
-                machine:{type: mongoose.Schema.Types.ObjectId, ref: 'mrp_machines', default:null},
-                mold:{type: mongoose.Schema.Types.ObjectId, ref: 'mrp_molds', default:null},
-                cycle:dbType.measureType,
-                cavity:{ type: Number, default: 0},
-                quantityPerHour:{ type: Number, default: 0}
+                machine:{type: mongoose.Schema.Types.ObjectId, ref: 'mrp_machines'},
+                minCapacity:{ type: Number, default: 0},
+                maxCapacity:{ type: Number, default: 0},
+                duration:{ type: Number, default: 0}
             }],
             input: [{
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},

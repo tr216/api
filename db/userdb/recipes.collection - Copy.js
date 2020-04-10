@@ -4,17 +4,15 @@ module.exports=function(conn){
         name:{type: String, default: ''},
         description:{type: String, trim:true, default: ''},
         revision:{ type: Number, default: 1},
-        mrpVersion:{ type: Number, default: 1},
         process:[{
             sequence:{ type: Number, default: 0},
             station: {type: mongoose.Schema.Types.ObjectId, ref: 'mrp_stations'},
             step: {type: mongoose.Schema.Types.ObjectId, ref: 'mrp_process_steps'},
-            machines: [{
-                machineGroup:{type: mongoose.Schema.Types.ObjectId, ref: 'mrp_machine_groups', default:null},
-                mold:{type: mongoose.Schema.Types.ObjectId, ref: 'mrp_molds', default:null},
-                cycle:dbType.measureType,
-                cavity:{ type: Number, default: 0},
-                quantityPerHour:{ type: Number, default: 0}
+            machines: [ {
+                machine:{type: mongoose.Schema.Types.ObjectId, ref: 'mrp_machines'},
+                minCapacity:{ type: Number, default: 0},
+                maxCapacity:{ type: Number, default: 0},
+                duration:{ type: Number, default: 0}
             }],
             input: [{
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},
