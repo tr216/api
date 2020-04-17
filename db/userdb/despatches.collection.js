@@ -2,6 +2,8 @@ module.exports=function(conn){
     var schema = mongoose.Schema({
         ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
         eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'e_integrators', required: true},
+        location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
+        location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
         profileId: { 
             value: { type: String,default: '', trim:true, enum:['TEMELIRSALIYE'], required: true}
         },
@@ -54,9 +56,9 @@ module.exports=function(conn){
             this.lineCountNumeric.value=this.despatchLine.length;
         }
         
-
+        updateActions(conn,this,next);
        
-        next();
+        //next();
         //bir seyler ters giderse 
         // next(new Error('ters giden birseyler var'));
         
@@ -86,13 +88,12 @@ module.exports=function(conn){
         "uuid.value":1,
         "eIntegrator":1,
         "profileId.value":1,
-        "despatchTypeCode.value":1,
+        "despatchAdviceTypeCode.value":1,
         "localDocumentId":1,
         "despatchStatus":1,
         "localStatus":1,
         "createdDate":1
     });
-
 
     var collectionName='despatches';
     var model=conn.model(collectionName, schema);
@@ -100,4 +101,63 @@ module.exports=function(conn){
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
     
     return model;
+}
+
+
+function updateActions(conn,doc,next){
+    
+    var index=0;
+    function kaydet(cb){
+        if(index>=doc.despatchLine.length) return cb(null);
+        if(doc.despatchLine[index].item._id){
+            var newActionDoc=conn.model('actions')(dbType.actionType);
+            newActionDoc.actionType='despatch';
+            newActionDoc.ioType=doc.ioType;
+            newActionDoc.actionCode=doc.despatchAdviceTypeCode.value;
+            newActionDoc.issueDate=doc.issueDate.value;
+            newActionDoc.issueTime=doc.issueTime.value;
+            newActionDoc.docId=doc._id;
+            newActionDoc.docNo=doc.ID.value;
+            newActionDoc.inventory.locationId=doc.location;
+            newActionDoc.inventory.locationId2=doc.location;
+            newActionDoc.inventory.itemId=doc.despatchLine[index].item._id;
+            newActionDoc.inventory.quantity=doc.despatchLine[index].deliveredQuantity.value;
+            newActionDoc.description='';
+            newActionDoc.modifiedDate=new Date();
+            
+            newActionDoc.save((err,newActionDoc2)=>{
+                if(!err){
+                    index++;
+                    setTimeout(kaydet,0,cb);
+                }else{
+                   cb(err);
+                }
+            })
+             
+        }else{
+            index++;
+            setTimeout(kaydet,0,cb);
+        }
+        
+    }
+    
+    conn.model('actions').deleteMany({docId:doc._id},(err,docs)=>{
+        if(err){
+            
+            errorLog(err);
+            next(err);
+        }else{
+            kaydet((err)=>{
+               if(err){
+                   errorLog(err);
+                  
+                   next(err); 
+               }else{
+                   
+                   next();
+               }
+            });
+        }
+        
+    })
 }

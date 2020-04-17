@@ -161,6 +161,9 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.name || '')!=''){
         filter['name.value']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };
     }
+    if((req.query.code || '')!=''){
+        filter['code.value']={ $regex: '' + req.query.code + '.*' ,$options: 'i' };
+    }
     if((req.query.brandName || '')!=''){
         filter['brandName.value']={ $regex: '.*' + req.query.brandName + '.*' ,$options: 'i' };
     }
@@ -246,7 +249,7 @@ function put(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         data.modifiedDate = new Date();
         if((data.accountGroup || '')=='') data.accountGroup=undefined;
-
+        console.log('unitPacks:',data.unitPacks);
         activeDb.items.findOne({ _id: data._id},(err,doc)=>{
             if(dberr(err,callback)){
                 if(dbnull(doc,callback)) {

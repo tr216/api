@@ -130,7 +130,7 @@ function put(activeDb,member,req,res,callback){
                 var newDoc = new activeDb.despatches(doc2);
                 var err=epValidateSync(newDoc);
                 if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-                //newDoc=calculateInvoiceTotals(newDoc);
+                
                 newDoc.save(function(err, newDoc2) {
                     if(dberr(err,callback)){
                         eventLog('After taxtotal:',doc.taxTotal);

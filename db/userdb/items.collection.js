@@ -1,6 +1,7 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
         itemType: {type: String, trim:true, required: [true,'itemType gereklidir'], default: 'item', enum:['item','raw-material','helper-material','product','semi-product','sales-service','purchasing-service','asset','expense']},
+        code:dbType.valueType,
         name:dbType.valueType,
         description:dbType.valueType,
         additionalItemIdentification:[{ID:dbType.idType}],
@@ -21,13 +22,17 @@ module.exports=function(conn){
         withholdingTaxTotal:[dbType.taxTotalType],
         accountGroup: {type: mongoose.Schema.Types.ObjectId, ref: 'account_groups', default:null},
         similar:[{type: mongoose.Schema.Types.ObjectId, ref: 'items'}],
-        unitPacks:[{type: Number, default: 0}],
+        unitPacks:[{
+            unitCode:{type: String, trim:true, default: ''},
+            netWeight:dbType.quantityType,
+            dimension:{ width:dbType.measureType, height:dbType.measureType,length:dbType.measureType},
+            barcode:{type: String, trim:true, default: ''}
+        }],
         vendors:[{
             sequenceNumeric:dbType.numberValueType,
             vendor:{type: mongoose.Schema.Types.ObjectId, ref: 'parties'},
             supplyDuration:dbType.numberValueType
         }],
-
         supplyDuration:dbType.numberValueType,
         tags:{type: String, trim:true, default: ''},
         images:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],
