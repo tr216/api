@@ -46,8 +46,10 @@ function copy(activeDb,member,req,res,callback){
                 }else{
                     data.name.value +=' copy';
                 }
-                data.passive=true;
-
+                //data.passive=true;
+                data.createdDate=new Date();
+                data.modifiedDate=new Date();
+                
                 var newdoc = new activeDb.items(data);
                 var err=epValidateSync(newdoc);
                 if(err) return callback({success: false, error: {code: err.name, message: err.message}});

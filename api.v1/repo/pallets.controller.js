@@ -9,7 +9,11 @@ module.exports = function(activeDb, member, req, res, callback) {
         }
         break;
         case 'POST':
-        post(activeDb,member,req,res,callback);
+        if(req.params.param1=='copy'){
+            copy(activeDb,member,req,res,callback);
+        }else{
+            post(activeDb,member,req,res,callback);
+        }
         break;
         case 'PUT':
         put(activeDb,member,req,res,callback);
@@ -24,16 +28,49 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 }
 
-var locationTypes=[
-            {"text":"(0)Depo","value": 0},
-            {"text":"(1)Magaza","value": 1},
-            {"text":"(2)Uretim","value":2},
-            {"text":"(3)Iade","value":3},
-            {"text":"(4)Seyyar","value":4},
-            {"text":"(5)Diger","value":5}
-        ]
+function copy(activeDb,member,req,res,callback){
+    var id=req.params.param2 || req.body['id'] || req.query.id || '';
+    var newName=req.body['newName'] || req.body['name'] || '';
+
+    if(id=='') return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    
+    activeDb.pallets.findOne({ _id: id},(err,doc)=>{
+        if(dberr(err,callback)) {
+            if(dbnull(doc,callback)) {
+                var data=doc.toJSON();
+                data._id=undefined;
+                delete data._id;
+                if(newName!=''){
+                    data.name=newName;
+                }else{
+                    data.name +=' copy';
+                }
+                data.pack=[];
+                data.location=undefined;
+                delete data.location;
+                data.subLocation=undefined;
+                delete data.subLocation;
+                
+                data.createdDate=new Date();
+                data.modifiedDate=new Date();
+                var newdoc = new activeDb.pallets(data);
+                var err=epValidateSync(newdoc);
+                if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+
+                newdoc.save(function(err, newdoc2) {
+                    if(dberr(err,callback)) {
+                        callback({success: true,data: newdoc2});
+                    } 
+                });
+            }
+        }
+    });
+}
+
 function getList(activeDb,member,req,res,callback){
-    var options={page: (req.query.page || 1)}
+    var options={page: (req.query.page || 1),
+        sort:{name:1}
+    }
     if(!req.query.page){
         options.limit=50000;
     }
@@ -58,32 +95,37 @@ function getList(activeDb,member,req,res,callback){
             break;
         }
     }
-
+    
     if((req.query.name || '')!=''){
         filter['passive']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };;
     }
-
-    if((req.query.locationType || '')!=''){
-        if(Number(req.query.locationType>=0)){
-            filter['locationType']=req.query.locationType;
-        }
+    if((req.query.palletType || '')!=''){
+        filter['palletType']=req.query.palletType;
     }
-
+    
     if((req.query.passive || '')!=''){
         filter['passive']=req.query.passive;
     }
-    activeDb.locations.paginate(filter,options,(err, resp)=>{
+
+    if((req.query.width || '')!=''){
+        filter['width']=req.query.width;
+    }
+
+    if((req.query.length || '')!=''){
+        filter['length']=req.query.length;
+    }
+
+    if((req.query.height || '')!=''){
+        filter['height']=req.query.height;
+    }
+
+    if((req.query.maxWeight || '')!=''){
+        filter['maxWeight']=req.query.maxWeight;
+    }
+
+
+    activeDb.pallets.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
-            resp.docs.forEach((doc)=>{
-                //doc=doc.toObject();
-                doc['locationTypeName']='';
-                locationTypes.forEach((e)=>{
-                    if(e.value==doc.locationType){
-                        doc['locationTypeName']=e.text;
-                        return;
-                    }
-                });
-            });
             callback({success: true,data: resp});
         } else {
             errorLog(__filename,err);
@@ -92,7 +134,7 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.locations.findOne({_id:req.params.param1},(err,doc)=>{
+    activeDb.pallets.findOne({_id:req.params.param1},(err,doc)=>{
         if (!err) {
             callback({success: true,data: doc});
         } else {
@@ -105,7 +147,7 @@ function post(activeDb,member,req,res,callback){
     var data = req.body || {};
     data._id=undefined;
     
-    var newdoc = new activeDb.locations(data);
+    var newdoc = new activeDb.pallets(data);
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
     newdoc.save(function(err, newdoc2) {
@@ -125,13 +167,13 @@ function put(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         data.modifiedDate = new Date();
 
-        activeDb.locations.findOne({ _id: data._id},(err,doc)=>{
+        activeDb.pallets.findOne({ _id: data._id},(err,doc)=>{
             if (!err) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
                     var doc2 = Object.assign(doc, data);
-                    var newdoc = new activeDb.locations(doc2);
+                    var newdoc = new activeDb.pallets(doc2);
                     var err=epValidateSync(newdoc);
                     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
                     newdoc.save(function(err, newdoc2) {
@@ -155,7 +197,7 @@ function deleteItem(activeDb,member,req,res,callback){
     }else{
         var data = req.body || {};
         data._id = req.params.param1;
-        activeDb.locations.removeOne(member,{ _id: data._id},(err,doc)=>{
+        activeDb.pallets.removeOne(member,{ _id: data._id},(err,doc)=>{
             if (!err) {
                 callback({success: true});
             }else{

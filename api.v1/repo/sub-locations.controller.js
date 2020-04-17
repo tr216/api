@@ -24,14 +24,6 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 }
 
-var locationTypes=[
-            {"text":"(0)Depo","value": 0},
-            {"text":"(1)Magaza","value": 1},
-            {"text":"(2)Uretim","value":2},
-            {"text":"(3)Iade","value":3},
-            {"text":"(4)Seyyar","value":4},
-            {"text":"(5)Diger","value":5}
-        ]
 function getList(activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1)}
     if(!req.query.page){
@@ -58,32 +50,20 @@ function getList(activeDb,member,req,res,callback){
             break;
         }
     }
-
+    
     if((req.query.name || '')!=''){
         filter['passive']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };;
     }
-
-    if((req.query.locationType || '')!=''){
-        if(Number(req.query.locationType>=0)){
-            filter['locationType']=req.query.locationType;
-        }
+    if((req.query.location || '')!=''){
+        filter['location']=req.query.location;
     }
-
+    
     if((req.query.passive || '')!=''){
         filter['passive']=req.query.passive;
     }
-    activeDb.locations.paginate(filter,options,(err, resp)=>{
+
+    activeDb.sub_locations.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
-            resp.docs.forEach((doc)=>{
-                //doc=doc.toObject();
-                doc['locationTypeName']='';
-                locationTypes.forEach((e)=>{
-                    if(e.value==doc.locationType){
-                        doc['locationTypeName']=e.text;
-                        return;
-                    }
-                });
-            });
             callback({success: true,data: resp});
         } else {
             errorLog(__filename,err);
@@ -92,7 +72,7 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.locations.findOne({_id:req.params.param1},(err,doc)=>{
+    activeDb.sub_locations.findOne({_id:req.params.param1},(err,doc)=>{
         if (!err) {
             callback({success: true,data: doc});
         } else {
@@ -105,7 +85,7 @@ function post(activeDb,member,req,res,callback){
     var data = req.body || {};
     data._id=undefined;
     
-    var newdoc = new activeDb.locations(data);
+    var newdoc = new activeDb.sub_locations(data);
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
     newdoc.save(function(err, newdoc2) {
@@ -125,13 +105,13 @@ function put(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         data.modifiedDate = new Date();
 
-        activeDb.locations.findOne({ _id: data._id},(err,doc)=>{
+        activeDb.sub_locations.findOne({ _id: data._id},(err,doc)=>{
             if (!err) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
                     var doc2 = Object.assign(doc, data);
-                    var newdoc = new activeDb.locations(doc2);
+                    var newdoc = new activeDb.sub_locations(doc2);
                     var err=epValidateSync(newdoc);
                     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
                     newdoc.save(function(err, newdoc2) {
@@ -155,7 +135,7 @@ function deleteItem(activeDb,member,req,res,callback){
     }else{
         var data = req.body || {};
         data._id = req.params.param1;
-        activeDb.locations.removeOne(member,{ _id: data._id},(err,doc)=>{
+        activeDb.sub_locations.removeOne(member,{ _id: data._id},(err,doc)=>{
             if (!err) {
                 callback({success: true});
             }else{

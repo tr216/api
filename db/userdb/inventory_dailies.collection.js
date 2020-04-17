@@ -11,7 +11,14 @@ module.exports=function(conn){
             quantity: {type: Number, default: 0, index:true},
             quantity2: {type: Number, default: 0, index:true},
             quantity3: {type: Number, default: 0, index:true},
-            unitCode:{type: String, trim:true, default: ''}
+            unitCode:{type: String, trim:true, default: ''},
+            subLocations:[{
+                subLocationId:{type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null, index:true},
+                quantity: {type: Number, default: 0, index:true},
+                quantity2: {type: Number, default: 0, index:true},
+                quantity3: {type: Number, default: 0, index:true},
+                unitCode:{type: String, trim:true, default: ''}
+            }]
         }],
         lastModified:{ type: Date, default: Date.now}
     });
