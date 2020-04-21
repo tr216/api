@@ -21,7 +21,7 @@ function getList(activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1),
         populate:[
             {path:'item',select:'_id name'},
-            {path:'locations.locationId',select:'_id locationName locationType'}
+            {path:'details.locationId',select:'_id locationName locationType'}
         ]
         
     }
@@ -34,7 +34,7 @@ function getList(activeDb,member,req,res,callback){
         filter['item']=req.query.item;
     }
     if((req.query.locationId || req.query.location || '')!=''){
-        filter['locations.locationId']=req.query.locationId || req.query.location;
+        filter['details.locationId']=req.query.locationId || req.query.location;
     }
    
 
@@ -50,7 +50,7 @@ function getList(activeDb,member,req,res,callback){
 function getOne(activeDb,member,req,res,callback){
     var populate=[
         {path:'item',select:'_id name'},
-        {path:'locations.locationId',select:'_id locationName locationType'}
+        {path:'details.locationId',select:'_id locationName locationType'}
     ]
     activeDb.inventory_lives.findOne({$or:[{item:req.params.param1},{_id:req.params.param1}]}).populate(populate).exec((err,doc)=>{
         if (!err) {

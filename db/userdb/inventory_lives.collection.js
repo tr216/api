@@ -5,19 +5,21 @@ module.exports=function(conn){
         quantity2: {type: Number, default: 0, index:true},
         quantity3: {type: Number, default: 0, index:true},
         unitCode:{type: String, trim:true, default: '', index:true},
-        locations:[{
+        orderedQuantity: {type: Number, default: 0, index:true},
+        remainingQuantity: {type: Number, default: 0, index:true},
+        details:[{
             locationId:{type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null, index:true},
+            subLocationId:{type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null, index:true},
             quantity: {type: Number, default: 0, index:true},
             quantity2: {type: Number, default: 0, index:true},
             quantity3: {type: Number, default: 0, index:true},
             unitCode:{type: String, trim:true, default: ''},
-            subLocations:[{
-                subLocationId:{type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null, index:true},
-                quantity: {type: Number, default: 0, index:true},
-                quantity2: {type: Number, default: 0, index:true},
-                quantity3: {type: Number, default: 0, index:true},
-                unitCode:{type: String, trim:true, default: ''}
-            }]
+            lotNo:{type: String, trim:true, default: '', index:true},
+            serialNo:{type: String, trim:true, default: '', index:true},
+            palletId:{type: mongoose.Schema.Types.ObjectId, ref: 'pallets', default:null, index:true},
+            color:{type: Object, default:null, index:true},  //qwerty  colors tablosuna
+            pattern:{type: Object, default:null, index:true},  //qwerty  pattern tablosuna
+            size:{type: Object, default:null, index:true}  //qwerty  size tablosuna
         }],
         lastModified:{ type: Date, default: Date.now}
     });

@@ -33,6 +33,13 @@ module.exports=function(conn){
             vendor:{type: mongoose.Schema.Types.ObjectId, ref: 'parties'},
             supplyDuration:dbType.numberValueType
         }],
+        tracking:{
+            lotNo:{type: Boolean, default: false},
+            serialNo:{type: Boolean, default: false},
+            color:{type: Boolean, default: false},
+            pattern:{type: Boolean, default: false},
+            size:{type: Boolean, default: false}
+        },
         supplyDuration:dbType.numberValueType,
         tags:{type: String, trim:true, default: ''},
         images:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],

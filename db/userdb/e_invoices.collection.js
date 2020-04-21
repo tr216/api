@@ -3,6 +3,7 @@ module.exports=function(conn){
         ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
         eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'e_integrators', required: true},
         location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
+        subLocation: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null},
         profileId: { 
             value: { type: String,default: '', trim:true, enum:['TEMELFATURA','TICARIFATURA','IHRACAT','YOLCUBERABERFATURA','EARSIVFATURA'], required: true}
         },

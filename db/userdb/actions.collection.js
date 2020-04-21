@@ -11,12 +11,21 @@ module.exports=function(conn){
         description:{type: String, trim:true, default: '', index:true},
         inventory:{
             locationId:{type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null, index:true},
+            subLocationId:{type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null, index:true},
             locationId2:{type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null, index:true},
+            subLocationId2:{type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null, index:true},
             itemId:{type: mongoose.Schema.Types.ObjectId, ref: 'items', default:null, index:true},
             quantity: {type: Number, default: 0, index:true},
             quantity2: {type: Number, default: 0, index:true},
             quantity3: {type: Number, default: 0, index:true},
-            unitCode:{type: String, trim:true, default: '', index:true}
+            unitCode:{type: String, trim:true, default: '', index:true},
+            lotNo:{type: String, trim:true, default: '', index:true},
+            serialNo:{type: String, trim:true, default: '', index:true},
+            palletId:{type: mongoose.Schema.Types.ObjectId, ref: 'pallets', default:null, index:true},
+            palletId2:{type: mongoose.Schema.Types.ObjectId, ref: 'pallets', default:null, index:true},
+            color:{type: Object, default:null, index:true},  //qwerty  colors tablosuna
+            pattern:{type: Object, default:null, index:true},  //qwerty  pattern tablosuna
+            size:{type: Object, default:null, index:true}  //qwerty  size tablosuna
         },
         party:{
             partyId:{type: mongoose.Schema.Types.ObjectId, ref: 'parties', default:null, index:true},
@@ -155,28 +164,61 @@ function updateInventory(conn,doc,tersMi,cb){
     conn.model('inventory_lives').findOne({item:doc.inventory.itemId},(err,update)=>{
         if(!err){
             if(update!=null){
-                if(doc.inventory.locationId.toString()==doc.inventory.locationId2.toString()){   // lokasyonlar esitse satis veya alis olmustur genel stok degisir
+                if(doc.inventory.locationId.toString()==doc.inventory.locationId2.toString() &&  (doc.inventory.subLocationId || '').toString()==(doc.inventory.subLocationId2 || '').toString()  &&  (doc.inventory.palletId || '').toString()==(doc.inventory.palletId2 || '').toString()){   // lokasyonlar ve alt lokasyonlar esitse satis veya alis olmustur genel stok degisir
                     update.quantity=update.quantity + ioTypeCarpan*doc.inventory.quantity;
                     update.quantity2=update.quantity2 + ioTypeCarpan*doc.inventory.quantity2;
                     update.quantity3=update.quantity3 + ioTypeCarpan*doc.inventory.quantity3;
                 }
-                update.locations.forEach((e)=>{
-                    if(e.locationId.toString()==doc.inventory.locationId.toString()){
+                var bFound=false;
+
+                update.details.forEach((e)=>{
+                    if(e.locationId.toString()==doc.inventory.locationId.toString() && (e.subLocationId || '').toString()==(doc.inventory.subLocationId || '').toString()  && (e.palletId || '').toString()==(doc.inventory.palletId || '').toString()  && (e.lotNo || '').toString()==(doc.inventory.lotNo || '').toString()  && (e.serialNo || '').toString()==(doc.inventory.serialNo || '').toString()){
                         e.quantity=e.quantity + ioTypeCarpan*doc.inventory.quantity;
                         e.quantity2=e.quantity2 + ioTypeCarpan*doc.inventory.quantity2;
                         e.quantity3=e.quantity3 + ioTypeCarpan*doc.inventory.quantity3;
+                        bFound=true;
                         return;
                     }
                 });
-                if(doc.inventory.locationId.toString()!=doc.inventory.locationId2.toString()){
-                    update.locations.forEach((e)=>{
-                        if(e.locationId.toString()==oldDoc.inventory.locationId2.toString()){
+
+                if(bFound==false){
+                    update.details.push({
+                        locationId:doc.inventory.locationId,
+                        subLocationId:doc.inventory.subLocationId,
+                        quantity:ioTypeCarpan*doc.inventory.quantity,
+                        quantity2:ioTypeCarpan*doc.inventory.quantity2,
+                        quantity3:ioTypeCarpan*doc.inventory.quantity3,
+                        unitCode:doc.inventory.unitCode,
+                        lotNo:doc.inventory.lotNo,
+                        serialNo:doc.inventory.serialNo,
+                        palletId:doc.inventory.palletId
+                    });
+                }
+
+                if(doc.inventory.locationId.toString()!=doc.inventory.locationId2.toString() ||  (doc.inventory.subLocationId || '').toString()!=(doc.inventory.subLocationId2 || '').toString()  &&  (doc.inventory.palletId || '').toString()!=(doc.inventory.palletId2 || '').toString()){
+                    bFound=false;
+                    update.details.forEach((e)=>{
+                        if(e.locationId.toString()==doc.inventory.locationId2.toString() && (e.subLocationId || '').toString()==(doc.inventory.subLocationId2 || '').toString()  && (e.palletId || '').toString()==(doc.inventory.palletId2 || '').toString()  && (e.lotNo || '').toString()==(doc.inventory.lotNo || '').toString()  && (e.serialNo || '').toString()==(doc.inventory.serialNo || '').toString()){
                             e.quantity=e.quantity + -1*ioTypeCarpan*doc.inventory.quantity;
                             e.quantity2=e.quantity2 + -1*ioTypeCarpan*doc.inventory.quantity2;
                             e.quantity3=e.quantity3 + -1*ioTypeCarpan*doc.inventory.quantity3;
+                            bFound=true;
                             return;
                         }
                     });
+                    if(bFound==false){
+                        update.details.push({
+                            locationId:doc.inventory.locationId2,
+                            subLocationId:doc.inventory.subLocationId2,
+                            quantity:ioTypeCarpan*doc.inventory.quantity,
+                            quantity2:ioTypeCarpan*doc.inventory.quantity2,
+                            quantity3:ioTypeCarpan*doc.inventory.quantity3,
+                            unitCode:doc.inventory.unitCode,
+                            lotNo:doc.inventory.lotNo,
+                            serialNo:doc.inventory.serialNo,
+                            palletId:doc.inventory.palletId2
+                        });
+                    }
                 }
                 update.lastModified=new Date();
                 update.save((err,update2)=>{
@@ -193,27 +235,35 @@ function updateInventory(conn,doc,tersMi,cb){
                     quantity2: 0,
                     quantity3: 0,
                     unitCode:doc.inventory.unitCode,
-                    locations:[{
+                    details:[{
                         locationId:doc.inventory.locationId,
+                        subLocationId:doc.inventory.subLocationId,
                         quantity: ioTypeCarpan*doc.inventory.quantity,
                         quantity2: ioTypeCarpan*doc.inventory.quantity2,
                         quantity3: ioTypeCarpan*doc.inventory.quantity3,
-                        unitCode:doc.inventory.unitCode
+                        unitCode:doc.inventory.unitCode,
+                        lotNo:doc.inventory.lotNo,
+                        serialNo:doc.inventory.serialNo,
+                        palletId:doc.inventory.palletId
                     }],
                     lastModified:(new Date())
                 });
 
-                if(doc.inventory.locationId==doc.inventory.locationId2){
+                if(doc.inventory.locationId.toString()==doc.inventory.locationId2.toString() &&  (doc.inventory.subLocationId || '').toString()==(doc.inventory.subLocationId2 || '').toString()  &&  (doc.inventory.palletId || '').toString()==(doc.inventory.palletId2 || '').toString()){
                     update.quantity= ioTypeCarpan*doc.inventory.quantity;
                     update.quantity2= ioTypeCarpan*doc.inventory.quantity2;
                     update.quantity3= ioTypeCarpan*doc.inventory.quantity3;
                 }else{
-                    update.locations.push({
-                        locationId:doc.inventory.locationId,
+                    update.details.push({
+                        locationId:doc.inventory.locationId2,
+                        subLocationId:doc.inventory.subLocationId2,
                         quantity: -1*ioTypeCarpan*doc.inventory.quantity,
                         quantity2: -1*ioTypeCarpan*doc.inventory.quantity2,
                         quantity3: -1*ioTypeCarpan*doc.inventory.quantity3,
-                        unitCode:doc.inventory.unitCode
+                        unitCode:doc.inventory.unitCode,
+                        lotNo:doc.inventory.lotNo,
+                        serialNo:doc.inventory.serialNo,
+                        palletId:doc.inventory.palletId2
                     })
                 }
                 update.save((err,update2)=>{
