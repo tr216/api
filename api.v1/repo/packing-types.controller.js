@@ -34,7 +34,7 @@ function copy(activeDb,member,req,res,callback){
 
     if(id=='') return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
     
-    activeDb.pallets.findOne({ _id: id},(err,doc)=>{
+    activeDb.packing_types.findOne({ _id: id},(err,doc)=>{
         if(dberr(err,callback)) {
             if(dbnull(doc,callback)) {
                 var data=doc.toJSON();
@@ -53,7 +53,7 @@ function copy(activeDb,member,req,res,callback){
                 
                 data.createdDate=new Date();
                 data.modifiedDate=new Date();
-                var newdoc = new activeDb.pallets(data);
+                var newdoc = new activeDb.packing_types(data);
                 var err=epValidateSync(newdoc);
                 if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
@@ -99,16 +99,28 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.name || '')!=''){
         filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };;
     }
-    if((req.query.palletType || '')!=''){
-        filter['palletType']=req.query.palletType;
+    if((req.query.description || '')!=''){
+        filter['description']={ $regex: '.*' + req.query.description + '.*' ,$options: 'i' };;
     }
     
-    if((req.query.passive || '')!=''){
-        filter['passive']=req.query.passive;
+    if((req.query.width || '')!=''){
+        filter['width']=req.query.width;
+    }
+
+    if((req.query.length || '')!=''){
+        filter['length']=req.query.length;
+    }
+
+    if((req.query.height || '')!=''){
+        filter['height']=req.query.height;
+    }
+
+    if((req.query.maxWeight || '')!=''){
+        filter['maxWeight']=req.query.maxWeight;
     }
 
 
-    activeDb.pallets.paginate(filter,options,(err, resp)=>{
+    activeDb.packing_types.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
         } else {
@@ -118,7 +130,13 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.pallets.findOne({_id:req.params.param1},(err,doc)=>{
+    var populate=[
+        {path:'content.item', select:'_id name unitPacks tracking passive'}
+        // {path:'docLine.color', select:'_id name'}, //qwerty
+        // {path:'docLine.pattern', select:'_id name'}, //qwerty
+        // {path:'docLine.size', select:'_id name'} //qwerty
+    ]
+    activeDb.packing_types.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if (!err) {
             callback({success: true,data: doc});
         } else {
@@ -131,7 +149,7 @@ function post(activeDb,member,req,res,callback){
     var data = req.body || {};
     data._id=undefined;
     
-    var newdoc = new activeDb.pallets(data);
+    var newdoc = new activeDb.packing_types(data);
     var err=epValidateSync(newdoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
     newdoc.save(function(err, newdoc2) {
@@ -151,13 +169,13 @@ function put(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         data.modifiedDate = new Date();
 
-        activeDb.pallets.findOne({ _id: data._id},(err,doc)=>{
+        activeDb.packing_types.findOne({ _id: data._id},(err,doc)=>{
             if (!err) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
                     var doc2 = Object.assign(doc, data);
-                    var newdoc = new activeDb.pallets(doc2);
+                    var newdoc = new activeDb.packing_types(doc2);
                     var err=epValidateSync(newdoc);
                     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
                     newdoc.save(function(err, newdoc2) {
@@ -181,7 +199,7 @@ function deleteItem(activeDb,member,req,res,callback){
     }else{
         var data = req.body || {};
         data._id = req.params.param1;
-        activeDb.pallets.removeOne(member,{ _id: data._id},(err,doc)=>{
+        activeDb.packing_types.removeOne(member,{ _id: data._id},(err,doc)=>{
             if (!err) {
                 callback({success: true});
             }else{

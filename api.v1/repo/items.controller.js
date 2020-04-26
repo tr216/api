@@ -197,7 +197,9 @@ function getList(activeDb,member,req,res,callback){
 function getOne(activeDb,member,req,res,callback){
     var populate=[
         {path:'images',select:'_id name extension fileName data type size createdDate modifiedDate'},
-        {path:'files',select:'_id name extension fileName data type size createdDate modifiedDate'}
+        {path:'files',select:'_id name extension fileName data type size createdDate modifiedDate'},
+        {path:'packingTypes.packingType',select:'_id name width length height maxWeight'},
+        {path:'palletTypes.palletType',select:'_id name width length height maxWeight'}
     ]
     activeDb.items.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if(dberr(err,callback)) {

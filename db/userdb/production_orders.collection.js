@@ -82,6 +82,10 @@ module.exports=function(conn){
             value:{type: String, trim:true, default: ''}
         }],
         finishNotes:{type: String, default: ''},
+        palletType:{type: mongoose.Schema.Types.ObjectId, ref: 'pallet_types',default:null},
+        packingType:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types',default:null},
+        totalPallet:{ type: Number, default: 0},
+        totalPacking:{ type: Number, default: 0},
         status: {type: String, default: 'Draft',enum:['Draft', 'Approved', 'Declined', 'Processing', 'Cancelled','Completed','Error']},
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},

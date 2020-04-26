@@ -47,6 +47,14 @@ module.exports=function(conn){
         exceptInventory: {type: Boolean, default: false},
         exceptRecipeCalculation: {type: Boolean, default: false},
         recipe: {type: mongoose.Schema.Types.ObjectId, ref: 'recipes'},
+        palletRequired:{type: Boolean, default: false},
+        palletTypes:[{palletType:{type: mongoose.Schema.Types.ObjectId, ref: 'pallet_types'}}],
+        packingRequired:{type: Boolean, default: false},
+        packingTypes:[{
+            packingType:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types'},
+            quantity:{ type: Number, default: 0},
+            unitCode:{type: String, trim:true, default: ''}
+        }],
         localDocumentId: {type: String, default: ''},
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},

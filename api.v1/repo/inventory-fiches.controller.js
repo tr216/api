@@ -92,9 +92,9 @@ function getList(activeDb,member,req,res,callback){
         filter['location2']=req.query.location2;
     }
 
-    filter_subLocation(activeDb,req,filter,(err,filter)=>{
+    filter_subLocation(activeDb,req,filter,(err,filter2)=>{
         if(dberr(err,callback)){
-            activeDb.inventory_fiches.paginate(filter,options,(err, resp)=>{
+            activeDb.inventory_fiches.paginate(filter2,options,(err, resp)=>{
                 if (dberr(err,callback)) {
                     callback({success: true,data: resp});
                 }
@@ -103,8 +103,8 @@ function getList(activeDb,member,req,res,callback){
     });
 }
 
-function filter_subLocation(activeDb,req,filter,callback){
-    function filter_subLocation1(cb){
+function filter_subLocation(activeDb,req,mainFilter,callback){
+    function filter_subLocation1(filter,cb){
         if((req.query.subLocation || '')!=''){
             activeDb.sub_locations.find({ name: { $regex: '.*' + req.query.subLocation + '.*' ,$options: 'i' }},(err,subLocations)=>{
                 if(!err){
@@ -140,7 +140,7 @@ function filter_subLocation(activeDb,req,filter,callback){
         }
     }
     
-    function filter_subLocation2(cb){
+    function filter_subLocation2(filter,cb){
         if((req.query.subLocation2 || '')!=''){
             activeDb.sub_locations.find({ name: { $regex: '.*' + req.query.subLocation2 + '.*' ,$options: 'i' }},(err,subLocations)=>{
                 if(!err){
@@ -176,9 +176,9 @@ function filter_subLocation(activeDb,req,filter,callback){
         }
     }
 
-    filter_subLocation1(()=>{
-        filter_subLocation2(()=>{
-            callback(null,filter);
+    filter_subLocation1(mainFilter,(err,mainFilter2)=>{
+        filter_subLocation2(mainFilter2,(err2,mainFilter3)=>{
+            callback(err2,mainFilter3);
         })
     })
 }
