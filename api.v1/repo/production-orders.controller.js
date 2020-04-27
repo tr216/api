@@ -120,6 +120,8 @@ function getList(activeDb,member,req,res,callback){
         populate:[
             {path:'item',select:'_id name'},
             {path:'sourceRecipe',select:'_id name'},
+            {path:'palletType',select:'_id name'},
+            {path:'packingType',select:'_id name'}
         ]
     }
 
@@ -146,11 +148,67 @@ function getList(activeDb,member,req,res,callback){
             filter['issueDate']={$lte:req.query.date2};
         }
     }
-    activeDb.production_orders.paginate(filter,options,(err, resp)=>{
-        if (dberr(err,callback)) {
-            callback({success: true,data: resp});
+    
+    if((req.query.musteri || req.query.customer || req.query.customerName || '')!=''){
+        filter['orderLineReference.orderReference.buyerCustomerParty.party.partyName.name.value']={ '$regex': '.*' + (req.query.musteri || req.query.customer || req.query.customerName) + '.*' , '$options': 'i' }
+    }
+
+    applyOtherFilters(activeDb,req,filter,(err,filter2)=>{
+        if(dberr(err,callback)){
+            activeDb.production_orders.paginate(filter2,options,(err, resp)=>{
+                if (dberr(err,callback)) {
+                    callback({success: true,data: resp});
+                }
+            });
         }
     });
+}
+
+function applyOtherFilters(activeDb,req,mainFilter,callback){
+    function filter_item(filter,cb){
+        if((req.query.itemName || '')!='' || (req.query.item || req.query.itemId || '')!=''){
+            var itemFilter={ 'name.value': { $regex: '.*' + req.query.itemName + '.*' ,$options: 'i' }}
+            if((req.query.item || req.query.itemId || '')!=''){
+                itemFilter={_id:(req.query.item || req.query.itemId)}
+            }
+            activeDb.items.find(itemFilter,(err,itemList)=>{
+                if(!err){
+                    if(filter['$or']!=undefined){
+                        var newOR=[];
+                        filter['$or'].forEach((e)=>{
+                            var bfound= false;
+                            fiches.forEach((e2)=>{ 
+                                if(e['item'].toString()==e2._id.toString()){
+                                    bfound=true;
+                                    return;
+                                }
+                            });
+                            if(bfound){
+                                newOR.push(e)
+                            }
+                        });
+                        filter['$or']=newOR;
+                    }else{
+                        filter['$or']=[];
+                        itemList.forEach((e)=>{
+                            filter['$or'].push({item:e._id});
+                        });
+                    }
+                    
+                    cb(null,filter);
+                }else{
+                    cb(err,filter);
+                }
+            });
+        }else{
+            cb(null,filter);
+        }
+    }
+    
+
+    filter_item(mainFilter,(err,mainFilter2)=>{
+        callback(err,mainFilter2);
+    })
 }
 
 function getOne(activeDb,member,req,res,callback){
@@ -174,42 +232,42 @@ function getOne(activeDb,member,req,res,callback){
 function post(activeDb,member,req,res,callback){
     var data = req.body || {};
     data._id=undefined;
-    documentHelper.yeniUretimNumarasi(activeDb,data,(err,data)=>{
-        var newdoc = new activeDb.production_orders(data);
-        var err=epValidateSync(newdoc);
-        if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+    verileriDuzenle(activeDb,data,(err,data)=>{
+        documentHelper.yeniUretimNumarasi(activeDb,data,(err,data)=>{
+            var newdoc = new activeDb.production_orders(data);
+            var err=epValidateSync(newdoc);
+            if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
-        newdoc.save(function(err, newdoc2) {
-            if (dberr(err,callback)) {
-                var populate=[
-                    { path:'process.station', select:'_id name'},
-                    { path:'process.step', select:'_id name useMaterial'},
-                    { path:'process.machines.machine', select:'_id name'},
-                    { path:'process.machines.mold', select:'_id name'},
-                    { path:'process.input.item', select:'_id itemType name'},
-                    { path:'process.output.item', select:'_id itemType name'},
-                    { path:'materialSummary.item', select:'_id itemType name'},
-                    { path:'outputSummary.item', select:'_id itemType name'}
-                ]
-                activeDb.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
-                    if(dberr(err,callback)) {
-                        callback({success: true,data: newdoc3});
-                    }
-                });
-            } 
-        });
+            newdoc.save(function(err, newdoc2) {
+                if (dberr(err,callback)) {
+                    var populate=[
+                        { path:'process.station', select:'_id name'},
+                        { path:'process.step', select:'_id name useMaterial'},
+                        { path:'process.machines.machine', select:'_id name'},
+                        { path:'process.machines.mold', select:'_id name'},
+                        { path:'process.input.item', select:'_id itemType name'},
+                        { path:'process.output.item', select:'_id itemType name'},
+                        { path:'materialSummary.item', select:'_id itemType name'},
+                        { path:'outputSummary.item', select:'_id itemType name'}
+                    ]
+                    activeDb.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
+                        if(dberr(err,callback)) {
+                            callback({success: true,data: newdoc3});
+                        }
+                    });
+                } 
+            });
+        })
     })
 }
 
 function put(activeDb,member,req,res,callback){
-    if(req.params.param1==undefined){
-        callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
-    }else{
-        var data = req.body || {};
-        
-        data._id = req.params.param1;
-        data.modifiedDate = new Date();
-
+    if(req.params.param1==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    var data = req.body || {};
+    
+    data._id = req.params.param1;
+    data.modifiedDate = new Date();
+    verileriDuzenle(activeDb,data,(err,data)=>{
         activeDb.production_orders.findOne({ _id: data._id},(err,doc)=>{
             if (dberr(err,callback)) {
                 if(doc==null){
@@ -245,7 +303,13 @@ function put(activeDb,member,req,res,callback){
                 }
             }
         });
-    }
+    });
+}
+
+function verileriDuzenle(activeDb,data,callback){
+    if((data.palletType || '')=='') data.palletType=undefined;
+    if((data.packingType || '')=='') data.packingType=undefined;
+    callback(null,data);
 }
 
 function deleteItem(activeDb,member,req,res,callback){
