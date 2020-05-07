@@ -1,4 +1,5 @@
 module.exports = function(activeDb, member, req, res, callback) {
+    
     switch(req.method){
         case 'GET':
             if(req.params.param1!=undefined){
@@ -116,6 +117,7 @@ function salesOrders(activeDb,member,req,res,callback){
 }
 
 function getList(activeDb,member,req,res,callback){
+    
     var options={page: (req.query.page || 1), 
         populate:[
             {path:'item',select:'_id name'},
@@ -148,7 +150,7 @@ function getList(activeDb,member,req,res,callback){
             filter['issueDate']={$lte:req.query.date2};
         }
     }
-    
+
     if((req.query.musteri || req.query.customer || req.query.customerName || '')!=''){
         filter['orderLineReference.orderReference.buyerCustomerParty.party.partyName.name.value']={ '$regex': '.*' + (req.query.musteri || req.query.customer || req.query.customerName) + '.*' , '$options': 'i' }
     }
@@ -217,16 +219,38 @@ function getOne(activeDb,member,req,res,callback){
         { path:'process.step', select:'_id name useMaterial'},
         { path:'process.machines.machine', select:'_id name'},
         { path:'process.machines.mold', select:'_id name'},
-        { path:'process.input.item', select:'_id itemType name'},
-        { path:'process.output.item', select:'_id itemType name'},
-        { path:'materialSummary.item', select:'_id itemType name'},
-        { path:'outputSummary.item', select:'_id itemType name'}
+        { path:'process.input.item', select:'_id itemType name description'},
+        { path:'process.output.item', select:'_id itemType name description'},
+        { path:'materialSummary.item', select:'_id itemType name description'},
+        { path:'outputSummary.item', select:'_id itemType name description'},
+        { path:'packingOption.packingType',select:'_id name description width length height weight maxWeight'},
+        { path:'packingOption.packingType2',select:'_id name description width length height weight maxWeight'},
+        { path:'packingOption.packingType3',select:'_id name description width length height weight maxWeight'},
+        { path:'packingOption.palletType',select:'_id name description width length height maxWeight'}
     ]
+    
     activeDb.production_orders.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if (dberr(err,callback)) {
-            callback({success: true,data: doc});
+            if(!req.query.print){
+                callback({success: true,data: doc});
+            }else{
+                doc.populate('item').execPopulate((err,doc2)=>{
+                    if(dberr(err,callback)) {
+                        var designId=req.query.designId || '';
+                        printHelper.print(activeDb,'mrp-production-order',doc2, designId, (err,html)=>{
+                            if(!err){
+                                callback({file: {data:html}});
+                            }else{
+                                callback({success:false,error:{code:(err.code || err.name || 'PRINT_ERROR'),message:err.message}})
+                            }
+                        });
+                    }
+                })
+                
+            }
         }
     });
+
 }
 
 function post(activeDb,member,req,res,callback){
@@ -237,7 +261,7 @@ function post(activeDb,member,req,res,callback){
             var newdoc = new activeDb.production_orders(data);
             var err=epValidateSync(newdoc);
             if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-
+            newdoc=calculateMaterialSummary(newdoc);
             newdoc.save(function(err, newdoc2) {
                 if (dberr(err,callback)) {
                     var populate=[
@@ -245,10 +269,10 @@ function post(activeDb,member,req,res,callback){
                         { path:'process.step', select:'_id name useMaterial'},
                         { path:'process.machines.machine', select:'_id name'},
                         { path:'process.machines.mold', select:'_id name'},
-                        { path:'process.input.item', select:'_id itemType name'},
-                        { path:'process.output.item', select:'_id itemType name'},
-                        { path:'materialSummary.item', select:'_id itemType name'},
-                        { path:'outputSummary.item', select:'_id itemType name'}
+                        { path:'process.input.item', select:'_id itemType name description'},
+                        { path:'process.output.item', select:'_id itemType name description'},
+                        { path:'materialSummary.item', select:'_id itemType name description'},
+                        { path:'outputSummary.item', select:'_id itemType name description'}
                     ]
                     activeDb.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
                         if(dberr(err,callback)) {
@@ -279,7 +303,7 @@ function put(activeDb,member,req,res,callback){
                     var newdoc = new activeDb.production_orders(doc2);
                     var err=epValidateSync(newdoc);
                     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-
+                    newdoc=calculateMaterialSummary(newdoc);
                     newdoc.save(function(err, newdoc2) {
                         if (dberr(err,callback)) {
                             var populate=[
@@ -287,10 +311,10 @@ function put(activeDb,member,req,res,callback){
                                 { path:'process.step', select:'_id name useMaterial'},
                                 { path:'process.machines.machine', select:'_id name'},
                                 { path:'process.machines.mold', select:'_id name'},
-                                { path:'process.input.item', select:'_id itemType name'},
-                                { path:'process.output.item', select:'_id itemType name'},
-                                { path:'materialSummary.item', select:'_id itemType name'},
-                                { path:'outputSummary.item', select:'_id itemType name'}
+                                { path:'process.input.item', select:'_id itemType name description'},
+                                { path:'process.output.item', select:'_id itemType name description'},
+                                { path:'materialSummary.item', select:'_id itemType name description'},
+                                { path:'outputSummary.item', select:'_id itemType name description'}
                             ]
                             activeDb.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
                                 if(dberr(err,callback)) {
@@ -304,6 +328,52 @@ function put(activeDb,member,req,res,callback){
             }
         });
     });
+}
+
+function calculateMaterialSummary(doc){
+    doc.materialSummary=[];
+    doc.outputSummary=[];
+    doc.process.forEach((e)=>{
+        e.input.forEach((e1)=>{
+            var bFound=false;
+            doc.materialSummary.forEach((e2)=>{
+                if(e2.item==e1.item){
+                    bFound=true;
+                    e2.quantity +=e1.quantity;
+                    return;
+                }
+            });
+            if(bFound==false){
+                doc.materialSummary.push({item:e1.item,quantity:e1.quantity,unitCode:e1.unitCode});
+            }
+        })
+        e.output.forEach((e1)=>{
+            var bFound=false;
+            doc.outputSummary.forEach((e2)=>{
+                if(e2.item==e1.item){
+                    bFound=true;
+                    e2.quantity +=e1.quantity;
+                    return;
+                }
+            });
+            if(bFound==false){
+                doc.outputSummary.push({item:e1.item,quantity:e1.quantity,unitCode:e1.unitCode});
+            }
+        })
+    });
+
+    var toplamAgirlik=doc.totalWeight || 0;
+
+    if(toplamAgirlik>0){
+        doc.materialSummary.forEach((e)=>{
+            e.percent=Math.round(1000*100*e.quantity/toplamAgirlik)/1000;
+        });
+        doc.outputSummary.forEach((e)=>{
+            e.percent=Math.round(1000*100*e.quantity/toplamAgirlik)/1000;
+        });
+    }
+
+    return doc;
 }
 
 function verileriDuzenle(activeDb,data,callback){

@@ -9,7 +9,11 @@ module.exports = function(activeDb, member, req, res, callback) {
         }
         break;
         case 'POST':
-        post(activeDb,member,req,res,callback);
+        if(req.params.param1=='copy'){
+            copy(activeDb,member,req,res,callback);
+        }else{
+            post(activeDb,member,req,res,callback);
+        }
         break;
         case 'PUT':
         put(activeDb,member,req,res,callback);
@@ -24,9 +28,45 @@ module.exports = function(activeDb, member, req, res, callback) {
 
 }
 
+
+function copy(activeDb,member,req,res,callback){
+    var id=req.params.param2 || req.body['id'] || req.query.id || '';
+    var newName=req.body['newName'] || req.body['name'] || '';
+
+    if(id=='') return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    
+    activeDb.print_designs.findOne({ _id: id},(err,doc)=>{
+        if(dberr(err,callback)) {
+            if(dbnull(doc,callback)) {
+                var data=doc.toJSON();
+                data._id=undefined;
+                delete data._id;
+                if(newName!=''){
+                    data.name=newName;
+                }else{
+                    data.name +=' copy';
+                }
+                
+                
+                data.createdDate=new Date();
+                data.modifiedDate=new Date();
+                var newdoc = new activeDb.print_designs(data);
+                var err=epValidateSync(newdoc);
+                if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+
+                newdoc.save(function(err, newdoc2) {
+                    if(dberr(err,callback)) {
+                        callback({success: true,data: newdoc2});
+                    } 
+                });
+            }
+        }
+    });
+}
+
 function getList(activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1)
-        
+        ,select:'-design'
     }
 
     if((req.query.pageSize || req.query.limit)){
@@ -36,9 +76,13 @@ function getList(activeDb,member,req,res,callback){
     var filter = {};
 
     if((req.query.module || '')!=''){
-        filter['module']=module;
+        filter['module']=req.query.module;
     }
-    if(req.query.name){
+    if((req.query.passive || '')!=''){
+        filter['passive']=req.query.passive;
+    }
+
+    if((req.query.name || '')!=''){
         filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };
     }
 

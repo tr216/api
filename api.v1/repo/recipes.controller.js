@@ -66,10 +66,10 @@ function getOne(activeDb,member,req,res,callback){
         { path:'process.step', select:'_id name useMaterial'},
         { path:'process.machines.machineGroup', select:'_id name'},
         { path:'process.machines.mold', select:'_id name'},
-        { path:'process.input.item', select:'_id itemType name'},
-        { path:'process.output.item', select:'_id itemType name'},
-        { path:'materialSummary.item', select:'_id itemType name'},
-        { path:'outputSummary.item', select:'_id itemType name'}
+        { path:'process.input.item', select:'_id itemType name description'},
+        { path:'process.output.item', select:'_id itemType name description'},
+        { path:'materialSummary.item', select:'_id itemType name description'},
+        { path:'outputSummary.item', select:'_id itemType name description'}
     ]
     activeDb.recipes.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if(dberr(err,callback)) {
@@ -123,10 +123,10 @@ function post(activeDb,member,req,res,callback){
                             { path:'process.step', select:'_id name useMaterial'},
                             { path:'process.machines.machineGroup', select:'_id name'},
                             { path:'process.machines.mold', select:'_id name'},
-                            { path:'process.input.item', select:'_id itemType name'},
-                            { path:'process.output.item', select:'_id itemType name'},
-                            { path:'materialSummary.item', select:'_id itemType name'},
-                            { path:'outputSummary.item', select:'_id itemType name'}
+                            { path:'process.input.item', select:'_id itemType name description'},
+                            { path:'process.output.item', select:'_id itemType name description'},
+                            { path:'materialSummary.item', select:'_id itemType name description'},
+                            { path:'outputSummary.item', select:'_id itemType name description'}
                         ]
                         activeDb.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
                             if(dberr(err,callback)) {
@@ -176,9 +176,10 @@ function put(activeDb,member,req,res,callback){
                                     { path:'process.step', select:'_id name useMaterial'},
                                     { path:'process.machines.machineGroup', select:'_id name'},
                                     { path:'process.machines.mold', select:'_id name'},
-                                    { path:'process.input.item', select:'_id itemType name'},
-                                    { path:'process.output.item', select:'_id itemType name'},
-                                    { path:'materialSummary.item', select:'_id itemType name'}
+                                    { path:'process.input.item', select:'_id itemType name description'},
+                                    { path:'process.output.item', select:'_id itemType name description'},
+                                    { path:'materialSummary.item', select:'_id itemType name description'},
+                                    { path:'outputSummary.item', select:'_id itemType name description'}
                                 ]
                                 activeDb.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
                                     if(dberr(err,callback)) {
@@ -226,11 +227,22 @@ function calculateMaterialSummary(doc){
         })
     });
 
+    var toplamAgirlik=doc.totalWeight || 0;
+
+    if(toplamAgirlik>0){
+        doc.materialSummary.forEach((e)=>{
+            e.percent=Math.round(1000*100*e.quantity/toplamAgirlik)/1000;
+        });
+        doc.outputSummary.forEach((e)=>{
+            e.percent=Math.round(1000*100*e.quantity/toplamAgirlik)/1000;
+        });
+    }
+
     return doc;
 }
 
 function defaultReceteAyarla(activeDb,doc,callback){
-    console.log('doc.isDefault:',doc.isDefault);
+
     if(doc.isDefault){
 
         // activeDb.recipes.find({ item:doc.item, isDefault:true }).count((err,countQuery)=>{

@@ -19,24 +19,28 @@ module.exports=function(conn){
             input: [{
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},
                 quantity:{ type: Number, default: 0},
-                unitCode:{type: String, trim:true, default: ''}
+                unitCode:{type: String, trim:true, default: ''},
+                percent:{ type: Number, default: 0}
             }],
             output: [{  //yan urunler
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},
                 quantity:{ type: Number, default: 0},
-                unitCode:{type: String, trim:true, default: ''}
+                unitCode:{type: String, trim:true, default: ''},
+                percent:{ type: Number, default: 0}
             }],
             parameters:{type: String, default: ''}
         }],
         materialSummary:[{
             item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
             quantity:{ type: Number, default: 0},
-            unitCode:{type: String, trim:true, default: ''}
+            unitCode:{type: String, trim:true, default: ''},
+            percent:{ type: Number, default: 0}
         }],
         outputSummary:[{
             item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
             quantity:{ type: Number, default: 0},
-            unitCode:{type: String, trim:true, default: ''}
+            unitCode:{type: String, trim:true, default: ''},
+            percent:{ type: Number, default: 0}
         }],
         qualityControl:[{
             param:{type: String,trim:true, default: ''},
@@ -44,6 +48,8 @@ module.exports=function(conn){
         }],
         isDefault: {type: Boolean, default: false},
         totalQuantity:{ type: Number, default: 100},
+        totalWeight:{ type: Number, default: 0},
+        staffCount:{ type: Number, default: 0},
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},
         passive: {type: Boolean, default: false}

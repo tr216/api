@@ -163,9 +163,7 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.name || '')!=''){
         filter['name.value']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };
     }
-    if((req.query.code || '')!=''){
-        filter['code.value']={ $regex: '' + req.query.code + '.*' ,$options: 'i' };
-    }
+    
     if((req.query.brandName || '')!=''){
         filter['brandName.value']={ $regex: '.*' + req.query.brandName + '.*' ,$options: 'i' };
     }
@@ -198,8 +196,10 @@ function getOne(activeDb,member,req,res,callback){
     var populate=[
         {path:'images',select:'_id name extension fileName data type size createdDate modifiedDate'},
         {path:'files',select:'_id name extension fileName data type size createdDate modifiedDate'},
-        {path:'packingTypes.packingType',select:'_id name width length height maxWeight'},
-        {path:'palletTypes.palletType',select:'_id name width length height maxWeight'}
+        {path:'packingOptions.packingType',select:'_id name description width length height weight maxWeight'},
+        {path:'packingOptions.packingType2',select:'_id name description width length height weight maxWeight'},
+        {path:'packingOptions.packingType3',select:'_id name description width length height weight maxWeight'},
+        {path:'packingOptions.palletType',select:'_id name description width length height maxWeight'}
     ]
     activeDb.items.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if(dberr(err,callback)) {

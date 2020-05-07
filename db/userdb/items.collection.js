@@ -1,20 +1,19 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
-        itemType: {type: String, trim:true, required: [true,'itemType gereklidir'], default: 'item', enum:['item','raw-material','helper-material','product','semi-product','sales-service','purchasing-service','asset','expense']},
-        code:dbType.valueType,
-        name:dbType.valueType,
-        description:dbType.valueType,
+        itemType: {type: String, trim:true, index:true, required: [true,'itemType gereklidir'], default: 'item', enum:['item','raw-material','helper-material','product','semi-product','sales-service','purchasing-service','asset','expense']},
+        name:{ value:{type: String, trim:true,default:'', unique:true}},
+        description:{ value:{type: String, trim:true,default:'', index:true}},
         additionalItemIdentification:[{ID:dbType.idType}],
-        brandName:dbType.valueType,
+        brandName:{ value:{type: String, trim:true,default:'', index:true}},
         buyersItemIdentification:{ID:dbType.idType},
         commodityClassification:[
             {
                 itemClassificationCode:dbType.codeType
             }
         ],
-        keyword:dbType.valueType,
+        keyword:{ value:{type: String, trim:true,default:'', index:true}},
         manufacturersItemIdentification:{ID:dbType.idType},
-        modelName:dbType.valueType,
+        modelName:{ value:{type: String, trim:true,default:'', index:true}},
         sellersItemIdentification:{ID:dbType.idType},
         originCountry:dbType.countryType,
         itemInstance:[dbType.itemInstanceType],
@@ -47,13 +46,15 @@ module.exports=function(conn){
         exceptInventory: {type: Boolean, default: false},
         exceptRecipeCalculation: {type: Boolean, default: false},
         recipe: {type: mongoose.Schema.Types.ObjectId, ref: 'recipes'},
-        palletRequired:{type: Boolean, default: false},
-        palletTypes:[{palletType:{type: mongoose.Schema.Types.ObjectId, ref: 'pallet_types'}}],
-        packingRequired:{type: Boolean, default: false},
-        packingTypes:[{
-            packingType:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types'},
-            quantity:{ type: Number, default: 0},
-            unitCode:{type: String, trim:true, default: ''}
+        packingOptions:[{
+            palletType:{type: mongoose.Schema.Types.ObjectId, ref: 'pallet_types',default:null},
+            packingType:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types',default:null},
+            quantityInPacking:{ type: Number, default: 0},
+            palletRowCount:{ type: Number, default: 0},
+            packingCountInRow:{ type: Number, default: 0},
+            unitCode:{type: String, trim:true, default: ''},
+            packingType2:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types',default:null},
+            packingType3:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types',default:null}
         }],
         localDocumentId: {type: String, default: ''},
         createdDate: { type: Date,default: Date.now},
@@ -87,20 +88,7 @@ module.exports=function(conn){
     schema.plugin(mongoosePaginate);
     schema.plugin(mongooseAggregatePaginate);
     
-    schema.index({
-        "name.value":1,
-        "description.value":1,
-        "brandName.value":1,
-        "keyword.value":1,
-        "itemInstance.serialId.value":1,
-        "itemInstance.lotIdentification.lotNumberId.value":1,
-        "buyersItemIdentification.ID.value":1,
-        "sellersItemIdentification.ID.value":1,
-        "buyersItemIdentification.ID.value":1,
-        "localDocumentId":1,
-        "tags":1,
-        "createdDate":1
-    });
+    
 
 
     var collectionName='items';

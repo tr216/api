@@ -2,9 +2,10 @@ module.exports=function(conn){
     var schema = mongoose.Schema({
         name: {type: String, trim:true, required: [true,'isim/kod gereklidir.'] , unique:true},
         description: {type: String, trim:true, default:''},
-        width: {type: Number, default: 0, index:true}, //birim cm/CMT
-        length: {type: Number, default: 0, index:true}, //birim cm/CMT
-        height: {type: Number, default: 0, index:true},//birim cm/CMT
+        width: {type: Number, default: 0, index:true}, //birim mm/MMT
+        length: {type: Number, default: 0, index:true}, //birim  mm/MMT
+        height: {type: Number, default: 0, index:true},//birim  mm/MMT
+        weight:{type: Number, default: 0, index:true},//birim gr/GRM
         maxWeight:{type: Number, default: 0, index:true},//birim kg/KGM
         createdDate: { type: Date,default: Date.now, index:true},
         modifiedDate:{ type: Date,default: Date.now},

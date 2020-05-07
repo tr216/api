@@ -58,34 +58,48 @@ module.exports=function(conn){
             input: [{
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},
                 quantity:{ type: Number, default: 0},
-                unitCode:{type: String, trim:true, default: ''}
+                unitCode:{type: String, trim:true, default: ''},
+                percent:{ type: Number, default: 0}
             }],
             output: [{  //yan urunler
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},
                 quantity:{ type: Number, default: 0},
-                unitCode:{type: String, trim:true, default: ''}
+                unitCode:{type: String, trim:true, default: ''},
+                percent:{ type: Number, default: 0}
             }],
             parameters:{type: String, trim:true, default: ''}
         }],
         materialSummary:[{
             item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
             quantity:{ type: Number, default: 0},
-            unitCode:{type: String, trim:true, default: ''}
+            unitCode:{type: String, trim:true, default: ''},
+            percent:{ type: Number, default: 0}
         }],
         outputSummary:[{
             item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
             quantity:{ type: Number, default: 0},
-            unitCode:{type: String, trim:true, default: ''}
+            unitCode:{type: String, trim:true, default: ''},
+            percent:{ type: Number, default: 0}
         }],
         qualityControl:[{
             param:{type: String, trim:true, default: ''},
             value:{type: String, trim:true, default: ''}
         }],
+        totalWeight:{ type: Number, default: 0},
         finishNotes:{type: String, default: ''},
-        palletType:{type: mongoose.Schema.Types.ObjectId, ref: 'pallet_types',default:null},
-        packingType:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types',default:null},
+        packingOption:{
+            palletType:{type: mongoose.Schema.Types.ObjectId, ref: 'pallet_types',default:null},
+            packingType:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types',default:null},
+            quantityInPacking:{ type: Number, default: 0},
+            palletRowCount:{ type: Number, default: 0},
+            packingCountInRow:{ type: Number, default: 0},
+            unitCode:{type: String, trim:true, default: ''},
+            packingType2:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types',default:null},
+            packingType3:{type: mongoose.Schema.Types.ObjectId, ref: 'packing_types',default:null}
+        },
         totalPallet:{ type: Number, default: 0},
         totalPacking:{ type: Number, default: 0},
+        staffCount:{ type: Number, default: 0},
         status: {type: String, default: 'Draft',enum:['Draft', 'Approved', 'Declined', 'Processing', 'Cancelled','Completed','Error']},
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now},
