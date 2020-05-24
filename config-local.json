@@ -1,0 +1,31 @@
+{
+  "httpserver":{
+  	"port" : 3500
+  },
+  "host":{
+    "url" : "http://localhost:3500"
+  },
+  "mongodb": {
+  	"address":"mongodb://localhost:27017/etuliaportal",
+  	"userAddress":"mongodb://localhost:27017/"
+  },
+  "connector_service":{
+  	"port":33216
+  },
+  "error_log":{
+    "path":"C:\\arge\\tr216\\log\\api.tr216.com.error.log",
+    "active": false
+  },
+  "event_log":{
+    "path":"C:\\arge\\tr216\\log\\api.tr216.com.access.log",
+    "active": false
+  },
+  "enabled_services":{
+    "tasks":false,
+    "posDevice":false,
+    "scheduler":false,
+    "eInvoice":false,
+    "eLedger":false,
+    "localConnector":true
+  }
+}

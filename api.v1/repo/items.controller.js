@@ -161,7 +161,11 @@ function getList(activeDb,member,req,res,callback){
         filter['passive']=req.query.passive;
     }
     if((req.query.name || '')!=''){
-        filter['name.value']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };
+        filter['$or']=[
+            {'name.value':{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }},
+            {'description.value':{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }}
+        ]
+        //filter['name.value']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };
     }
     
     if((req.query.brandName || '')!=''){

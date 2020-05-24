@@ -7,25 +7,26 @@ module.exports = function(activeDb, member, req, res, callback) {
 				
 				case 'inboxorderlist':
 				return getOrderList(1,activeDb,member,req,res,callback);
-				break;
+				case 'inboxwaitingorders':
+				return waitingOrders(1,activeDb,member,req,res,callback);
+
 				case 'outboxorderlist':
 				return getOrderList(0,activeDb,member,req,res,callback);
-				break;
+				case 'outboxwaitingorders':
+				return waitingOrders(0,activeDb,member,req,res,callback);
+
 				case 'order':
 				return getOrder(activeDb,member,req,res,callback);
-				break;
+				
 				case 'orderview':
 				return orderView(activeDb,member,req,res,callback);
-				break;
 				case 'orderpdf':
 				return orderPdf(activeDb,member,req,res,callback);
-				break;
 				case 'orderxmlxslt':
 				case 'orderxml':
 				case 'orderxslt':
 				case 'orderxsltxml':
 				return getOrderXmlXslt(activeDb,member,req,res,callback);
-				break;
 				case 'eorderuserlist':
 				return getEOrderUserList(activeDb,member,req,res,callback);
 				case 'errors':
@@ -82,6 +83,72 @@ module.exports = function(activeDb, member, req, res, callback) {
 		return callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
 		break;
 	}
+}
+
+
+function waitingOrders(ioType,activeDb,member,req,res,callback){
+    var options={page: (req.query.page || 1) ,
+        // ,
+        // select:'_id profileId ID salesOrderId issueDate issueTime orderTypeCode validityPeriod lineCountNumeric buyerCustomerParty.party buyerCustomerParty.deliveryContact buyerCustomerParty.accountingContact buyerCustomerParty.buyerContact orderLine localDocumentId orderStatus localStatus '
+
+        
+        
+    }
+
+    if((req.query.pageSize || req.query.limit)){
+        options['limit']=req.query.pageSize || req.query.limit;
+    }
+
+    
+    var filter = { 
+        ioType:ioType
+        
+    }
+
+
+    var aggregateProject=[
+        
+        {$unwind:'$orderLine'},
+        {$project: {
+               _id:'$orderLine._id',
+               sip_id:'$_id',
+               profileId:'$profileId',
+               ID: '$ID',
+               salesOrderId:'$salesOrderId',
+               issueDate: '$issueDate',
+               issueTime:'$issueTime',
+               orderTypeCode: '$orderTypeCode',
+               validityPeriod:1,
+               lineCountNumeric:1,
+               buyerCustomerParty: { party:'$buyerCustomerParty.party'},
+               orderLine:1,
+               deliveredRemaining:{$subtract:['$orderLine.orderedQuantity.value', '$orderLine.deliveredQuantity.value']},
+               producedRemaining:{$subtract:['$orderLine.orderedQuantity.value', '$orderLine.producedQuantity.value']},
+               localDocumentId: 1,
+               orderStatus: 1,
+               localStatus:1
+            }
+        },
+        {
+            $match: {
+               deliveredRemaining:{$gt:0},
+               producedRemaining:{$gt:0}
+            }
+        }
+        
+        
+    ]
+    var myAggregate = activeDb.orders.aggregate(aggregateProject);
+
+    activeDb.orders.aggregatePaginate(myAggregate,options,(err, resp)=>{
+        if(err){
+            console.log('err:',err);
+        }
+        if (dberr(err,callback)) {
+        	console.log('resp.docs:', resp.docs);
+            callback({success: true,data: resp});
+        }
+    });
 }
 
 function getErrors(activeDb,member,req,res,callback){

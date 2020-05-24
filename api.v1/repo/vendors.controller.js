@@ -50,7 +50,7 @@ function getList(activeDb,member,req,res,callback){
         }
     }
 
-    if(req.query.passive!=undefined){
+    if((req.query.passive || '')!=''){
         filter['passive']=req.query.passive;
     }
     if((req.query.name || req.query.partyName || '')!=''){
@@ -65,6 +65,22 @@ function getList(activeDb,member,req,res,callback){
     }
     activeDb.parties.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
+            resp.docs.forEach((e)=>{
+                e.vknTckn='';
+                e.mersisNo='';
+                e.partyIdentification.forEach((e2)=>{
+                    switch(e2.ID.attr.schemeID.toUpperCase()){
+                        case 'VKN':
+                        case 'TCKN':
+                            e.vknTckn=e2.ID.value;
+                        break;
+                        case 'MERSISNO':
+                        case 'MERSİSNO':
+                            e.mersisNo=e2.ID.value;
+                        break;
+                    }
+                });
+            });
             callback({success: true,data: resp});
         }
     });
@@ -73,6 +89,7 @@ function getList(activeDb,member,req,res,callback){
 function getOne(activeDb,member,req,res,callback){
     activeDb.parties.findOne({_id:req.params.param1},(err,doc)=>{
         if(dberr(err,callback)) {
+
             callback({success: true,data: doc});
         }
     });

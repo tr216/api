@@ -185,7 +185,6 @@ function put(activeDb,member,req,res,callback){
 				eventLog('doc==null');
 				callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
 			}else{
-				eventLog('Before taxtotal:',doc.taxTotal);
 				data=mrutil.amountValueFixed2Digit(data,'');
 				var doc2 = Object.assign(doc, data);
 				var newDoc = new activeDb.e_invoices(doc2);

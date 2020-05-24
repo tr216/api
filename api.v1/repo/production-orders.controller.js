@@ -14,7 +14,24 @@ module.exports = function(activeDb, member, req, res, callback) {
             }
         break;
         case 'POST':
-            post(activeDb,member,req,res,callback);
+            if(req.params.param1!=undefined){
+                if(req.params.param1=='approve'){
+                    approveDecline('Approved',activeDb,member,req,res,callback);
+                }else if(req.params.param1=='decline'){
+                    approveDecline('Declined',activeDb,member,req,res,callback);
+                }else if(req.params.param1=='start'){
+                    approveDecline('Processing',activeDb,member,req,res,callback);
+                }else if(req.params.param1.toLowerCase()=='setdraft'){
+                    approveDecline('Draft',activeDb,member,req,res,callback);
+                }else if(req.params.param1.toLowerCase()=='complete'){
+                    approveDecline('Completed',activeDb,member,req,res,callback);
+                }else{
+                    callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+                }
+            }else{
+                post(activeDb,member,req,res,callback);
+            }
+            
         break;
         case 'PUT':
             put(activeDb,member,req,res,callback);
@@ -27,6 +44,29 @@ module.exports = function(activeDb, member, req, res, callback) {
         break;
     }
 
+}
+
+function approveDecline(status, activeDb,member,req,res,callback){
+    if(req.params.param2==undefined) return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}});
+    var data = req.body || {};
+    
+    data._id = req.params.param2;
+    data.modifiedDate = new Date();
+    activeDb.production_orders.findOne({ _id: data._id},(err,doc)=>{
+        if (dberr(err,callback)) {
+            if(doc==null){
+                callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+            }else{
+                doc.status=status;
+                doc.save(function(err, doc2) {
+                    if (dberr(err,callback)){
+                        callback({success:true,data:doc2});
+                    }
+                });
+               
+            }
+        }
+    });
 }
 
 function salesOrders(activeDb,member,req,res,callback){
@@ -43,42 +83,20 @@ function salesOrders(activeDb,member,req,res,callback){
     }
 
     //var filter = {ioType:0,orderStatus:'Approved'}; // qwerty sadece onaylanmis siparisler
-    var filter = { 
-        ioType:0
+    // var filter = { 
+    //     ioType:0
         
-    }
-    //orderLine localDocumentId orderStatus localStatus
-    // var aggregateGroup={ $group: {
-    //            _id:'$_id',
-    //            profileId:{$first:'$profileId.value'},
-    //            ID: { $first: '$ID.value' },
-    //            salesOrderId: { $first: '$salesOrderId.value' },
-    //            issueDate: { $first: '$issueDate.value' },
-    //            issueTime: { $first: '$issueTime.value' },
-    //            orderTypeCode: { $first: '$orderTypeCode.value' },
-    //            validityPeriod: { $first: '$validityPeriod' },
-    //            lineCountNumeric: { $first: '$lineCountNumeric.value' },
-    //            buyerCustomerParty: { $first: '$buyerCustomerParty' },
-    //            orderLine_ID: {$first: '$orderLine.ID.value' },
-    //            // orderLine_orderedQuantityLeft: {$subtract: ['$orderLine.orderedQuantity.value','$orderLine.orderedQuantity.value'] },
-    //            orderLine_orderedQuantity: '$orderLine.orderedQuantity.value',
-    //            orderLine_deliveredQuantity: '$orderLine.deliveredQuantity.value',
-    //            orderLine_item: '$orderLine.item',
-    //            localDocumentId: { $first: '$localDocumentId' },
-    //            orderStatus: { $first: '$orderStatus' },
-    //            localStatus: { $first: '$localStatus' },
-    //            count: { $sum: 1 }
-    //         }
-    //     }
+    // }
+
+    
 
     var aggregateProject=[
-        // {$replaceRoot:{newRoot:'$orderLine'}},
-        
         {$unwind:'$orderLine'},
         {$project: {
                _id:'$orderLine._id',
                sip_id:'$_id',
                profileId:'$profileId',
+               ioType:'$ioType',
                ID: '$ID',
                salesOrderId:'$salesOrderId',
                issueDate: '$issueDate',
@@ -97,18 +115,22 @@ function salesOrders(activeDb,member,req,res,callback){
         },
         {
             $match: {
+               ioType:0,
                deliveredRemaining:{$gt:0},
                producedRemaining:{$gt:0}
             }
         }
-        
-        
     ]
+
+    if((req.query.orderLineId || '')!=''){
+        aggregateProject[2]['$match']['_id']={ $in: [ObjectId(req.query.orderLineId)]}
+    }
+
     var myAggregate = activeDb.orders.aggregate(aggregateProject);
 
     activeDb.orders.aggregatePaginate(myAggregate,options,(err, resp)=>{
         if(err){
-            console.log('err:',err);
+            errorLog(err);
         }
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
@@ -120,10 +142,8 @@ function getList(activeDb,member,req,res,callback){
     
     var options={page: (req.query.page || 1), 
         populate:[
-            {path:'item',select:'_id name'},
-            {path:'sourceRecipe',select:'_id name'},
-            {path:'palletType',select:'_id name'},
-            {path:'packingType',select:'_id name'}
+            {path:'item',select:'_id name description'},
+            {path:'sourceRecipe',select:'_id name description'}
         ]
     }
 
@@ -136,7 +156,10 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.productionId || req.query.productionNo || req.query.no || '')!=''){
         filter['productionId']={ '$regex': '.*' + (req.query.productionId || req.query.productionNo || req.query.no) + '.*' , '$options': 'i' }
     }
-    if(req.query.status){
+    if((req.query.productionTypeCode || '')!=''){
+        filter['productionTypeCode']=req.query.productionTypeCode;
+    }
+    if((req.query.status || '')!=''){
         filter['status']=req.query.status;
     }
     if((req.query.date1 || '')!=''){
@@ -377,8 +400,11 @@ function calculateMaterialSummary(doc){
 }
 
 function verileriDuzenle(activeDb,data,callback){
-    if((data.palletType || '')=='') data.palletType=undefined;
-    if((data.packingType || '')=='') data.packingType=undefined;
+    if(!data.packingOption) return callback(null,data);
+    if((data.packingOption.palletType || '')=='') data.packingOption.palletType=undefined;
+    if((data.packingOption.packingType || '')=='') data.packingOption.packingType=undefined;
+    if((data.packingOption.packingType2 || '')=='') data.packingOption.packingType2=undefined;
+    if((data.packingOption.packingType3 || '')=='') data.packingOption.packingType3=undefined;
     callback(null,data);
 }
 

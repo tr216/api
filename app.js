@@ -20,16 +20,24 @@ require("tls").DEFAULT_MIN_VERSION = 'TLSv1';
 
 global.uuid = require('node-uuid');
 global.path_module = require('path');
+global.fs=require('fs');
 
 global.config = require('./config.json');
-if(process.argv.length>=3){
+var controlMessage='Config original';
+
+if(fs.existsSync('./config-test.json')){
+  controlMessage='Config test running';
+  global.config = require('./config-test.json');
+
+}else if(process.argv.length>=3){
     if(process.argv[2]=='localhost' || process.argv[2]=='-l'){
-        global.config = require('./config_local.json');
+        controlMessage='Config local running';
+        global.config = require('./config-local.json');
     }
 }
 
 
-global.fs=require('fs');
+
 
 global.dbType=require('./lib/db_object_types.js');
 global.mrutil = require('./lib/mrutil.js');
@@ -87,7 +95,7 @@ require('./lib/loader_db.js')((err)=>{
     require('./lib/loader_api_v1.js')(app,(err)=>{
       if(!err){
         global.services=require('./services/services.js');
-        
+        console.log(controlMessage.blue);
       }else{
         eventLog('loader_api_v1.js ERROR:',err);
       }
@@ -96,6 +104,7 @@ require('./lib/loader_db.js')((err)=>{
     eventLog('loader_db.js ERROR:',err);
   }
 });
+
 
 
 

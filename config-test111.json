@@ -1,0 +1,31 @@
+{
+  "httpserver":{
+  	"port" : 3501
+  },
+  "host":{
+    "url" : "http://localhost:3501"
+  },
+  "mongodb": {
+  	"address":"mongodb://localhost:27017/tr216-test",
+  	"userAddress":"mongodb://localhost:27017/"
+  },
+  "connector_service":{
+  	"port":33218
+  },
+  "error_log":{
+    "path":"/var/log/api-test.tr216.com.error.log",
+    "active": false
+  },
+  "event_log":{
+    "path":"/var/log/api-test.tr216.com.access.log",
+    "active": false
+  },
+  "enabled_services":{
+    "tasks":false,
+    "posDevice":false,
+    "scheduler":false,
+    "eInvoice":false,
+    "eLedger":false,
+    "localConnector":false
+  }
+}

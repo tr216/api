@@ -58,7 +58,11 @@ function getList(activeDb,member,req,res,callback){
     }
     
     if((req.query.name || '')!=''){
-        filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };;
+        filter['$or']=[
+            {name:{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }},
+            {description:{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }}
+        ]
+        // filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };;
     }
     if((req.query.description || '')!=''){
         filter['description']={ $regex: '.*' + req.query.description + '.*' ,$options: 'i' };;
