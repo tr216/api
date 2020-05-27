@@ -141,6 +141,7 @@ function salesOrders(activeDb,member,req,res,callback){
 function getList(activeDb,member,req,res,callback){
     
     var options={page: (req.query.page || 1), 
+        select:'-process',
         populate:[
             {path:'item',select:'_id name description'},
             {path:'sourceRecipe',select:'_id name description'}

@@ -29,7 +29,8 @@ function getList(activeDb,member,req,res,callback){
             {path:'location',select:'_id locationName'},
             {path:'subLocation',select:'_id name'},
             {path:'location2',select:'_id locationName'},
-            {path:'subLocation2',select:'_id name'}
+            {path:'subLocation2',select:'_id name'},
+            {path:'productionOrderId',select:'_id productionId'}
         ]
     }
     if(!req.query.page){
@@ -187,7 +188,8 @@ function filter_subLocation(activeDb,req,mainFilter,callback){
 function getOne(activeDb,member,req,res,callback){
     var populate=[
         {path:'docLine.item', select:'_id name unitPacks tracking passive'},
-        {path:'docLine.pallet', select:'_id name'}
+        {path:'docLine.pallet', select:'_id name'},
+        {path:'productionOrderId', select:'_id productionId'}
         // {path:'docLine.color', select:'_id name'}, //qwerty
         // {path:'docLine.pattern', select:'_id name'}, //qwerty
         // {path:'docLine.size', select:'_id name'} //qwerty
@@ -204,6 +206,11 @@ function post(activeDb,member,req,res,callback){
     if((data.account || '')=='') data.account=undefined;
     data._id=undefined;
     data=fazlaliklariTemizleDuzelt(data);
+    if(data.docTypeCode=='URETIMECIKIS' || data.docTypeCode=='URETIMDENGIRIS'){
+        if((data.productionOrderId || '')==''){
+            return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Üretim emri seçilmemiş'}});
+        }
+    }
     var yeniDoc = new activeDb.inventory_fiches(data);
     documentHelper.yeniStokFisNumarasi(activeDb,yeniDoc,(err11,newDoc)=>{
         var err=epValidateSync(newDoc);
@@ -226,7 +233,11 @@ function put(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         data.modifiedDate = new Date();
         data=fazlaliklariTemizleDuzelt(data);
-        
+        if(data.docTypeCode=='URETIMECIKIS' || data.docTypeCode=='URETIMDENGIRIS'){
+            if((data.productionOrderId || '')==''){
+                return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Üretim emri seçilmemiş'}});
+            }
+        }
         activeDb.inventory_fiches.findOne({ _id: data._id},(err,doc)=>{
             if(dberr(err,callback)) {
                 if(doc==null) return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});

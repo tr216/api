@@ -4,6 +4,7 @@ module.exports=function(conn){
         docId:{type: String, trim:true, default: '', unique:true},
         issueDate: { type: String, trim:true, required: [true,'Tarih gereklidir']},
         issueTime: { type: String, trim:true, default: '00:00:00.0000000+03:00'},
+        productionOrderId: {type: mongoose.Schema.Types.ObjectId, ref: 'production_orders', default:null},
         location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
         subLocation: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null},
         location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},

@@ -92,6 +92,7 @@ function post(activeDb,member,req,res,callback){
     data._id=undefined;
     
     data=mrutil.amountValueFixed2Digit(data,'');
+    data=fazlaliklariTemizleDuzelt(data);
     var newDoc = new activeDb.despatches(data);
     var err=epValidateSync(newDoc);
     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
@@ -118,7 +119,8 @@ function put(activeDb,member,req,res,callback){
     var data = req.body || {};
     data._id = req.params.param2;
     data.modifiedDate = new Date();
-    
+    data=fazlaliklariTemizleDuzelt(data);
+
     activeDb.despatches.findOne({ _id: data._id},(err,doc)=>{
         if (!err) {
             if(doc==null){
@@ -146,6 +148,18 @@ function put(activeDb,member,req,res,callback){
     });
 }
 
+function fazlaliklariTemizleDuzelt(data){
+    // if(data.docTypeCode!='TRANSFER'){
+        data.location2=data.location;
+        data.subLocation2=data.subLocation;
+    // }
+    if((data.subLocation || '')=='') data.subLocation=undefined;
+    if((data.subLocation2 || '')=='') data.subLocation2=undefined;
+    
+    
+    return data;
+
+}
 function getDespatchList(ioType,activeDb,member,req,res,callback){
     var options={page: (req.query.page || 1), 
         populate:[

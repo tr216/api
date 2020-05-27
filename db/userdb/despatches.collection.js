@@ -2,9 +2,9 @@ module.exports=function(conn){
     var schema = mongoose.Schema({
         ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
         eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'e_integrators', required: true},
-        location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
+        location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', required: [true, 'Lokasyon gereklidir']},
         subLocation: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null},
-        location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
+        location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', required: [true, 'Lokasyon 2 gereklidir']},
         subLocation2: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null},
         profileId: { 
             value: { type: String,default: '', trim:true, enum:['TEMELIRSALIYE'], required: true}

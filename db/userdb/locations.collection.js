@@ -34,7 +34,6 @@ module.exports=function(conn){
     
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
     // model.removeMany=(member, filter,cb)=>{ sendToTrashMany(conn,collectionName,member,filter,cb); }
-    model.relations={pos_devices:'location'}
-    model.relations={machines:'location'}
+    model.relations={pos_devices:'location',machines:'location'}
     return model;
 }

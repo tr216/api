@@ -1,5 +1,4 @@
 module.exports = function(activeDb, member, req, res, callback) {
-   
     switch(req.method){
         case 'GET':
         if(req.params.param1!=undefined){
@@ -9,13 +8,13 @@ module.exports = function(activeDb, member, req, res, callback) {
         }
         break;
         case 'POST':
-        post(activeDb,member,req,res,callback);
+           callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
         break;
         case 'PUT':
         put(activeDb,member,req,res,callback);
         break;
         case 'DELETE':
-        deleteItem(activeDb,member,req,res,callback);
+        callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
         break;
         default:
         callback({success: false, error: {code: 'WRONG_METHOD', message: 'Method was wrong!'}});
@@ -50,18 +49,15 @@ function getList(activeDb,member,req,res,callback){
         }
     }
     
-    if((req.query.name || '')!=''){
-        filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' };;
+    if((req.query.name || req.query.parameter || '')!=''){
+        filter['parameter']={ $regex: '.*' + (req.query.name || req.query.parameter) + '.*' ,$options: 'i' };;
     }
-    if((req.query.location || '')!=''){
-        filter['location']=req.query.location;
+    if((req.query.desc || req.query.description || '')!=''){
+        filter['description']={ $regex: '.*' + (req.query.desc || req.query.description) + '.*' ,$options: 'i' };;
     }
     
-    if((req.query.passive || '')!=''){
-        filter['passive']=req.query.passive;
-    }
 
-    activeDb.sub_locations.paginate(filter,options,(err, resp)=>{
+    activeDb.variables.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
         } else {
@@ -71,7 +67,7 @@ function getList(activeDb,member,req,res,callback){
 }
 
 function getOne(activeDb,member,req,res,callback){
-    activeDb.sub_locations.findOne({_id:req.params.param1},(err,doc)=>{
+    activeDb.variables.findOne({_id:req.params.param1},(err,doc)=>{
         if (!err) {
             callback({success: true,data: doc});
         } else {
@@ -80,21 +76,6 @@ function getOne(activeDb,member,req,res,callback){
     });
 }
 
-function post(activeDb,member,req,res,callback){
-    var data = req.body || {};
-    data._id=undefined;
-    
-    var newdoc = new activeDb.sub_locations(data);
-    var err=epValidateSync(newdoc);
-    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-    newdoc.save(function(err, newdoc2) {
-        if (!err) {
-            callback({success:true,data:newdoc2});
-        } else {
-            callback({success: false, error: {code: err.name, message: err.message}});
-        }
-    });
-}
 
 function put(activeDb,member,req,res,callback){
     if(req.params.param1==undefined){
@@ -104,13 +85,13 @@ function put(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         data.modifiedDate = new Date();
 
-        activeDb.sub_locations.findOne({ _id: data._id},(err,doc)=>{
+        activeDb.variables.findOne({ _id: data._id},(err,doc)=>{
             if (!err) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
                 }else{
                     var doc2 = Object.assign(doc, data);
-                    var newdoc = new activeDb.sub_locations(doc2);
+                    var newdoc = new activeDb.variables(doc2);
                     var err=epValidateSync(newdoc);
                     if(err) return callback({success: false, error: {code: err.name, message: err.message}});
                     newdoc.save(function(err, newdoc2) {
@@ -128,18 +109,3 @@ function put(activeDb,member,req,res,callback){
     }
 }
 
-function deleteItem(activeDb,member,req,res,callback){
-    if(req.params.param1==undefined){
-        callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Parametre hatali'}});
-    }else{
-        var data = req.body || {};
-        data._id = req.params.param1;
-        activeDb.sub_locations.removeOne(member,{ _id: data._id},(err,doc)=>{
-            if (!err) {
-                callback({success: true});
-            }else{
-                callback({success: false, error: {code: err.name, message: err.message}});
-            }
-        });
-    }
-}

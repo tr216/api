@@ -146,5 +146,6 @@ module.exports=function(conn){
     
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }
     
+    model.relations={inventory_fiches:'productionOrderId'}
     return model;
 }
