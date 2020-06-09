@@ -112,14 +112,14 @@ function filter_subLocation(activeDb,req,mainFilter,callback){
                     if(filter['$or']!=undefined){
                         var newOR=[];
                         filter['$or'].forEach((e)=>{
-                            var bfound= false;
+                            var bFound= false;
                             fiches.forEach((e2)=>{ 
                                 if(e['subLocation'].toString()==e2._id.toString()){
-                                    bfound=true;
+                                    bFound=true;
                                     return;
                                 }
                             });
-                            if(bfound){
+                            if(bFound){
                                 newOR.push(e)
                             }
                         });
@@ -148,14 +148,14 @@ function filter_subLocation(activeDb,req,mainFilter,callback){
                     if(filter['$or']!=undefined){
                         var newOR=[];
                         filter['$or'].forEach((e)=>{
-                            var bfound= false;
+                            var bFound= false;
                             fiches.forEach((e2)=>{ 
                                 if(e['subLocation2'].toString()==e2._id.toString()){
-                                    bfound=true;
+                                    bFound=true;
                                     return;
                                 }
                             });
-                            if(bfound){
+                            if(bFound){
                                 newOR.push(e)
                             }
                         });
@@ -188,8 +188,8 @@ function filter_subLocation(activeDb,req,mainFilter,callback){
 function getOne(activeDb,member,req,res,callback){
     var populate=[
         {path:'docLine.item', select:'_id name unitPacks tracking passive'},
-        {path:'docLine.pallet', select:'_id name'},
-        {path:'productionOrderId', select:'_id productionId'}
+        {path:'docLine.pallet', select:'_id name'}
+        
         // {path:'docLine.color', select:'_id name'}, //qwerty
         // {path:'docLine.pattern', select:'_id name'}, //qwerty
         // {path:'docLine.size', select:'_id name'} //qwerty
@@ -208,21 +208,24 @@ function post(activeDb,member,req,res,callback){
     data=fazlaliklariTemizleDuzelt(data);
     if(data.docTypeCode=='URETIMECIKIS' || data.docTypeCode=='URETIMDENGIRIS'){
         if((data.productionOrderId || '')==''){
-            return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Üretim emri seçilmemiş'}});
+            return callback({success: false,error: {code: 'WRONG_DATA', message: 'Üretim emri seçilmemiş'}});
         }
     }
-    var yeniDoc = new activeDb.inventory_fiches(data);
-    documentHelper.yeniStokFisNumarasi(activeDb,yeniDoc,(err11,newDoc)=>{
-        var err=epValidateSync(newDoc);
+    uretimFisiKontrolEt(activeDb,data,(err,data)=>{
         if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+        var yeniDoc = new activeDb.inventory_fiches(data);
+        documentHelper.yeniStokFisNumarasi(activeDb,yeniDoc,(err11,newDoc)=>{
+            var err=epValidateSync(newDoc);
+            if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
-        newDoc.save(function(err, newDoc2) {
-            if(dberr(err,callback)) {
-                callback({success:true,data:newDoc2});
-            } 
-        });
+            newDoc.save(function(err, newDoc2) {
+                if(dberr(err,callback)) {
+                    callback({success:true,data:newDoc2});
+                } 
+            });
+        })
+            
     })
-    
 }
 
 function put(activeDb,member,req,res,callback){
@@ -235,25 +238,82 @@ function put(activeDb,member,req,res,callback){
         data=fazlaliklariTemizleDuzelt(data);
         if(data.docTypeCode=='URETIMECIKIS' || data.docTypeCode=='URETIMDENGIRIS'){
             if((data.productionOrderId || '')==''){
-                return callback({success: false,error: {code: 'WRONG_PARAMETER', message: 'Üretim emri seçilmemiş'}});
+                return callback({success: false,error: {code: 'WRONG_DATA', message: 'Üretim emri seçilmemiş'}});
             }
         }
-        activeDb.inventory_fiches.findOne({ _id: data._id},(err,doc)=>{
-            if(dberr(err,callback)) {
-                if(doc==null) return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
-                    
-                var doc2 = Object.assign(doc, data);
-                var newDoc = new activeDb.inventory_fiches(doc2);
-                var err=epValidateSync(newDoc);
-                if(err) return callback({success: false, error: {code: err.name, message: err.message}});
-                newDoc.save(function(err, newDoc2) {
-                    if(dberr(err,callback)) {
-                        callback({success: true,data: newDoc2});
-                    } 
-                });
-            }
-        });
+        uretimFisiKontrolEt(activeDb,data,(err,data)=>{
+            if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+            activeDb.inventory_fiches.findOne({ _id: data._id},(err,doc)=>{
+                if(dberr(err,callback)) {
+                    if(doc==null) return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
+                        
+                    var doc2 = Object.assign(doc, data);
+                    var newDoc = new activeDb.inventory_fiches(doc2);
+                    var err=epValidateSync(newDoc);
+                    if(err) return callback({success: false, error: {code: err.name, message: err.message}});
+                    newDoc.save(function(err, newDoc2) {
+                        if(dberr(err,callback)) {
+                            callback({success: true,data: newDoc2});
+                        } 
+                    });
+                }
+            });
+        })
+        
     }
+}
+
+function uretimFisiKontrolEt(activeDb,data,callback){
+    if(!(data.docTypeCode=='URETIMECIKIS' || data.docTypeCode=='URETIMDENGIRIS')) return callback(null,data);
+
+    activeDb.production_orders.findOne({_id:data.productionOrderId},(err,proOrder)=>{
+        if(!err){
+            if(proOrder==null) return callback({code:'WRONG_DATA',message:'Uretim emri bulunamadi'},data);
+            if(!data.docLine) return callback(null,data);
+
+            var hata;
+
+            if(data.docTypeCode=='URETIMECIKIS'){
+                
+
+                data.docLine.forEach((e,index)=>{
+                    var bFound=false;
+                    proOrder.materialSummary.forEach((e2)=>{
+                        if(e.item._id.toString()==e2.item.toString()){
+                            bFound=true;
+                            return;
+                        }
+                    });
+                    if(bFound==false){
+                        hata={code:'WRONG_DATA',message:'Uretim emrinde olmayan bir hammadde ya da malzemeyi uretime cikamazsiniz. Satir:' + (index+1)}
+                        return;
+                    }
+                })
+            }else if(data.docTypeCode=='URETIMDENGIRIS'){
+                data.docLine.forEach((e,index)=>{
+                    var bFound=false;
+                    if(proOrder.item.toString()!=e.item.toString()){
+                        proOrder.outputSummary.forEach((e2)=>{
+                            if(e.item._id.toString()==e2.item.toString()){
+                                bFound=true;
+                                return;
+                            }
+                        });
+                    }
+                    
+                    if(bFound==false){
+                        hata={code:'WRONG_DATA',message:'Uretim emrinde olmayan bir hammadde ya da malzemeyi uretime cikamazsiniz. Satir:' + (index+1)}
+                        return;
+                    }
+                })
+            }
+            
+            callback(hata,data);
+        }else{
+            callback(err,data);
+        }
+    })
+    
 }
 
 function fazlaliklariTemizleDuzelt(data){
