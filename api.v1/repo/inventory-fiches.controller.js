@@ -187,7 +187,7 @@ function filter_subLocation(activeDb,req,mainFilter,callback){
 
 function getOne(activeDb,member,req,res,callback){
     var populate=[
-        {path:'docLine.item', select:'_id name unitPacks tracking passive'},
+        {path:'docLine.item', select:'_id name description unitPacks tracking passive'},
         {path:'docLine.pallet', select:'_id name'}
         
         // {path:'docLine.color', select:'_id name'}, //qwerty
@@ -292,17 +292,19 @@ function uretimFisiKontrolEt(activeDb,data,callback){
             }else if(data.docTypeCode=='URETIMDENGIRIS'){
                 data.docLine.forEach((e,index)=>{
                     var bFound=false;
-                    if(proOrder.item.toString()!=e.item.toString()){
+                    if(proOrder.item.toString()!=e.item._id.toString()){
                         proOrder.outputSummary.forEach((e2)=>{
                             if(e.item._id.toString()==e2.item.toString()){
                                 bFound=true;
                                 return;
                             }
                         });
+                    }else{
+                        bFound=true;
                     }
                     
                     if(bFound==false){
-                        hata={code:'WRONG_DATA',message:'Uretim emrinde olmayan bir hammadde ya da malzemeyi uretime cikamazsiniz. Satir:' + (index+1)}
+                        hata={code:'WRONG_DATA',message:'Uretim emrinde tanımsız mamul olamaz. Satir:' + (index+1)}
                         return;
                     }
                 })
@@ -317,6 +319,7 @@ function uretimFisiKontrolEt(activeDb,data,callback){
 }
 
 function fazlaliklariTemizleDuzelt(data){
+    console.log('data._id:',data._id);
     if(data.docTypeCode!='TRANSFER'){
         data.location2=data.location;
         data.subLocation2=data.subLocation;
@@ -325,14 +328,32 @@ function fazlaliklariTemizleDuzelt(data){
     if((data.subLocation2 || '')=='') data.subLocation2=undefined;
     if(data.docLine){
         data.docLine.forEach((e)=>{
-            if(e.pallet)
+            
+            if((e.pallet || '')==''){
+                e.pallet=undefined;
+            }else{
                 if((e.pallet._id || '')=='') e.pallet=undefined;
-            if(e.color)
+            }
+
+            if((e.color || '')==''){
+                e.color=undefined;
+            }else{
                 if((e.color._id || '')=='') e.color=undefined;
-            if(e.pattern)
+            }
+
+            if((e.pattern || '')==''){
+                e.pattern=undefined;
+            }else{
                 if((e.pattern._id || '')=='') e.pattern=undefined;
-            if(e.size)
+            }
+
+            if((e.size || '')==''){
+                e.size=undefined;
+            }else{
                 if((e.size._id || '')=='') e.size=undefined;
+            }
+
+           
         });
     }
 

@@ -1,6 +1,7 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
         item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
+        //qwerty renkler, desenler, bedenler, her varyasyon icin subQuantity dusunulebilir
         sourceRecipe: {type: mongoose.Schema.Types.ObjectId, ref: 'recipes', default:null},
         productionId:{type: String, trim:true, default: ''},
         productionTypeCode: { type: String,default: '', trim:true, enum:['MUSTERI','DEPO'] },
@@ -57,12 +58,14 @@ module.exports=function(conn){
             }],
             input: [{
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},
+                //qwerty buraya renk desen beden gelecek
                 quantity:{ type: Number, default: 0},
                 unitCode:{type: String, trim:true, default: ''},
                 percent:{ type: Number, default: 0}
             }],
             output: [{  //yan urunler
                 item:{type: mongoose.Schema.Types.ObjectId, ref: 'items'},
+                //qwerty buraya renk desen beden gelecek
                 quantity:{ type: Number, default: 0},
                 unitCode:{type: String, trim:true, default: ''},
                 percent:{ type: Number, default: 0}
@@ -71,12 +74,14 @@ module.exports=function(conn){
         }],
         materialSummary:[{
             item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
+            //qwerty buraya renk desen beden gelecek
             quantity:{ type: Number, default: 0},
             unitCode:{type: String, trim:true, default: ''},
             percent:{ type: Number, default: 0}
         }],
         outputSummary:[{
             item: {type: mongoose.Schema.Types.ObjectId, ref: 'items'},
+            //qwerty buraya renk desen beden gelecek
             quantity:{ type: Number, default: 0},
             unitCode:{type: String, trim:true, default: ''},
             percent:{ type: Number, default: 0}

@@ -255,22 +255,42 @@ function getOne(activeDb,member,req,res,callback){
     
     activeDb.production_orders.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if (dberr(err,callback)) {
-            if(!req.query.print){
-                callback({success: true,data: doc});
-            }else{
-                doc.populate('item').execPopulate((err,doc2)=>{
-                    if(dberr(err,callback)) {
-                        var designId=req.query.designId || '';
-                        printHelper.print(activeDb,'mrp-production-order',doc2, designId, (err,html)=>{
-                            if(!err){
-                                callback({file: {data:html}});
-                            }else{
-                                callback({success:false,error:{code:(err.code || err.name || 'PRINT_ERROR'),message:err.message}})
-                            }
-                        });
-                    }
-                })
-                
+            if (dbnull(doc,callback)) {
+                if(!req.query.print){
+                    
+                    var populate2=[
+                        {path:'docLine.item', select:'_id name description unitPacks tracking passive'},
+                        {path:'docLine.pallet', select:'_id name'}
+                        // {path:'docLine.color', select:'_id name'}, //qwerty
+                        // {path:'docLine.pattern', select:'_id name'}, //qwerty
+                        // {path:'docLine.size', select:'_id name'} //qwerty
+                    ]
+                    activeDb.inventory_fiches.find({productionOrderId:doc._id}).populate(populate2).exec((err,invFiches)=>{
+                        if(dberr(err,callback)) {
+                            doc=doc.toJSON();
+                            doc['inventory_fiches']=invFiches;
+                            // invFiches.forEach((e)=>{
+                            //     doc['inventory_fiches'].push(e.toJSON());
+                            // })
+                            
+                            callback({success: true,data: doc});
+                        }
+                    });
+                }else{
+                    doc.populate('item').execPopulate((err,doc2)=>{
+                        if(dberr(err,callback)) {
+                            var designId=req.query.designId || '';
+                            printHelper.print(activeDb,'mrp-production-order',doc2, designId, (err,html)=>{
+                                if(!err){
+                                    callback({file: {data:html}});
+                                }else{
+                                    callback({success:false,error:{code:(err.code || err.name || 'PRINT_ERROR'),message:err.message}})
+                                }
+                            });
+                        }
+                    })
+                    
+                }
             }
         }
     });
