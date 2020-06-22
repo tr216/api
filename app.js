@@ -25,14 +25,18 @@ global.fs=require('fs');
 global.config = require('./config.json');
 var controlMessage='Config original';
 
+global.config['status']='dist';
+
 if(fs.existsSync('./config-test.json')){
   controlMessage='Config test running';
   global.config = require('./config-test.json');
-
+  global.config['status']='test';
+  
 }else if(process.argv.length>=3){
     if(process.argv[2]=='localhost' || process.argv[2]=='-l'){
         controlMessage='Config local running';
         global.config = require('./config-local.json');
+        global.config['status']='src';
     }
 }
 
