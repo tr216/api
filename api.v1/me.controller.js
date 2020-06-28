@@ -1,5 +1,7 @@
 module.exports = function(member, req, res, callback) {
+	console.log('me.controller calisti');
     if(member.isSysUser){
+    	console.log('member.isSysUser:',member.isSysUser);
         return apiv1_system['me'](member,req,res,callback);
     }
     switch(req.method){
@@ -81,16 +83,10 @@ function put(member,req,res,callback){
 }
 
 function changePassword(member,req,res,callback){
-    eventLog('changePassword1');
     db.members.findOne({_id:member._id},(err,doc)=>{
         if(dberr(err,callback)){
-            eventLog('changePassword2');
             if(doc==null) return callback({success:false,error:{code:'RECORD_NOT_FOUND',message:'Kayit bulunamadi'}});
-            //var data={}
-            // doc.name=req.body.name || '';
-            // doc.lastName=req.body.lastName || '';
-            // doc.email=req.body.email || '';
-            // doc.gender=req.body.gender || '';
+            
             eventLog('changePassword3');
             var oldPassword=req.body.oldPassword || '';
             var newPassword=req.body.newPassword || '';

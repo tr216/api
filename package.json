@@ -1,6 +1,6 @@
 {
-  "name": "node-sbadmin",
-  "version": "0.0.0",
+  "name": "tr216-api",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "postinstall": "bower install",

@@ -8,9 +8,9 @@ var timeout=180000;
 
 function generateRequestMessage(funcName,query,isQuery=true){
     var message =  '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">' +
-                     '<s:Header />' +
-                       '<s:Body>' +
-                         '<s:' + funcName + ' xmlns:s="http://tempuri.org/">'
+    '<s:Header />' +
+    '<s:Body>' +
+    '<s:' + funcName + ' xmlns:s="http://tempuri.org/">'
     if(isQuery){
         message +='<s:query PageIndex="' + (query.pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 10) + '">';
         for(let k in query){
@@ -27,19 +27,19 @@ function generateRequestMessage(funcName,query,isQuery=true){
         message +='</s:query>';
     }else{
         
-            for(let k in query){
-                if(!Array.isArray(query[k])){
-                    if(Object.keys(query[k]).indexOf('pageIndex')>-1 || Object.keys(query[k]).indexOf('pageSize')>-1 || Object.keys(query[k]).indexOf('PageIndex')>-1 || Object.keys(query[k]).indexOf('PageSize')>-1){
-                        message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 10) + '">' + query[k].toString() + '</s:' + k +'>';
-                    }else{
-                        message +='<s:' + k + '>' + query[k].toString() + '</s:' + k +'>';
-                    }
+        for(let k in query){
+            if(!Array.isArray(query[k])){
+                if(Object.keys(query[k]).indexOf('pageIndex')>-1 || Object.keys(query[k]).indexOf('pageSize')>-1 || Object.keys(query[k]).indexOf('PageIndex')>-1 || Object.keys(query[k]).indexOf('PageSize')>-1){
+                    message +='<s:' + k + ' PageIndex="' + (query[k].pageIndex || query.PageIndex || 0) + '" PageSize="' + (query.pageSize || query.PageSize || 10) + '">' + query[k].toString() + '</s:' + k +'>';
                 }else{
-                    query[k].forEach((e)=>{
-                        message +='<s:' + k + '>' + e.toString() + '</s:' + k +'>';
-                    });
+                    message +='<s:' + k + '>' + query[k].toString() + '</s:' + k +'>';
                 }
+            }else{
+                query[k].forEach((e)=>{
+                    message +='<s:' + k + '>' + e.toString() + '</s:' + k +'>';
+                });
             }
+        }
         
     }
     message +='</s:' + funcName + '>';
@@ -125,19 +125,19 @@ function uyumsoftInvoiceProfileID(typeCode){
     switch(typeCode){
         case 'BaseInvoice':
         case '0':
-            return 'TEMELFATURA';
+        return 'TEMELFATURA';
         case 'ComercialInvoice':
         case '1':
-            return 'TICARIFATURA';
+        return 'TICARIFATURA';
         case 'InvoiceWithPassanger':
         case '2':
-            return 'YOLCUBERABERFATURA';
+        return 'YOLCUBERABERFATURA';
         case 'Export':
         case '3':
-            return 'IHRACAT';
+        return 'IHRACAT';
         case 'eArchive':
         case '4':
-            return 'EARSIVFATURA';
+        return 'EARSIVFATURA';
         default:
         return 'TEMELFATURA';
     }
@@ -170,9 +170,9 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
     try{ 
 
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
 
         var proxy = new Proxy(binding, options.url);
         
@@ -201,7 +201,7 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
                         var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
                         return callback({code:'WebServiceError',message:errorMessage});
                         
-                       
+                        
                     }
                     if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['$'].IsSucceded=='true'){
                         var result={
@@ -262,19 +262,19 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
                     }else{
                         callback({code:'UNSUCCESSFUL',message:'Uyumsoft E-InvoiceDownload Basarisiz'});
                     }
-                                       
+                    
                     
                 }else{
                     callback({code:'XML2JSON_ERROR',message:(err.name || err.message || err.toString())});
                 }
             });
 
-        
-        });
-        
-    }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
-    }
+
+});
+
+}catch(tryErr){
+    callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+}
 }
 
 
@@ -299,9 +299,9 @@ exports.getInboxInvoice = function (options,invoiceId,mainCallback) {
     }, timeout)
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
@@ -343,7 +343,7 @@ exports.getInboxInvoice = function (options,invoiceId,mainCallback) {
                     callback(err);
                 }
             });
-        
+            
         });
     }catch(tryErr){
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
@@ -371,9 +371,9 @@ exports.getInboxInvoiceHtml = function (options,invoiceId,mainCallback) {
     }, timeout)
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
@@ -398,8 +398,8 @@ exports.getInboxInvoiceHtml = function (options,invoiceId,mainCallback) {
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
 
-                                     
-                   try{
+                    
+                    try{
                         if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceViewResponse'][0]['GetInboxInvoiceViewResult'][0]['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
@@ -419,7 +419,7 @@ exports.getInboxInvoiceHtml = function (options,invoiceId,mainCallback) {
                     callback(err);
                 }
             });
-        
+            
         });
     }catch(tryErr){
         errorLog('exports.getInboxInvoicePdf tryErr:',tryErr)
@@ -449,9 +449,9 @@ exports.getInboxInvoicePdf = function (options,invoiceId,mainCallback) {
     }, timeout)
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
@@ -477,8 +477,8 @@ exports.getInboxInvoicePdf = function (options,invoiceId,mainCallback) {
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
 
-                                     
-                   try{
+                    
+                    try{
                         if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoicePdfResponse'][0]['GetInboxInvoicePdfResult'][0]['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
@@ -533,9 +533,9 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
     try{ 
 
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
 
         var proxy = new Proxy(binding, options.url);
         
@@ -564,7 +564,7 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
                         var errorMessage=jsObject['s:Envelope']['s:Body'][0]['s:Fault'][0]['faultstring'][0]['_'];
                         return callback({code:'WebServiceError',message:errorMessage});
                         
-                       
+                        
                     }
                     if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['$'].IsSucceded=='true'){
                         var result={
@@ -625,19 +625,19 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
                     }else{
                         callback({code:'UNSUCCESSFUL',message:'Uyumsoft E-InvoiceDownload Basarisiz'});
                     }
-                                       
+                    
                     
                 }else{
                     callback({code:'XML2JSON_ERROR',message:(err.name || err.message || err.toString())});
                 }
             });
 
-        
-        });
-        
-    }catch(tryErr){
-        callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
-    }
+
+});
+
+}catch(tryErr){
+    callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
+}
 }
 
 
@@ -662,9 +662,9 @@ exports.getOutboxInvoice = function (options,invoiceId,mainCallback) {
     }, timeout)
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
@@ -706,7 +706,7 @@ exports.getOutboxInvoice = function (options,invoiceId,mainCallback) {
                     callback(err);
                 }
             });
-        
+            
         });
     }catch(tryErr){
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
@@ -734,9 +734,9 @@ exports.getOutboxInvoiceHtml = function (options,invoiceId,mainCallback) {
     }, timeout)
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
@@ -761,8 +761,8 @@ exports.getOutboxInvoiceHtml = function (options,invoiceId,mainCallback) {
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
 
-                                     
-                   try{
+                    
+                    try{
                         if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceViewResponse'][0]['GetOutboxInvoiceViewResult'][0]['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
@@ -782,7 +782,7 @@ exports.getOutboxInvoiceHtml = function (options,invoiceId,mainCallback) {
                     callback(err);
                 }
             });
-        
+            
         });
     }catch(tryErr){
         errorLog('exports.getOutboxInvoicePdf tryErr:',tryErr)
@@ -812,9 +812,9 @@ exports.getOutboxInvoicePdf = function (options,invoiceId,mainCallback) {
     }, timeout)
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
@@ -840,8 +840,8 @@ exports.getOutboxInvoicePdf = function (options,invoiceId,mainCallback) {
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
 
-                                     
-                   try{
+                    
+                    try{
                         if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoicePdfResponse'][0]['GetOutboxInvoicePdfResult'][0]['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
@@ -877,9 +877,9 @@ exports.getOutboxInvoicePdf = function (options,invoiceId,mainCallback) {
 exports.setInvoicesTaken = function (options,invoices,callback) {
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
@@ -918,9 +918,9 @@ exports.setInvoicesTaken = function (options,invoices,callback) {
 exports.isEInvoiceUser = function (options,vknTckn,callback) {
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
@@ -966,9 +966,9 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
 exports.getEInvoiceUsers = function (options,query,callback) {
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         // var proxy = new Proxy(binding, 'https://efatura.uyumsoft11.com.tr/');
         proxy.ClientCredentials.Username.Username =options.username;
@@ -1042,9 +1042,9 @@ exports.getEInvoiceUsers = function (options,query,callback) {
 exports.sendInvoice = function (options,ssss,callback) {
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
@@ -1075,7 +1075,7 @@ exports.sendInvoice = function (options,ssss,callback) {
                         IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceResponse'][0]['GetInboxInvoiceResult'][0]['$'].IsSucceded=='true',
                         doc:{} // {invoice:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['Value']['Invoice']}
                     }
-                   
+                    
                     callback(null,result);
                     
                     
@@ -1083,7 +1083,7 @@ exports.sendInvoice = function (options,ssss,callback) {
                     callback(err);
                 }
             });
-       
+            
         });
     }catch(tryErr){
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || tryErr});
@@ -1098,9 +1098,9 @@ exports.sendInvoice = function (options,ssss,callback) {
 exports.sendDocumentResponse = function (options,query,callback) {
     try{
         var binding = new BasicHttpBinding(
-            { SecurityMode: "TransportWithMessageCredential"
-            , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
-        })
+                                           { SecurityMode: "TransportWithMessageCredential"
+                                           , MessageClientCredentialType: "UserName", MaxBufferPoolSize : 20000000, MaxBufferSize : 20000000, MaxReceivedMessageSize : 20000000, SendTimeout : new Date(12, 50, 50), ReceiveTimeout : new Date(12, 50, 50)
+                                       })
         var proxy = new Proxy(binding, options.url);
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;

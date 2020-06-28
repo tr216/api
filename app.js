@@ -12,34 +12,23 @@ global.os = require('os');
 
 require("tls").DEFAULT_MIN_VERSION = 'TLSv1';
 
-// var tls=require("tls");
-// console.log('tls:',tls);
-
-// process.exit(1);
-
 
 global.uuid = require('node-uuid');
 global.path_module = require('path');
 global.fs=require('fs');
 
 global.config = require('./config.json');
-var controlMessage='Config original';
-
 global.config['status']='dist';
 
-if(fs.existsSync('./config-test.json')){
-  controlMessage='Config test running';
-  global.config = require('./config-test.json');
-  global.config['status']='test';
-  
-}else if(process.argv.length>=3){
-    if(process.argv[2]=='localhost' || process.argv[2]=='-l'){
-        controlMessage='Config local running';
-        global.config = require('./config-local.json');
-        global.config['status']='src';
-    }
+if(process.argv.length>=3){
+	if(process.argv[2]=='localhost' || process.argv[2]=='-l'){
+		global.config = require('./config-local.json');
+		global.config['status']='dev';
+	}
+}else if(fs.existsSync('./config-test.json')){
+	global.config = require('./config-test.json');
+	global.config['status']='test';
 }
-
 
 
 
@@ -49,10 +38,11 @@ global.printHelper = require('./lib/print_helper.js');
 
 
 
+
 global.ttext = require('./lib/language.js');
 global.passport = require('./lib/passport.js');
 global.passportRepo = require('./lib/passport_repo.js');
-global.rootPath=__dirname;
+global.rootDir=__dirname;
 global.documentHelper=require('./lib/document_helper.js');
 // global.eDespatchHelper=require('./lib/edespatch_helper.js');
 global.fileImporter=require('./lib/file_importer.js');
@@ -60,23 +50,9 @@ global.fileImporter=require('./lib/file_importer.js');
 var app = express();
 var cors = require('cors');
 app.use(cors());
-//var passport = require('passport');
-//var expressSession = require('express-session');
 var flash = require('connect-flash');
 
-
-// view engine setup
-// app.engine('ejs', engine);
-// app.set('views', path.join(__dirname, 'views'));
-// app.set('view engine', 'ejs');
-
 app.set('port', config.httpserver.port);
-
-// uncomment after placing your favicon in /public
-//app.use(favicon(__dirname + '/public/favicon.ico'));
-
-//app.use(expressSession({secret: 'mySecretKey' , resave:false , saveUninitialized:true}));
-
 
 app.use(logger('dev'));
 // app.use(bodyParser.json());
@@ -85,7 +61,6 @@ app.use(bodyParser.json({limit: "50mb"}));
 app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}));
 
 app.use(cookieParser());
-eventLog(path.join(__dirname, 'downloads'));
 
 app.use('/downloads',express.static(path.join(__dirname, 'downloads')));
 // app.use(passport.initialize());
@@ -95,18 +70,28 @@ app.use(flash());
 
 
 require('./lib/loader_db.js')((err)=>{
-  if(!err){
-    require('./lib/loader_api_v1.js')(app,(err)=>{
-      if(!err){
-        global.services=require('./services/services.js');
-        console.log(controlMessage.blue);
-      }else{
-        eventLog('loader_api_v1.js ERROR:',err);
-      }
-    });
-  }else{
-    eventLog('loader_db.js ERROR:',err);
-  }
+	if(!err){
+		require('./lib/loader_api_v1.js')(app,(err)=>{
+			if(!err){
+				//global.services=require('./services/services.js');
+				switch(config.status){
+					case 'test':
+					eventLog('API is running on '.yellow + 'test'.cyan + ' platform.'.yellow);
+					break;
+					case 'dev':
+					eventLog('API is running on '.yellow + 'development'.cyan + ' platform.'.yellow);
+					break;
+					case 'dist':
+					eventLog('API is running '.yellow + 'release'.red + ' mode.'.yellow);
+					break;
+				}
+			}else{
+				eventLog('loader_api_v1.js ERROR:',err);
+			}
+		});
+	}else{
+		eventLog('loader_db.js ERROR:',err);
+	}
 });
 
 
@@ -131,52 +116,52 @@ server.on('listening', onListening);
 
 
 function normalizePort(val) {
-  var port = parseInt(val, 10);
+	var port = parseInt(val, 10);
 
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
+	if (isNaN(port)) {
+		// named pipe
+		return val;
+	}
 
-  if (port >= 0) {
-    // port number
-    return port;
-  }
+	if (port >= 0) {
+		// port number
+		return port;
+	}
 
-  return false;
+	return false;
 }
 
 
 function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
+	if (error.syscall !== 'listen') {
+		throw error;
+	}
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+	var bind = typeof port === 'string'
+	? 'Pipe ' + port
+	: 'Port ' + port;
 
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
+	// handle specific listen errors with friendly messages
+	switch (error.code) {
+		case 'EACCES':
+		console.error(bind + ' requires elevated privileges');
+		process.exit(1);
+		break;
+		case 'EADDRINUSE':
+		console.error(bind + ' is already in use');
+		process.exit(1);
+		break;
+		default:
+		throw error;
+	}
 }
 
 function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  //debug('Listening on ' + bind);
+	var addr = server.address();
+	var bind = typeof addr === 'string'
+	? 'pipe ' + addr
+	: 'port ' + addr.port;
+	//debug('Listening on ' + bind);
 }
 
 // ==========HTTP SERVER /===========
@@ -184,7 +169,17 @@ function onListening() {
 
 
 process.on('uncaughtException', function (err) {
-    errorLog('Caught exception: ', err);
+	errorLog('Caught exception: ', err);
 });
 
 
+
+// // run inline programs
+
+// runNodeJs(path.join('./services','e-despatch','e-despatch.js'),(err,data)=>{
+//   if(!err){
+//     console.log('data:',data);
+//   }else{
+//     console.error(err);
+//   }
+// });

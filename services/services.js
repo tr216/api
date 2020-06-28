@@ -1,4 +1,7 @@
-exports.tr216LocalConnector=require('./local-connector/local-connector.js');
+if(config.status!='dev'){ //qwerty
+    exports.tr216LocalConnector=require('./local-connector/local-connector.js');
+}
+
 
 exports.tasks=require('./tasks/tasks.js');
 exports.posDevice=require('./pos-device/pos-device.js');

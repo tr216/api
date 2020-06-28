@@ -75,8 +75,8 @@ function defaultValues(model){
         })
     }
 
-    eventLog('parametreEkle basladi.')
-    parametreEkle((err)=>{
-        eventLog('parametreEkle bitti.')
-    });
+    // eventLog('parametreEkle basladi.')
+    // parametreEkle((err)=>{
+    //     eventLog('parametreEkle bitti.')
+    // });
 }
