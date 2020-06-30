@@ -143,7 +143,7 @@ module.exports=function(conn){
     schema.plugin(mongoosePaginate);
     
 
-    var collectionName='e_integrators';
+    var collectionName='integrators';
     var model=conn.model(collectionName, schema);
     
     model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb); }

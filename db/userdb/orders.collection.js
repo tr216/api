@@ -1,7 +1,7 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
         ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
-        eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'e_integrators', required: false},
+        eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'integrators', required: false},
         profileId: { 
             value: { type: String,default: '', trim:true, enum:['TEMELSIPARIS'], required: true}
         },
@@ -108,7 +108,7 @@ module.exports=function(conn){
         },
         orderLine:[dbType.orderLineType],
         localDocumentId: {type: String, default: ''},
-        orderStatus: {type: String, default: 'Draft',enum:['Draft','Pending','Queued', 'Processing','Sent','Approved','Declined','WaitingForAprovement','Error']},
+        orderStatus: {type: String, default: 'Draft',enum:['Deleted','Pending','Draft','Canceled','Queued','Pending','Queued', 'Processing','Sent','Approved','Declined','WaitingForApprovement','Error']},
         orderErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
         localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
         localErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],

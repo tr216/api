@@ -20,12 +20,15 @@
     "path":"C:\\arge\\tr216\\log\\api.tr216.com.access.log",
     "active": false
   },
+  "tmpDir":"C:\\arge\\tr216\\temp",
   "enabled_services":{
     "tasks":false,
     "posDevice":false,
     "scheduler":false,
     "eInvoice":false,
+    "eDespatch":true,
     "eLedger":false,
     "localConnector":true
   }
+
 }

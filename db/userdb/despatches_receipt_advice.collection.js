@@ -1,7 +1,7 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
         ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
-        eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'e_integrators', required: true},
+        eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'integrators', required: true},
         profileId: { 
             value: { type: String,default: '', trim:true, enum:['TEMELIRSALIYE'], required: true}
         },
@@ -36,7 +36,7 @@ module.exports=function(conn){
         lineCountNumeric:dbType.numberValueType,
         receiptLine:[dbType.receiptLineType],
         localDocumentId: {type: String, default: ''},
-        receiptStatus: {type: String, default: 'Draft',enum:['Draft','Pending','Queued', 'Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
+        receiptStatus: {type: String, default: 'Draft',enum:['Draft','Pending','Queued', 'Processing','SentToGib','Approved','PartialApproved','Declined','WaitingForApprovement','Error']},
         receiptErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
         receiptStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
         receiptErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],

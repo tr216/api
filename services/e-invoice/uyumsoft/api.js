@@ -84,9 +84,9 @@ function seperateInvoice(items){
 
 
 function uyumsoftInvoiceStatus(status){
-    // NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined,  Return, EArchivedCanceled, Error,
-    //  , , , , WaitingForAprovement, Declined,  Return, , Error,
-    //'Draft','Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error'
+    // NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForApprovement, Declined,  Return, EArchivedCanceled, Error,
+    //  , , , , WaitingForApprovement, Declined,  Return, , Error,
+    //'Draft','Processing','SentToGib','Approved','Declined','WaitingForApprovement','Error'
 
     switch(status){
         case 'NotPrepared':
@@ -110,8 +110,8 @@ function uyumsoftInvoiceStatus(status){
         case 'Declined':
         return 'Declined';
 
-        case 'WaitingForAprovement':
-        return 'WaitingForAprovement';
+        case 'WaitingForApprovement':
+        return 'WaitingForApprovement';
 
         case 'Error':
         return 'Error';
@@ -147,7 +147,7 @@ function uyumsoftInvoiceProfileID(typeCode){
 * @query :{CreateStartDate:Date, CreateEndDate:Date, ExecutionStartDate:Date, ExecutionEndDate:Date, PageIndex:Number, PageSize:Number
 * , Status:String, OnlyNewestInvoices:Boolean, InvoiceNumbers:String[] , InvoiceIds: String[]}
 *
-*  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined, Return, EArchivedCanceled, Error
+*  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForApprovement, Declined, Return, EArchivedCanceled, Error
 */
 
 
@@ -511,7 +511,7 @@ exports.getInboxInvoicePdf = function (options,invoiceId,mainCallback) {
 * @query :{CreateStartDate:Date, CreateEndDate:Date, ExecutionStartDate:Date, ExecutionEndDate:Date, PageIndex:Number, PageSize:Number
 * , Status:String, OnlyNewestInvoices:Boolean, InvoiceNumbers:String[] , InvoiceIds: String[]}
 *
-*  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined, Return, EArchivedCanceled, Error
+*  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForApprovement, Declined, Return, EArchivedCanceled, Error
 */
 
 exports.getOutboxInvoiceList = function (options,query,mainCallback) {

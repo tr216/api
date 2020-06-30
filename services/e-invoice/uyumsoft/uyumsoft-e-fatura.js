@@ -7,7 +7,7 @@ exports.downloadInboxInvoices=function(dbModel,eIntegratorDoc,callback){
 		var isTestPlatform=eIntegratorDoc.invoice.url.indexOf('test')>-1?true:false;
 		if(isTestPlatform) eventLog('uyumsoft test platform');
 		eventLog('downloadInboxInvoices dbId:',dbModel._id);
-		dbModel.e_invoices.find({eIntegrator:eIntegratorDoc._id, ioType:1}).sort({'issueDate.value':-1}).limit(1).exec((err,docs)=>{
+		dbModel.invoices.find({eIntegrator:eIntegratorDoc._id, ioType:1}).sort({'issueDate.value':-1}).limit(1).exec((err,docs)=>{
 			if(!err){
 				var date2=new Date();
 				var query={ 
@@ -93,7 +93,7 @@ function kaydetInboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callbac
 	function faturaIndir(cb){
 		try{
 			if(index>=indirilecekFaturalar.length) return cb(null);
-			dbModel.e_invoices.findOne({ioType:1,'uuid.value':indirilecekFaturalar[index].uuid},(err,doc)=>{
+			dbModel.invoices.findOne({ioType:1,'uuid.value':indirilecekFaturalar[index].uuid},(err,doc)=>{
 				if(!err){
 					if(doc!=null){
 						if(doc.invoiceStatus!=indirilecekFaturalar[index].status){
@@ -184,7 +184,7 @@ exports.downloadOutboxInvoices=function(dbModel,eIntegratorDoc,callback){
 		var isTestPlatform=eIntegratorDoc.invoice.url.indexOf('test')>-1?true:false;
 		if(isTestPlatform) eventLog('uyumsoft test platform');
 		eventLog('downloadOutboxInvoices dbId:',dbModel._id);
-		dbModel.e_invoices.find({eIntegrator:eIntegratorDoc._id, ioType:0}).sort({'issueDate.value':-1}).limit(1).exec((err,docs)=>{
+		dbModel.invoices.find({eIntegrator:eIntegratorDoc._id, ioType:0}).sort({'issueDate.value':-1}).limit(1).exec((err,docs)=>{
 			if(!err){
 				var date2=new Date();
 				var query={ 
@@ -273,7 +273,7 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 		try{
 			if(index>=indirilecekFaturalar.length) return cb(null);
 		
-			dbModel.e_invoices.findOne({ioType:0,'uuid.value':indirilecekFaturalar[index].uuid},(err,doc)=>{
+			dbModel.invoices.findOne({ioType:0,'uuid.value':indirilecekFaturalar[index].uuid},(err,doc)=>{
 				if(!err){
 					if(doc!=null){
 						if(doc.invoiceStatus!=indirilecekFaturalar[index].status){
@@ -366,14 +366,14 @@ function kaydetOutboxInvoices(dbModel,eIntegratorDoc,indirilecekFaturalar,callba
 
 function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,files,callback){
 	try{
-		dbModel.e_invoices.findOne({ioType:ioType,'uuid.value':invoice.uuid.value},(err,foundDoc)=>{
+		dbModel.invoices.findOne({ioType:ioType,'uuid.value':invoice.uuid.value},(err,foundDoc)=>{
 			if(!err){
 				if(foundDoc==null){
 					eventLog('insertInvoice uuid:', invoice.uuid.value);
 					
 					var data={ioType:ioType,eIntegrator:eIntegratorDoc._id}
 					data=Object.assign(data,invoice);
-					var testInvoiceValidate=new dbModel.e_invoices(data);
+					var testInvoiceValidate=new dbModel.invoices(data);
 					var err=epValidateSync(testInvoiceValidate);
 					
 					if(err){
@@ -385,7 +385,7 @@ function insertInvoice(dbModel,eIntegratorDoc,ioType,invoice,files,callback){
 							if(resultFiles.html) data['html']=resultFiles.html;
 							if(resultFiles.pdf) data['pdf']=resultFiles.pdf;
 						}
-						var newInvoice=new dbModel.e_invoices(data);
+						var newInvoice=new dbModel.invoices(data);
 						newInvoice.save((err,newDoc)=>{
 							if(!err){
 								callback(null,newDoc);

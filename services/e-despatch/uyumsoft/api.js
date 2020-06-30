@@ -68,25 +68,25 @@ function seperateItems(response){
     return items;
 }
 
-function seperateInvoice(items){
-    var invoice=''
-    if(!items) return invoice;
-    var s1=items.indexOf('<Invoice');
-    var s2=items.indexOf('</Invoice>');
+function seperateDespatche(items){
+    var despatch=''
+    if(!items) return despatch;
+    var s1=items.indexOf('<Despatche');
+    var s2=items.indexOf('</Despatche>');
 
     if(s1>-1 && s2>s1){
-        invoice=items.substr(s1,s2-s1+10);
+        despatch=items.substr(s1,s2-s1+10);
     }
 
-    return invoice;
+    return despatch;
 }
 
 
 
-function uyumsoftInvoiceStatus(status){
-    // NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined,  Return, EArchivedCanceled, Error,
-    //  , , , , WaitingForAprovement, Declined,  Return, , Error,
-    //'Draft','Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error'
+function uyumsoftDespatcheStatus(status){
+    // NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForApprovement, Declined,  Return, EArchivedCanceled, Error,
+    //  , , , , WaitingForApprovement, Declined,  Return, , Error,
+    //'Draft','Processing','SentToGib','Approved','Declined','WaitingForApprovement','Error'
 
     switch(status){
         case 'NotPrepared':
@@ -110,8 +110,8 @@ function uyumsoftInvoiceStatus(status){
         case 'Declined':
         return 'Declined';
 
-        case 'WaitingForAprovement':
-        return 'WaitingForAprovement';
+        case 'WaitingForApprovement':
+        return 'WaitingForApprovement';
 
         case 'Error':
         return 'Error';
@@ -121,15 +121,15 @@ function uyumsoftInvoiceStatus(status){
     }
 }
 
-function uyumsoftInvoiceProfileID(typeCode){
+function uyumsoftDespatcheProfileID(typeCode){
     switch(typeCode){
-        case 'BaseInvoice':
+        case 'BaseDespatche':
         case '0':
         return 'TEMELFATURA';
-        case 'ComercialInvoice':
+        case 'ComercialDespatche':
         case '1':
         return 'TICARIFATURA';
-        case 'InvoiceWithPassanger':
+        case 'DespatcheWithPassanger':
         case '2':
         return 'YOLCUBERABERFATURA';
         case 'Export':
@@ -145,13 +145,13 @@ function uyumsoftInvoiceProfileID(typeCode){
 
 /**
 * @query :{CreateStartDate:Date, CreateEndDate:Date, ExecutionStartDate:Date, ExecutionEndDate:Date, PageIndex:Number, PageSize:Number
-* , Status:String, OnlyNewestInvoices:Boolean, InvoiceNumbers:String[] , InvoiceIds: String[]}
+* , Status:String, OnlyNewestDespatches:Boolean, DespatcheNumbers:String[] , DespatcheIds: String[]}
 *
-*  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined, Return, EArchivedCanceled, Error
+*  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForApprovement, Declined, Return, EArchivedCanceled, Error
 */
 
 
-exports.getInboxInvoiceList = function (options,query,mainCallback) {
+exports.getInboxDespatcheList = function (options,query,mainCallback) {
     var timeIsUp=false;
     var stopTimer=false;
 
@@ -180,11 +180,11 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetInboxInvoiceList',query);
+        var message=generateRequestMessage('GetInboxDespatcheList',query);
         
-        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {')
-        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {
-            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceList", function(response, ctx) {')
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatcheList", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatcheList", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatcheList", function(response, ctx) {')
 
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
@@ -203,7 +203,7 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
                         
                         
                     }
-                    if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['$'].IsSucceded=='true'){
+                    if(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheListResponse'][0]['GetInboxDespatcheListResult'][0]['$'].IsSucceded=='true'){
                         var result={
                             page:0,
                             pageSize:0,
@@ -214,23 +214,23 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
 
                         // result.page= query.PageIndex;
                         // result.pageSize=query.PageSize;
-                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['$'].PageIndex);
-                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['$'].PageSize);
-                        result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['$'].TotalCount);
-                        result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['$'].TotalPages);
+                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheListResponse'][0]['GetInboxDespatcheListResult'][0]['Value'][0]['$'].PageIndex);
+                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheListResponse'][0]['GetInboxDespatcheListResult'][0]['Value'][0]['$'].PageSize);
+                        result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheListResponse'][0]['GetInboxDespatcheListResult'][0]['Value'][0]['$'].TotalCount);
+                        result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheListResponse'][0]['GetInboxDespatcheListResult'][0]['Value'][0]['$'].TotalPages);
                         
-                        var items=jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceListResponse'][0]['GetInboxInvoiceListResult'][0]['Value'][0]['Items'];
+                        var items=jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheListResponse'][0]['GetInboxDespatcheListResult'][0]['Value'][0]['Items'];
                         if(items){
                             for(var i=0;i<items.length;i++){
                                 
                                 var obj={
                                     ioType:1,
-                                    profileId:uyumsoftInvoiceProfileID(items[i]['Type'][0]),
-                                    id:items[i]['InvoiceId'][0],
+                                    profileId:uyumsoftDespatcheProfileID(items[i]['Type'][0]),
+                                    id:items[i]['DespatcheId'][0],
                                     uuid:items[i]['DocumentId'][0],
                                     issueDate:items[i]['ExecutionDate'][0].toString().substr(0,10),
                                     issueTime:items[i]['ExecutionDate'][0].toString().substr(11,8),
-                                    invoiceType:'SATIS',
+                                    despatchType:'SATIS',
                                     accountingParty:{
                                         tcknVkn:items[i]['TargetTcknVkn']!=undefined?(items[i]['TargetTcknVkn'][0]) || '':'',
                                         title:items[i]['TargetTitle']!=undefined?(items[i]['TargetTitle'][0]|| ''):''
@@ -251,7 +251,7 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
                                     documentCurrencyCode:items[i]['DocumentCurrencyCode'][0],
                                     exchangeRate:Number(items[i]['ExchangeRate'][0]),
                                     
-                                    status:uyumsoftInvoiceStatus(items[i]['Status'][0])
+                                    status:uyumsoftDespatcheStatus(items[i]['Status'][0])
                                 }
                                 result.docs.push(obj);
                             }
@@ -260,7 +260,7 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
                             callback(null,result);
                         }
                     }else{
-                        callback({code:'UNSUCCESSFUL',message:'Uyumsoft E-InvoiceDownload Basarisiz'});
+                        callback({code:'UNSUCCESSFUL',message:'Uyumsoft E-DespatcheDownload Basarisiz'});
                     }
                     
                     
@@ -279,9 +279,9 @@ exports.getInboxInvoiceList = function (options,query,mainCallback) {
 
 
 /**
-* @query :{ invoiceId: String}
+* @query :{ despatchId: String}
 */
-exports.getInboxInvoice = function (options,invoiceId,mainCallback) {
+exports.getInboxDespatche = function (options,despatchId,mainCallback) {
     var timeIsUp=false;
     var stopTimer=false;
 
@@ -307,10 +307,10 @@ exports.getInboxInvoice = function (options,invoiceId,mainCallback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetInboxInvoice',{invoiceId:invoiceId},false);
-        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {')
-        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {
-            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoice", function(response, ctx) {')
+        var message=generateRequestMessage('GetInboxDespatche',{despatchId:despatchId},false);
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatche", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatche", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatche", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -326,14 +326,14 @@ exports.getInboxInvoice = function (options,invoiceId,mainCallback) {
                     }
 
                     try{
-                        if(jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['$'].IsSucceded=='true'){
+                        if(jsObject['s:Envelope']['s:Body']['GetInboxDespatcheResponse']['GetInboxDespatcheResult']['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
-                                doc:{invoice:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['Value']['Invoice']}
+                                doc:{despatch:jsObject['s:Envelope']['s:Body']['GetInboxDespatcheResponse']['GetInboxDespatcheResult']['Value']['Despatche']}
                             }
                             return callback(null,result);
                         }else{
-                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['$'].Message});
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body']['GetInboxDespatcheResponse']['GetInboxDespatcheResult']['$'].Message});
                         }
                         
                     }catch(tryErr1){
@@ -351,9 +351,9 @@ exports.getInboxInvoice = function (options,invoiceId,mainCallback) {
 }; 
 
 /**
-* @query :{ invoiceId: String}
+* @query :{ despatchId: String}
 */
-exports.getInboxInvoiceHtml = function (options,invoiceId,mainCallback) {
+exports.getInboxDespatcheHtml = function (options,despatchId,mainCallback) {
     var timeIsUp=false;
     var stopTimer=false;
 
@@ -379,10 +379,10 @@ exports.getInboxInvoiceHtml = function (options,invoiceId,mainCallback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetInboxInvoiceView',{invoiceId:invoiceId},false);
-        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {')
-        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {
-            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoiceView", function(response, ctx) {')
+        var message=generateRequestMessage('GetInboxDespatcheView',{despatchId:despatchId},false);
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatcheView", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatcheView", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatcheView", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -400,38 +400,38 @@ exports.getInboxInvoiceHtml = function (options,invoiceId,mainCallback) {
 
                     
                     try{
-                        if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceViewResponse'][0]['GetInboxInvoiceViewResult'][0]['$'].IsSucceded=='true'){
+                        if(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheViewResponse'][0]['GetInboxDespatcheViewResult'][0]['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
-                                doc:{html:(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceViewResponse'][0]['GetInboxInvoiceViewResult'][0]['Value'][0].Html || '')}
+                                doc:{html:(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheViewResponse'][0]['GetInboxDespatcheViewResult'][0]['Value'][0].Html || '')}
                             }
                             return callback(null,result);
                         }else{
-                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceViewResponse'][0]['GetInboxInvoiceViewResult'][0]['$'].Message});
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheViewResponse'][0]['GetInboxDespatcheViewResult'][0]['$'].Message});
                         }
                         
                     }catch(tryErr1){
-                        errorLog('exports.getInboxInvoiceHtml tryErr1:',tryErr1)
+                        errorLog('exports.getInboxDespatcheHtml tryErr1:',tryErr1)
                         return callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
                     }
                 }else{
-                    errorLog('exports.getInboxInvoiceHtml err:',err)
+                    errorLog('exports.getInboxDespatcheHtml err:',err)
                     callback(err);
                 }
             });
             
         });
     }catch(tryErr){
-        errorLog('exports.getInboxInvoicePdf tryErr:',tryErr)
+        errorLog('exports.getInboxDespatchePdf tryErr:',tryErr)
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
     }
 }
 
 
 /**
-* @query :{ invoiceId: String}
+* @query :{ despatchId: String}
 */
-exports.getInboxInvoicePdf = function (options,invoiceId,mainCallback) {
+exports.getInboxDespatchePdf = function (options,despatchId,mainCallback) {
     var timeIsUp=false;
     var stopTimer=false;
 
@@ -457,11 +457,11 @@ exports.getInboxInvoicePdf = function (options,invoiceId,mainCallback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetInboxInvoicePdf',{invoiceId:invoiceId},false);
+        var message=generateRequestMessage('GetInboxDespatchePdf',{despatchId:despatchId},false);
 
-        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {')
-        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {
-            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxInvoicePdf", function(response, ctx) {')
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatchePdf", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatchePdf", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetInboxDespatchePdf", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -479,28 +479,28 @@ exports.getInboxInvoicePdf = function (options,invoiceId,mainCallback) {
 
                     
                     try{
-                        if(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoicePdfResponse'][0]['GetInboxInvoicePdfResult'][0]['$'].IsSucceded=='true'){
+                        if(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatchePdfResponse'][0]['GetInboxDespatchePdfResult'][0]['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
-                                doc:{pdf:(jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoicePdfResponse'][0]['GetInboxInvoicePdfResult'][0]['Value'][0].Data || '')}
+                                doc:{pdf:(jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatchePdfResponse'][0]['GetInboxDespatchePdfResult'][0]['Value'][0].Data || '')}
                             }
                             return callback(null,result);
                         }else{
-                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoicePdfResponse'][0]['GetInboxInvoicePdfResult'][0]['$'].Message});
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatchePdfResponse'][0]['GetInboxDespatchePdfResult'][0]['$'].Message});
                         }
                         
                     }catch(tryErr1){
-                        errorLog('exports.getInboxInvoicePdf tryErr1:',tryErr1)
+                        errorLog('exports.getInboxDespatchePdf tryErr1:',tryErr1)
                         return callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
                     }
                 }else{
-                    errorLog('exports.getInboxInvoicePdf err:',err)
+                    errorLog('exports.getInboxDespatchePdf err:',err)
                     callback(err);
                 }
             });
         });
     }catch(tryErr){
-        errorLog('exports.getInboxInvoicePdf tryErr:',tryErr)
+        errorLog('exports.getInboxDespatchePdf tryErr:',tryErr)
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
     }
 }
@@ -509,12 +509,12 @@ exports.getInboxInvoicePdf = function (options,invoiceId,mainCallback) {
 
 /**
 * @query :{CreateStartDate:Date, CreateEndDate:Date, ExecutionStartDate:Date, ExecutionEndDate:Date, PageIndex:Number, PageSize:Number
-* , Status:String, OnlyNewestInvoices:Boolean, InvoiceNumbers:String[] , InvoiceIds: String[]}
+* , Status:String, OnlyNewestDespatches:Boolean, DespatcheNumbers:String[] , DespatcheIds: String[]}
 *
-*  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForAprovement, Declined, Return, EArchivedCanceled, Error
+*  Status in NotPrepared, NotSend, Draft, Canceled, Queued, Processing, SentToGib, Approved, WaitingForApprovement, Declined, Return, EArchivedCanceled, Error
 */
 
-exports.getOutboxInvoiceList = function (options,query,mainCallback) {
+exports.getOutboxDespatcheList = function (options,query,mainCallback) {
     var timeIsUp=false;
     var stopTimer=false;
 
@@ -543,11 +543,11 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetOutboxInvoiceList',query);
+        var message=generateRequestMessage('GetOutboxDespatcheList',query);
         
-        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceList", function(response, ctx) {')
-        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceList", function(response, ctx) {
-            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceList", function(response, ctx) {')
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatcheList", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatcheList", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatcheList", function(response, ctx) {')
 
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
@@ -566,7 +566,7 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
                         
                         
                     }
-                    if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['$'].IsSucceded=='true'){
+                    if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheListResponse'][0]['GetOutboxDespatcheListResult'][0]['$'].IsSucceded=='true'){
                         var result={
                             page:0,
                             pageSize:0,
@@ -577,23 +577,23 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
 
                         // result.page= query.PageIndex;
                         // result.pageSize=query.PageSize;
-                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].PageIndex);
-                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].PageSize);
-                        result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].TotalCount);
-                        result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['$'].TotalPages);
+                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheListResponse'][0]['GetOutboxDespatcheListResult'][0]['Value'][0]['$'].PageIndex);
+                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheListResponse'][0]['GetOutboxDespatcheListResult'][0]['Value'][0]['$'].PageSize);
+                        result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheListResponse'][0]['GetOutboxDespatcheListResult'][0]['Value'][0]['$'].TotalCount);
+                        result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheListResponse'][0]['GetOutboxDespatcheListResult'][0]['Value'][0]['$'].TotalPages);
                         
-                        var items=jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceListResponse'][0]['GetOutboxInvoiceListResult'][0]['Value'][0]['Items'];
+                        var items=jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheListResponse'][0]['GetOutboxDespatcheListResult'][0]['Value'][0]['Items'];
                         if(items){
                             for(var i=0;i<items.length;i++){
                                 
                                 var obj={
                                     ioType:1,
-                                    profileId:uyumsoftInvoiceProfileID(items[i]['Type'][0]),
-                                    id:items[i]['InvoiceId'][0],
+                                    profileId:uyumsoftDespatcheProfileID(items[i]['Type'][0]),
+                                    id:items[i]['DespatcheId'][0],
                                     uuid:items[i]['DocumentId'][0],
                                     issueDate:items[i]['ExecutionDate'][0].toString().substr(0,10),
                                     issueTime:items[i]['ExecutionDate'][0].toString().substr(11,8),
-                                    invoiceType:'SATIS',
+                                    despatchType:'SATIS',
                                     accountingParty:{
                                         tcknVkn:items[i]['TargetTcknVkn']!=undefined?(items[i]['TargetTcknVkn'][0]) || '':'',
                                         title:items[i]['TargetTitle']!=undefined?(items[i]['TargetTitle'][0]|| ''):''
@@ -614,7 +614,7 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
                                     documentCurrencyCode:items[i]['DocumentCurrencyCode'][0],
                                     exchangeRate:Number(items[i]['ExchangeRate'][0]),
                                     
-                                    status:uyumsoftInvoiceStatus(items[i]['Status'][0])
+                                    status:uyumsoftDespatcheStatus(items[i]['Status'][0])
                                 }
                                 result.docs.push(obj);
                             }
@@ -623,7 +623,7 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
                             callback(null,result);
                         }
                     }else{
-                        callback({code:'UNSUCCESSFUL',message:'Uyumsoft E-InvoiceDownload Basarisiz'});
+                        callback({code:'UNSUCCESSFUL',message:'Uyumsoft E-DespatcheDownload Basarisiz'});
                     }
                     
                     
@@ -642,9 +642,9 @@ exports.getOutboxInvoiceList = function (options,query,mainCallback) {
 
 
 /**
-* @query :{ invoiceId: String}
+* @query :{ despatchId: String}
 */
-exports.getOutboxInvoice = function (options,invoiceId,mainCallback) {
+exports.getOutboxDespatche = function (options,despatchId,mainCallback) {
     var timeIsUp=false;
     var stopTimer=false;
 
@@ -670,10 +670,10 @@ exports.getOutboxInvoice = function (options,invoiceId,mainCallback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetOutboxInvoice',{invoiceId:invoiceId},false);
-        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {')
-        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {
-            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoice", function(response, ctx) {')
+        var message=generateRequestMessage('GetOutboxDespatche',{despatchId:despatchId},false);
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatche", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatche", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatche", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -689,14 +689,14 @@ exports.getOutboxInvoice = function (options,invoiceId,mainCallback) {
                     }
 
                     try{
-                        if(jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceResponse']['GetOutboxInvoiceResult']['$'].IsSucceded=='true'){
+                        if(jsObject['s:Envelope']['s:Body']['GetOutboxDespatcheResponse']['GetOutboxDespatcheResult']['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
-                                doc:{invoice:jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceResponse']['GetOutboxInvoiceResult']['Value']['Invoice']}
+                                doc:{despatch:jsObject['s:Envelope']['s:Body']['GetOutboxDespatcheResponse']['GetOutboxDespatcheResult']['Value']['Despatche']}
                             }
                             return callback(null,result);
                         }else{
-                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body']['GetOutboxInvoiceResponse']['GetOutboxInvoiceResult']['$'].Message});
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body']['GetOutboxDespatcheResponse']['GetOutboxDespatcheResult']['$'].Message});
                         }
                         
                     }catch(tryErr1){
@@ -714,9 +714,9 @@ exports.getOutboxInvoice = function (options,invoiceId,mainCallback) {
 }; 
 
 /**
-* @query :{ invoiceId: String}
+* @query :{ despatchId: String}
 */
-exports.getOutboxInvoiceHtml = function (options,invoiceId,mainCallback) {
+exports.getOutboxDespatcheHtml = function (options,despatchId,mainCallback) {
     var timeIsUp=false;
     var stopTimer=false;
 
@@ -742,10 +742,10 @@ exports.getOutboxInvoiceHtml = function (options,invoiceId,mainCallback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetOutboxInvoiceView',{invoiceId:invoiceId},false);
-        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceView", function(response, ctx) {')
-        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceView", function(response, ctx) {
-            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoiceView", function(response, ctx) {')
+        var message=generateRequestMessage('GetOutboxDespatcheView',{despatchId:despatchId},false);
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatcheView", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatcheView", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatcheView", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -763,38 +763,38 @@ exports.getOutboxInvoiceHtml = function (options,invoiceId,mainCallback) {
 
                     
                     try{
-                        if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceViewResponse'][0]['GetOutboxInvoiceViewResult'][0]['$'].IsSucceded=='true'){
+                        if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheViewResponse'][0]['GetOutboxDespatcheViewResult'][0]['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
-                                doc:{html:(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceViewResponse'][0]['GetOutboxInvoiceViewResult'][0]['Value'][0].Html || '')}
+                                doc:{html:(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheViewResponse'][0]['GetOutboxDespatcheViewResult'][0]['Value'][0].Html || '')}
                             }
                             return callback(null,result);
                         }else{
-                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoiceViewResponse'][0]['GetOutboxInvoiceViewResult'][0]['$'].Message});
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatcheViewResponse'][0]['GetOutboxDespatcheViewResult'][0]['$'].Message});
                         }
                         
                     }catch(tryErr1){
-                        errorLog('exports.getOutboxInvoiceHtml tryErr1:',tryErr1)
+                        errorLog('exports.getOutboxDespatcheHtml tryErr1:',tryErr1)
                         return callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
                     }
                 }else{
-                    errorLog('exports.getOutboxInvoiceHtml err:',err)
+                    errorLog('exports.getOutboxDespatcheHtml err:',err)
                     callback(err);
                 }
             });
             
         });
     }catch(tryErr){
-        errorLog('exports.getOutboxInvoicePdf tryErr:',tryErr)
+        errorLog('exports.getOutboxDespatchePdf tryErr:',tryErr)
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
     }
 }
 
 
 /**
-* @query :{ invoiceId: String}
+* @query :{ despatchId: String}
 */
-exports.getOutboxInvoicePdf = function (options,invoiceId,mainCallback) {
+exports.getOutboxDespatchePdf = function (options,despatchId,mainCallback) {
     var timeIsUp=false;
     var stopTimer=false;
 
@@ -820,11 +820,11 @@ exports.getOutboxInvoicePdf = function (options,invoiceId,mainCallback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetOutboxInvoicePdf',{invoiceId:invoiceId},false);
+        var message=generateRequestMessage('GetOutboxDespatchePdf',{despatchId:despatchId},false);
 
-        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoicePdf", function(response, ctx) {')
-        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoicePdf", function(response, ctx) {
-            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxInvoicePdf", function(response, ctx) {')
+        eventLog('before: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatchePdf", function(response, ctx) {')
+        proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatchePdf", function(response, ctx) {
+            eventLog('after: proxy.send(message, "http://tempuri.org/IIntegration/GetOutboxDespatchePdf", function(response, ctx) {')
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -842,28 +842,28 @@ exports.getOutboxInvoicePdf = function (options,invoiceId,mainCallback) {
 
                     
                     try{
-                        if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoicePdfResponse'][0]['GetOutboxInvoicePdfResult'][0]['$'].IsSucceded=='true'){
+                        if(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatchePdfResponse'][0]['GetOutboxDespatchePdfResult'][0]['$'].IsSucceded=='true'){
                             var result={
                                 IsSucceded: true, 
-                                doc:{pdf:(jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoicePdfResponse'][0]['GetOutboxInvoicePdfResult'][0]['Value'][0].Data || '')}
+                                doc:{pdf:(jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatchePdfResponse'][0]['GetOutboxDespatchePdfResult'][0]['Value'][0].Data || '')}
                             }
                             return callback(null,result);
                         }else{
-                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetOutboxInvoicePdfResponse'][0]['GetOutboxInvoicePdfResult'][0]['$'].Message});
+                            return callback({code:'UNSUCCESSFUL',message:jsObject['s:Envelope']['s:Body'][0]['GetOutboxDespatchePdfResponse'][0]['GetOutboxDespatchePdfResult'][0]['$'].Message});
                         }
                         
                     }catch(tryErr1){
-                        errorLog('exports.getOutboxInvoicePdf tryErr1:',tryErr1)
+                        errorLog('exports.getOutboxDespatchePdf tryErr1:',tryErr1)
                         return callback({code: tryErr1.name || 'CATCHED_ERROR',message:tryErr1.message || 'CATCHED_ERROR'});
                     }
                 }else{
-                    errorLog('exports.getOutboxInvoicePdf err:',err)
+                    errorLog('exports.getOutboxDespatchePdf err:',err)
                     callback(err);
                 }
             });
         });
     }catch(tryErr){
-        errorLog('exports.getOutboxInvoicePdf tryErr:',tryErr)
+        errorLog('exports.getOutboxDespatchePdf tryErr:',tryErr)
         callback({code: tryErr.name || 'CATCHED_ERROR',message:tryErr.message || 'CATCHED_ERROR'});
     }
 }
@@ -872,9 +872,9 @@ exports.getOutboxInvoicePdf = function (options,invoiceId,mainCallback) {
 
 
 /**
-* @query :{ invoices: String[]}
+* @query :{ despatches: String[]}
 */
-exports.setInvoicesTaken = function (options,invoices,callback) {
+exports.setDespatchesTaken = function (options,despatches,callback) {
     try{
         var binding = new BasicHttpBinding(
                                            { SecurityMode: "TransportWithMessageCredential"
@@ -884,9 +884,9 @@ exports.setInvoicesTaken = function (options,invoices,callback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('SetInvoicesTaken',{invoices:invoices},false);
+        var message=generateRequestMessage('SetDespatchesTaken',{despatches:despatches},false);
 
-        proxy.send(message, "http://tempuri.org/IIntegration/SetInvoicesTaken", function(response, ctx) {
+        proxy.send(message, "http://tempuri.org/IIntegration/SetDespatchesTaken", function(response, ctx) {
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
                 return callback({code:ctx.error['code'],message:ctx.error['code']});
@@ -915,7 +915,7 @@ exports.setInvoicesTaken = function (options,invoices,callback) {
 * @vknTckn:String
 */
 
-exports.isEInvoiceUser = function (options,vknTckn,callback) {
+exports.isEDespatcheUser = function (options,vknTckn,callback) {
     try{
         var binding = new BasicHttpBinding(
                                            { SecurityMode: "TransportWithMessageCredential"
@@ -925,9 +925,9 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('IsEInvoiceUser',{vknTckn:vknTckn,alias:''});
+        var message=generateRequestMessage('IsEDespatcheUser',{vknTckn:vknTckn,alias:''});
         
-        proxy.send(message, "http://tempuri.org/IIntegration/IsEInvoiceUser", function(response, ctx) {
+        proxy.send(message, "http://tempuri.org/IIntegration/IsEDespatcheUser", function(response, ctx) {
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -941,7 +941,7 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
 
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
-                    var value=jsObject['s:Envelope']['s:Body'][0]['IsEInvoiceUserResponse'][0]['IsEInvoiceUserResult'][0]['$'].Value=='true';
+                    var value=jsObject['s:Envelope']['s:Body'][0]['IsEDespatcheUserResponse'][0]['IsEDespatcheUserResult'][0]['$'].Value=='true';
                     callback(null,value);
                 }else{
                     callback({code:'XML2JSON_ERROR',message:(err.name || err.message || err.toString())});
@@ -963,7 +963,7 @@ exports.isEInvoiceUser = function (options,vknTckn,callback) {
 */
 
 
-exports.getEInvoiceUsers = function (options,query,callback) {
+exports.getEDespatcheUsers = function (options,query,callback) {
     try{
         var binding = new BasicHttpBinding(
                                            { SecurityMode: "TransportWithMessageCredential"
@@ -974,10 +974,10 @@ exports.getEInvoiceUsers = function (options,query,callback) {
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('GetEInvoiceUsers',query,false);
+        var message=generateRequestMessage('GetEDespatcheUsers',query,false);
         
         
-        proxy.send(message, "http://tempuri.org/IIntegration/GetEInvoiceUsers", function(response, ctx) {
+        proxy.send(message, "http://tempuri.org/IIntegration/GetEDespatcheUsers", function(response, ctx) {
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -990,7 +990,7 @@ exports.getEInvoiceUsers = function (options,query,callback) {
 
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
-                    if(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['$'].IsSucceded=='true'){
+                    if(jsObject['s:Envelope']['s:Body'][0]['GetEDespatcheUsersResponse'][0]['GetEDespatcheUsersResult'][0]['$'].IsSucceded=='true'){
                         var result={
                             page:0,
                             pageSize:0,
@@ -999,12 +999,12 @@ exports.getEInvoiceUsers = function (options,query,callback) {
                             docs:[]
                         }
 
-                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].PageIndex || query.pagination.pageIndex);
-                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].PageSize || query.pagination.pageSize);
-                        result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].TotalCount);
-                        result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['$'].TotalPages);
+                        result.page= Number(jsObject['s:Envelope']['s:Body'][0]['GetEDespatcheUsersResponse'][0]['GetEDespatcheUsersResult'][0]['Value'][0]['$'].PageIndex || query.pagination.pageIndex);
+                        result.pageSize=Number(jsObject['s:Envelope']['s:Body'][0]['GetEDespatcheUsersResponse'][0]['GetEDespatcheUsersResult'][0]['Value'][0]['$'].PageSize || query.pagination.pageSize);
+                        result.recordCount= Number(jsObject['s:Envelope']['s:Body'][0]['GetEDespatcheUsersResponse'][0]['GetEDespatcheUsersResult'][0]['Value'][0]['$'].TotalCount);
+                        result.pageCount=Number(jsObject['s:Envelope']['s:Body'][0]['GetEDespatcheUsersResponse'][0]['GetEDespatcheUsersResult'][0]['Value'][0]['$'].TotalPages);
                         
-                        var items=jsObject['s:Envelope']['s:Body'][0]['GetEInvoiceUsersResponse'][0]['GetEInvoiceUsersResult'][0]['Value'][0]['Items'];
+                        var items=jsObject['s:Envelope']['s:Body'][0]['GetEDespatcheUsersResponse'][0]['GetEDespatcheUsersResult'][0]['Value'][0]['Items'];
                         if(items){
                             items.forEach((item)=>{
                                 var obj={
@@ -1024,7 +1024,7 @@ exports.getEInvoiceUsers = function (options,query,callback) {
                         
                         callback(null,result);
                     }else{
-                        callback({code:'UNSUCCESSFUL',message:'Uyumsoft getEInvoiceUsers Basarisiz'});
+                        callback({code:'UNSUCCESSFUL',message:'Uyumsoft getEDespatcheUsers Basarisiz'});
                     }
                 }else{
                     callback({code:'XML2JSON_ERROR',message:(err.name || err.message || err.toString())});
@@ -1037,9 +1037,9 @@ exports.getEInvoiceUsers = function (options,query,callback) {
 }
 
 /**
-* @invoice: {object}
+* @despatch: {object}
 */
-exports.sendInvoice = function (options,ssss,callback) {
+exports.sendDespatche = function (options,ssss,callback) {
     try{
         var binding = new BasicHttpBinding(
                                            { SecurityMode: "TransportWithMessageCredential"
@@ -1050,11 +1050,11 @@ exports.sendInvoice = function (options,ssss,callback) {
         proxy.ClientCredentials.Username.Password =options.password ;
         
         var msj ='<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Header /><s:Body>';
-        msj +='<s:SendInvoice xmlns:s="http://tempuri.org/">';
+        msj +='<s:SendDespatche xmlns:s="http://tempuri.org/">';
         msj += ssss
-        msj +='</s:SendInvoice></s:Body></s:Envelope>';
+        msj +='</s:SendDespatche></s:Body></s:Envelope>';
 
-        proxy.send(msj, "http://tempuri.org/IIntegration/SendInvoice", function(response, ctx) {
+        proxy.send(msj, "http://tempuri.org/IIntegration/SendDespatche", function(response, ctx) {
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
 
@@ -1068,12 +1068,12 @@ exports.sendInvoice = function (options,ssss,callback) {
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
 
-                    if(jsObject['s:Envelope']['s:Body']['SendInvoiceResponse']['SendInvoiceResult']['$'].IsSucceded=='false'){
-                        return callback({code:'UYUMSOFT_SEND_INVOICE',message:jsObject['s:Envelope']['s:Body']['SendInvoiceResponse']['SendInvoiceResult']['$'].Message});
+                    if(jsObject['s:Envelope']['s:Body']['SendDespatcheResponse']['SendDespatcheResult']['$'].IsSucceded=='false'){
+                        return callback({code:'UYUMSOFT_SEND_INVOICE',message:jsObject['s:Envelope']['s:Body']['SendDespatcheResponse']['SendDespatcheResult']['$'].Message});
                     }
                     var result={
-                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetInboxInvoiceResponse'][0]['GetInboxInvoiceResult'][0]['$'].IsSucceded=='true',
-                        doc:{} // {invoice:jsObject['s:Envelope']['s:Body']['GetInboxInvoiceResponse']['GetInboxInvoiceResult']['Value']['Invoice']}
+                        IsSucceded: true, //jsObject['s:Envelope']['s:Body'][0]['GetInboxDespatcheResponse'][0]['GetInboxDespatcheResult'][0]['$'].IsSucceded=='true',
+                        doc:{} // {despatch:jsObject['s:Envelope']['s:Body']['GetInboxDespatcheResponse']['GetInboxDespatcheResult']['Value']['Despatche']}
                     }
                     
                     callback(null,result);
@@ -1092,7 +1092,7 @@ exports.sendInvoice = function (options,ssss,callback) {
 }
 
 /**
-* @query :{ documentResponseInfo: [{InvoiceId:string, ResponseStatus:string}]}
+* @query :{ documentResponseInfo: [{DespatcheId:string, ResponseStatus:string}]}
 * ResponseStatus : 'Approved' || ' Declined' || 'Return'
 */
 exports.sendDocumentResponse = function (options,query,callback) {
@@ -1138,10 +1138,10 @@ exports.sendDocumentResponse = function (options,query,callback) {
 }
 
 /**
-* @query :{  InvoiceIds: String[] }
+* @query :{  DespatcheIds: String[] }
 */
 /*
-exports.checkInboxInvoicesStatus=function(options,query,callback){
+exports.checkInboxDespatchesStatus=function(options,query,callback){
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
@@ -1151,9 +1151,9 @@ exports.checkInboxInvoicesStatus=function(options,query,callback){
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('QueryInboxInvoiceStatus',query,false);
+        var message=generateRequestMessage('QueryInboxDespatcheStatus',query,false);
         
-        proxy.send(message, "http://tempuri.org/IIntegration/QueryInboxInvoiceStatus", function(response, ctx) {
+        proxy.send(message, "http://tempuri.org/IIntegration/QueryInboxDespatcheStatus", function(response, ctx) {
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
                 return callback({code:ctx.error['code'],message:ctx.error['code']});
@@ -1165,14 +1165,14 @@ exports.checkInboxInvoicesStatus=function(options,query,callback){
 
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
-                    if(jsObject['s:Envelope']['s:Body'][0]['QueryInboxInvoiceStatusResponse'][0]['QueryInboxInvoiceStatusResult'][0]['$'].IsSucceded=='false'){
-                        return callback({code:'UYUMSOFT_QUERY_INBOX_INVOICE_STATUS',message:jsObject['s:Envelope']['s:Body'][0]['QueryInboxInvoiceStatusResponse'][0]['QueryInboxInvoiceStatusResult'][0]['$'].Message});
+                    if(jsObject['s:Envelope']['s:Body'][0]['QueryInboxDespatcheStatusResponse'][0]['QueryInboxDespatcheStatusResult'][0]['$'].IsSucceded=='false'){
+                        return callback({code:'UYUMSOFT_QUERY_INBOX_INVOICE_STATUS',message:jsObject['s:Envelope']['s:Body'][0]['QueryInboxDespatcheStatusResponse'][0]['QueryInboxDespatcheStatusResult'][0]['$'].Message});
                     }
                     eventLog('api result:',JSON.stringify(jsObject['s:Envelope']['s:Body'],null,2));
 
                     var result={
                         IsSucceded: true,
-                        Value:jsObject['s:Envelope']['s:Body'][0]['QueryInboxInvoiceStatusResponse'][0]['QueryInboxInvoiceStatusResult'][0]['Value']
+                        Value:jsObject['s:Envelope']['s:Body'][0]['QueryInboxDespatcheStatusResponse'][0]['QueryInboxDespatcheStatusResult'][0]['Value']
                     }
                     
                     callback(null,result);
@@ -1188,10 +1188,10 @@ exports.checkInboxInvoicesStatus=function(options,query,callback){
 }
 */
 /**
-* @query :{  InvoiceIds: String[] }
+* @query :{  DespatcheIds: String[] }
 */
 /** 
-exports.checkOutboxInvoicesStatus=function(options,query,callback){
+exports.checkOutboxDespatchesStatus=function(options,query,callback){
     try{
         var binding = new BasicHttpBinding(
             { SecurityMode: "TransportWithMessageCredential"
@@ -1201,9 +1201,9 @@ exports.checkOutboxInvoicesStatus=function(options,query,callback){
         proxy.ClientCredentials.Username.Username =options.username;
         proxy.ClientCredentials.Username.Password =options.password ;
 
-        var message=generateRequestMessage('QueryOutboxInvoiceStatus',query,false);
+        var message=generateRequestMessage('QueryOutboxDespatcheStatus',query,false);
         
-        proxy.send(message, "http://tempuri.org/IIntegration/QueryOutboxInvoiceStatus", function(response, ctx) {
+        proxy.send(message, "http://tempuri.org/IIntegration/QueryOutboxDespatcheStatus", function(response, ctx) {
             if(ctx.error!=undefined){
                 if(ctx.error['code']=='ENOTFOUND') return callback({code:'URL_NOT_FOUND',message:'Web Servis URL bulunamadi!'});
                 return callback({code:ctx.error['code'],message:ctx.error['code']});
@@ -1215,14 +1215,14 @@ exports.checkOutboxInvoicesStatus=function(options,query,callback){
 
                         return callback({code:'WebServiceError',message:errorMessage});
                     }
-                    if(jsObject['s:Envelope']['s:Body'][0]['QueryOutboxInvoiceStatusResponse'][0]['QueryOutboxInvoiceStatusResult'][0]['$'].IsSucceded=='false'){
-                        return callback({code:'UYUMSOFT_QUERY_OUTBOX_INVOICE_STATUS',message:jsObject['s:Envelope']['s:Body'][0]['QueryOutboxInvoiceStatusResponse'][0]['QueryOutboxInvoiceStatusResult'][0]['$'].Message});
+                    if(jsObject['s:Envelope']['s:Body'][0]['QueryOutboxDespatcheStatusResponse'][0]['QueryOutboxDespatcheStatusResult'][0]['$'].IsSucceded=='false'){
+                        return callback({code:'UYUMSOFT_QUERY_OUTBOX_INVOICE_STATUS',message:jsObject['s:Envelope']['s:Body'][0]['QueryOutboxDespatcheStatusResponse'][0]['QueryOutboxDespatcheStatusResult'][0]['$'].Message});
                     }
                     eventLog('api result:',JSON.stringify(jsObject['s:Envelope']['s:Body'],null,2));
 
                     var result={
                         IsSucceded: true,
-                        Value:jsObject['s:Envelope']['s:Body'][0]['QueryOutboxInvoiceStatusResponse'][0]['QueryOutboxInvoiceStatusResult'][0]['Value']
+                        Value:jsObject['s:Envelope']['s:Body'][0]['QueryOutboxDespatcheStatusResponse'][0]['QueryOutboxDespatcheStatusResult'][0]['Value']
                     }
                     
                     callback(null,result);

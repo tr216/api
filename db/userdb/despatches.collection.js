@@ -1,10 +1,12 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
-        ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
-        eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'e_integrators', required: true},
-        location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', required: [true, 'Lokasyon gereklidir']},
+        ioType :{ type: Number,default: 0, index:true}, // 0 - cikis , 1- giris
+        eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'integrators', required: true},
+        // location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', required: [true, 'Lokasyon gereklidir']},
+        location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
         subLocation: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null},
-        location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', required: [true, 'Lokasyon 2 gereklidir']},
+        // location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', required: [true, 'Lokasyon 2 gereklidir']},
+        location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
         subLocation2: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null},
         profileId: { 
             value: { type: String,default: '', trim:true, enum:['TEMELIRSALIYE'], required: true}
@@ -43,7 +45,8 @@ module.exports=function(conn){
         lineCountNumeric:dbType.numberValueType,
         despatchLine:[dbType.despatchLineType],
         localDocumentId: {type: String, default: ''},
-        despatchStatus: {type: String, default: 'Draft',enum:['Draft','Pending','Queued', 'Processing','SentToGib','Approved','Declined','WaitingForAprovement','Error']},
+        
+        despatchStatus: {type: String, default: 'Draft',enum:['Deleted','Pending','Draft','Canceled','Queued', 'Processing','SentToGib','Approved','PartialApproved','Declined','WaitingForApprovement','Error']},
         despatchErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
         localStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
         localErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],

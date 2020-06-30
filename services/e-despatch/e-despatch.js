@@ -1,508 +1,213 @@
-/* E Invoice Service | etulia/portal */
+var dbModel
+var processList=[]
+var repeatInterval=50000
+var SinifGrubu=require('./uyumsoft/DespatchIntegration.class.js')
 
-var uyumsoft=require('./uyumsoft/uyumsoft-e-fatura.js');
+function calistir(){
+	eventLog('e-despatch service started:',dbModel.dbName)
 
-exports.run=function(dbModel){
-	
-	function calistirInbox(){
-		eventLog('checkDbAndDownloadInboxInvoices started.',dbModel.dbName);
-		try{
-			checkDbAndDownloadInboxInvoices(dbModel,(err)=>{
-				if(err){
-					errorLog('checkDbAndDownloadInboxInvoices',err);
-				}
-				eventLog('checkDbAndDownloadInboxInvoices ended.',dbModel.dbName);
-				setTimeout(calistirInbox,60000);
-			});
-		}catch(tryErr){
-			setTimeout(calistirInbox,60000);
+	dbModel.integrators.find({passive:false},(err,docs)=>{
+		if(!err){
+			var integrators=[]
+			docs.forEach((e)=>{
+				var itg=e.toJSON()
+				itg['despatchIntegration']=new SinifGrubu.DespatchIntegration(itg.despatch.url,itg.despatch.username,itg.despatch.password)
+				integrators.push(itg)
+			})
+
+			iteration(integrators,syncInboxList,0,true,(err,result)=>{
+				if(err)
+					errorLog('e-despatch service error:',err)
+				
+				iteration(integrators,syncInbox,0,true,(err,result)=>{
+					if(err)
+						errorLog('e-despatch service error:',err)
+					if(result)
+						eventLog('e-despatch service finished:',dbModel.dbName)
+					setTimeout(calistir,repeatInterval)
+				})
+			})
+			
+		}else{
+			errorLog('e-despatch service error:',err)
+			setTimeout(calistir,repeatInterval)
 		}
-		
-	}
-	function calistirOutbox(){
-		eventLog('checkDbAndDownloadOutboxInvoices started.',dbModel.dbName);
-		try{
-			checkDbAndDownloadOutboxInvoices(dbModel,(err)=>{
-				if(err){
-					errorLog('checkDbAndDownloadOutboxInvoices',err);
-				}
-				eventLog('checkDbAndDownloadOutboxInvoices ended.',dbModel.dbName);
-				setTimeout(calistirOutbox,60000);
-			});
-		}catch(tryErr){
-			setTimeout(calistirOutbox,60000);
-		}
-		
-	}
-
-	function calistirCheckOutboxStatus(){
-		eventLog('calistirCheckOutboxStatus started.',dbModel.dbName);
-		try{
-			checkDbAndCheckOutboxInvoicesStatus(dbModel,(err)=>{
-				if(err){
-					errorLog('checkDbAndCheckOutboxInvoicesStatus',err);
-				}
-				eventLog('calistirCheckOutboxStatus ended.',dbModel.dbName);
-				setTimeout(calistirCheckOutboxStatus,60000);
-			});
-		}catch(tryErr){
-			setTimeout(calistirCheckOutboxStatus,60000);
-		}
-		
-	}
-
-	function calistirCheckInboxStatus(){
-		eventLog('calistirCheckOutboxStatus started.',dbModel.dbName);
-		try{
-			checkDbAndCheckInboxInvoicesStatus(dbModel,(err)=>{
-				if(err){
-					errorLog('checkDbAndCheckInboxInvoicesStatus',err);
-				}
-				eventLog('calistirCheckInboxStatus ended.',dbModel.dbName);
-				setTimeout(calistirCheckInboxStatus,60000);
-			});
-		}catch(tryErr){
-			setTimeout(calistirCheckInboxStatus,60000);
-		}
-		
-	}
-	eventLog('E-Invoice service started: ',dbModel.dbName);
-	setTimeout(()=>{
-		calistirInbox();
-	},15000);
-
-	setTimeout(()=>{
-		calistirOutbox();
-	},13000);
-
-	setTimeout(()=>{
-		calistirCheckOutboxStatus();
-	},24000);
-	setTimeout(()=>{
-		calistirCheckInboxStatus();
-	},35000);
+	})
 }
 
-setTimeout(()=>{
-	eventLog('E-InvoiceUsers download service started');
-
-	function downloadEInvoiceUsers(){
-		eventLog('downloadEInvoiceUsers started');
-		try{
-			uyumsoft.downloadEInvoiceUsers((err)=>{
-				if(err){
-					errorLog('downloadEInvoiceUsers:',  err);
-				}
-				eventLog('downloadEInvoiceUsers completed');
-				setTimeout(downloadEInvoiceUsers,3600*1000*1);
-			});
-		}catch(tryErr){
-			setTimeout(downloadEInvoiceUsers,600*1000);
+function syncInbox(integrator,callback){
+	dbModel.temp_table.find({docType:'eDespatch_syncInboxList',status:'',docId2:integrator._id},(err,docs)=>{
+		if(!err){
+			iteration(docs,
+			(listItem,cb)=>{ 
+				syncInbox_getInboxDespatch(integrator,listItem,cb)
+			},
+			5000,true,
+			(err,result)=>{
+				callback(err,result)
+			})
+		}else{
+			callback(err)
 		}
-	}
-	downloadEInvoiceUsers();
-},600*1000*1000);  //10dk sonra basla
-// },1000*3600*24);
+	})
+}
 
+function syncInbox_getInboxDespatch(integrator,listItem,callback){
+	dbModel.despatches.findOne({eIntegrator:listItem.docId2,'uuid.value':listItem.docId},(err,doc)=>{
+		if(!err){
+			if(doc==null){
+				integrator.despatchIntegration.GetInboxDespatch(listItem.docId,(err,data)=>{
+					if(!err){
+						fs.writeFileSync(path.join(config.tmpDir,`inbox_${listItem.document.despatchNumber}.json`),JSON.stringify(data,null,2),'utf8')
+						var newDoc=new dbModel.despatches(data.value.despatchAdvice)
+						newDoc.eIntegrator=integrator._id
+						newDoc.ioType=1
+						newDoc.despatchStatus=listItem.document.statusEnum
+						
 
-function checkDbAndDownloadOutboxInvoices(dbModel,callback){
-	try{
-		if(dbModel.e_integrators==undefined) return callback(null);
-		eventLog('checkDbAndDownloadOutboxInvoices :',dbModel.dbName);
-		dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
-			if(!err){
-				var index=0;
-				function calistir(cb){
-					if(index>=eIntegratorDocs.length) return cb(null);
-					switch(eIntegratorDocs[index].eIntegrator){
-						case 'uyumsoft':
-							uyumsoft.downloadOutboxInvoices(dbModel,eIntegratorDocs[index],(err)=>{
-								if(err){
-									errorLog('E-Invoice Service downloadOutboxInvoices error:', dbModel.dbName ,err);
-									errorLog('E-Invoice Service downloadOutboxInvoices error service:',eIntegratorDocs[index]);
-								}
-								index++;
-								setTimeout(calistir,3000,cb);
-							});
-						break;
-						default:
-							index++;
-							setTimeout(calistir,3000,cb);
-						break;
+						newDoc.save((err,newDoc2)=>{
+							if(!err){
+								eventLog(`Despatch:${newDoc2.ID.value} indirildi`)
+							}
+							callback(err)
+						})
+					}else{
+						callback(err)
 					}
-					
-				}
-
-				calistir((err)=>{
-					callback(err);
-				});
-
+				})
 			}else{
-				callback(err);
+				callback(null)
 			}
-		});
-	}catch(tryErr){
-		callback(err);
-	}
+		}else{
+			callback(err)
+		}
+	})
+}
+
+function syncInboxList(integrator,callback){
+	syncInboxList_queryModel(integrator,(err,query)=>{
+
+		function indir(cb){
+			
+			integrator.despatchIntegration.GetInboxDespatchList(query,(err,data)=>{
+				if(!err){
+					if(data.value.attr.totalPages==0) 
+						return cb(null)
+					console.log(`syncInboxList page:${data.value.attr.pageIndex+1}/${data.value.attr.totalPages}`)
+					if(typeof data.value.Items=='object'){
+						data.value.Items=[clone(data.value.Items)]
+					}
+					data.value.items.forEach((e)=>{ e._integratorId=integrator._id })
+					iteration(data.value.items,insertTempTable,0,false,(err)=>{
+						if(!err){
+							if(data.value.attr.pageIndex<data.value.attr.totalPages-1){
+								query.PageIndex++
+								setTimeout(indir,5000,cb)
+							}else{
+								cb(null)
+							}
+							
+						}else{
+							cb(err)
+						}
+					})
+				}else{
+					cb(err)
+				}
+			})
+		}
+
+		indir((err)=>{
+			callback(err)
+		})
+		
+	})
+	
+}
+
+function syncInboxList_queryModel(integrator,cb){
+	var query=new SinifGrubu.InboxDespatchListQueryModel()
+	query.PageIndex=0
+	query.PageSize=10
+	query.CreateStartDate=defaultStartDate()
+	query.CreateEndDate=endDate()
+
+	dbModel.temp_table.find({docType:'eDespatch_syncInboxList'}).sort({orderBy:-1}).limit(1).exec((err,docs)=>{
+		if(!err){
+			if(docs.length>0){
+				var tarih=new Date(docs[0].document['createDateUtc'])
+				tarih.setMinutes(tarih.getMinutes()+(new Date()).getTimezoneOffset()*-1)
+				query.CreateStartDate=tarih.toISOString()
+
+				cb(null,query)
+			}else{
+				cb(null,query)
+			}
+		}else{
+			cb(err,query)
+		}
+	})
+}
+
+function insertTempTable(item,callback){
+	var filter={
+			docType:'eDespatch_syncInboxList',
+			docId:item['despatchId'],
+			docId2:item['_integratorId']
+		}
+
+	dbModel.temp_table.findOne(filter,(err,doc)=>{
+		if(err) 
+			return callback(err)
+		if(doc==null){
+			var data={
+				docType:'eDespatch_syncInboxList',
+				docId:item['despatchId'],
+				docId2:item['_integratorId'],
+				document:item,
+				status:'',
+				orderBy:item['createDateUtc']
+			}
+			
+			doc=new dbModel.temp_table(data)
+			doc.save((err)=>{
+				callback(err)
+			})
+		}else{
+			if(doc.document['statusEnum']!=item['statusEnum']){
+				doc.status='modified'
+				doc.document=item
+				doc.modifiedDate=new Date()
+
+				doc.save((err)=>{
+					callback(err)
+				})
+			}else{
+				callback(null)
+			}
+		}
+	})
 }
 
 
-// function downloadOutboxInvoices(dbModel,eIntegratorDoc,cb){
+function defaultStartDate(){
 	
-// 	switch(eIntegratorDoc.eIntegrator){
-// 		case 'uyumsoft':
-// 			uyumsoft.downloadOutboxInvoices(dbModel,eIntegratorDoc,cb);
-// 		break;
-// 		default:
-// 			cb(null);
-// 		break;
-// 	}
+	return (new Date((new Date()).getFullYear(),5,27,0,(new Date()).getTimezoneOffset()*-1,0)).toISOString()
+}
+
+// function defaultEndDate(){
+	
+// 	return (new Date((new Date()).getFullYear(),0,31,23,59+(new Date()).getTimezoneOffset()*-1,59)).toISOString()
 // }
 
-
-
-function checkDbAndCheckOutboxInvoicesStatus(dbModel,callback){
-	try{
-		if(dbModel.e_integrators==undefined) return callback(null);
-		dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
-			if(!err){
-				var index=0;
-				function calistir(cb){
-					if(index>=eIntegratorDocs.length){
-						cb(null);
-					}else{
-						
-						checkOutboxInvoicesStatus(dbModel,eIntegratorDocs[index],(err)=>{
-							if(err){
-								errorLog('E-Invoice Service checkOutboxInvoicesStatus error:', dbModel.dbName ,err);
-								errorLog('E-Invoice Service checkOutboxInvoicesStatus error service:',eIntegratorDocs[index]);
-							}
-							index++;
-							setTimeout(calistir,3000,cb);
-						});
-					}
-				}
-
-				calistir((err)=>{
-					callback(err);
-				});
-
-			}else{
-				callback(err);
-			}
-		});
-	}catch(tryErr){
-		callback(err);
-	}
+function endDate(){
+	var a=new Date()
+	a.setMinutes(a.getMinutes()+(new Date()).getTimezoneOffset()*-1)
+	return a.toISOString()
 }
 
 
-function checkDbAndCheckInboxInvoicesStatus(dbModel,callback){
-	try{
-		if(dbModel.e_integrators==undefined) return callback(null);
-		dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
-			if(!err){
-				var index=0;
-				function calistir(cb){
-					if(index>=eIntegratorDocs.length){
-						cb(null);
-					}else{
-						
-						checkInboxInvoicesStatus(dbModel,eIntegratorDocs[index],(err)=>{
-							if(err){
-								errorLog('E-Invoice Service checkInboxInvoicesStatus error:', dbModel.dbName ,err);
-								errorLog('E-Invoice Service checkInboxInvoicesStatus error service:',eIntegratorDocs[index]);
-							}
-							index++;
-							setTimeout(calistir,3000,cb);
-						});
-					}
-				}
-
-				calistir((err)=>{
-					callback(err);
-				});
-
-			}else{
-				callback(err);
-			}
-		});
-	}catch(tryErr){
-		callback(err);
-	}
-}
-
-function checkInboxInvoicesStatus(dbModel,eIntegratorDoc,callback){
-	
-	var filter={
-		ioType:1,
-		eIntegrator:eIntegratorDoc._id,
-		invoiceStatus:{$nin:['Approved','Declined','Error','Draft']},
-		createdDate:{$gte:(new Date()).addDays(-30)}
-	}
-
-	dbModel.e_invoices.find(filter).select('_id uuid ID invoiceStatus').exec((err,docs)=>{
-		if(!err){
-			var invoiceList=[];
-			docs.forEach((e)=>{
-				invoiceList.push({_id:e._id, uuid:e.uuid.value,status:e.invoiceStatus});
-			});
-
-			
-			if(invoiceList.length>0){
-				switch(eIntegratorDoc.eIntegrator){
-					case 'uyumsoft':
-						uyumsoft.checkInboxInvoicesStatus(dbModel,eIntegratorDoc,invoiceList,(err,guncellenmisInvoiceList)=>{
-							if(!err){
-								if(guncellenmisInvoiceList.length>0){
-									var index=0;
-									function calistir(cb){
-										if(index>=guncellenmisInvoiceList.length) return cb(null);
-										dbModel.e_invoices.updateOne({_id:guncellenmisInvoiceList[index]._id},{$set:{invoiceStatus:guncellenmisInvoiceList[index].status}},(err)=>{
-											index++;
-											setTimeout(calistir,0,cb);
-										});
-									}
-									calistir((err)=>{
-										callback(err);
-									})
-								}
-							}else{
-								callback(err)
-							}
-							
-						});
-					break;
-					default:
-						callback(null);
-					break;
-				}
-			}else{
-				callback(null)
-			}
-			
-			
-		}else{
-			callback(err);
-		}
-	});
-}
-
-
-function checkOutboxInvoicesStatus(dbModel,eIntegratorDoc,callback){
-	
-	var filter={
-		ioType:0,
-		eIntegrator:eIntegratorDoc._id,
-		invoiceStatus:{$nin:['Approved','Declined','Error','Draft']},
-		createdDate:{$gte:(new Date()).addDays(-30)}
-	}
-
-	dbModel.e_invoices.find(filter).select('_id uuid ID invoiceStatus').exec((err,docs)=>{
-		if(!err){
-			var invoiceList=[];
-			docs.forEach((e)=>{
-				invoiceList.push({_id:e._id, uuid:e.uuid.value,status:e.invoiceStatus});
-			});
-
-			
-			if(invoiceList.length>0){
-				switch(eIntegratorDoc.eIntegrator){
-					case 'uyumsoft':
-						uyumsoft.checkOutboxInvoicesStatus(dbModel,eIntegratorDoc,invoiceList,(err,guncellenmisInvoiceList)=>{
-							if(!err){
-								if(guncellenmisInvoiceList.length>0){
-									var index=0;
-									function calistir(cb){
-										if(index>=guncellenmisInvoiceList.length) return cb(null);
-										dbModel.e_invoices.updateOne({_id:guncellenmisInvoiceList[index]._id},{$set:{invoiceStatus:guncellenmisInvoiceList[index].status}},(err)=>{
-											index++;
-											setTimeout(calistir,0,cb);
-										});
-									}
-									calistir((err)=>{
-										callback(err);
-									})
-								}
-							}else{
-								callback(err)
-							}
-							
-						});
-					break;
-					default:
-						callback(null);
-					break;
-				}
-			}else{
-				callback(null)
-			}
-			
-			
-		}else{
-			callback(err);
-		}
-	});
-}
-
-
-
-function checkDbAndDownloadInboxInvoices(dbModel,callback){
-	if(dbModel.e_integrators==undefined) return callback(null);
-	eventLog('checkDbAndDownloadInboxInvoices :',dbModel.dbName);
-	dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
-		if(!err){
-			var index=0;
-			function calistir(cb){
-				if(index>=eIntegratorDocs.length) return cb(null);
-					
-				downloadInboxInvoices(dbModel,eIntegratorDocs[index],(err)=>{
-					if(err){
-						errorLog('E-Invoice Service downloadInboxInvoices error:', dbModel.dbName ,err);
-						errorLog('E-Invoice Service downloadInboxInvoices error service:',eIntegratorDocs[index]);
-					}
-					index++;
-					setTimeout(calistir,3000,cb);
-				});
-			}
-
-			calistir((err)=>{
-				callback(err);
-			});
-
-		}else{
-			callback(err);
-		}
-	});
-}
-
-
-function downloadInboxInvoices(dbModel,eIntegratorDoc,cb){
-	
-	switch(eIntegratorDoc.eIntegrator){
-		case 'uyumsoft':
-			uyumsoft.downloadInboxInvoices(dbModel,eIntegratorDoc,cb);
-		break;
-		default:
-			cb(null);
-		break;
-	}
-}
-
-exports.sendToGib=function(dbModel,eInvoice,cb){
-	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).populate('invoiceXslt').exec((err,eIntegratorDoc)=>{
-			if(!err){
-				var xsltEkle=false;
-				if(eIntegratorDoc.invoiceXslt)
-					if(eIntegratorDoc.invoiceXslt.data){
-						xsltEkle=true;
-						if(eInvoice.additionalDocumentReference.length>0){
-							if(eInvoice.additionalDocumentReference[0].attachment)
-								if(eInvoice.additionalDocumentReference[0].attachment.embeddedDocumentBinaryObject)
-									if(eInvoice.additionalDocumentReference[0].attachment.value){
-										xsltEkle=false;
-									}
-						}
-					}
-				if(xsltEkle){
-					var value='';
-					if(eIntegratorDoc.invoiceXslt.data.indexOf('base64,')>-1){
-						value=eIntegratorDoc.invoiceXslt.data.split('base64,')[1];
-					}else{
-						value=eIntegratorDoc.invoiceXslt.data;
-					}
-					eInvoice.additionalDocumentReference=[{
-						ID:{value:'1'},
-						issueDate:{ value:eInvoice.issueDate.value},
-						documentTypeCode:{ value:'XSLT'},
-						documentType:{ value:'XSLT'},
-						attachment:{
-							embeddedDocumentBinaryObject:{
-								attr : {
-			                        mimeCode : 'application/xml',
-			                        encodingCode : 'Base64',
-			                        characterSetCode : 'UTF-8',
-			                        filename : eInvoice.ID.value + '.xslt'
-			                    },
-			                    value :value
-							}
-						}
-					}];
-				}	
-			}
-			switch(eInvoice.eIntegrator.eIntegrator){
-				case 'uyumsoft':
-					uyumsoft.sendToGib(dbModel,eInvoice,cb);
-				break;
-				default:
-					cb(null);
-				break;
-			}
-		});
-		
-	}catch(tryErr){
-		cb(tryErr)
-	}
-	
-}
-
-exports.approveInvoice=function(dbModel,eInvoice,cb){
-	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
-			
-			switch(eInvoice.eIntegrator.eIntegrator){
-				case 'uyumsoft':
-					uyumsoft.sendDocumentResponse('Approved',dbModel,eInvoice,cb);
-				break;
-				default:
-					cb(null);
-				break;
-			}
-		});
-		
-	}catch(tryErr){
-		cb(tryErr)
-	}
-	
-}
-
-exports.declineInvoice=function(dbModel,eInvoice,cb){
-	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
-			
-			switch(eInvoice.eIntegrator.eIntegrator){
-				case 'uyumsoft':
-					uyumsoft.sendDocumentResponse('Declined',dbModel,eInvoice,cb);
-				break;
-				default:
-					cb(null);
-				break;
-			}
-		});
-		
-	}catch(tryErr){
-		cb(tryErr)
-	}
-	
-}
-
-exports.returnInvoice=function(dbModel,eInvoice,cb){
-	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
-			
-			switch(eInvoice.eIntegrator.eIntegrator){
-				case 'uyumsoft':
-					uyumsoft.sendDocumentResponse('Return',dbModel,eInvoice,cb);
-				break;
-				default:
-					cb(null);
-				break;
-			}
-		});
-		
-	}catch(tryErr){
-		cb(tryErr)
-	}
-	
+exports.run=(userDbConn)=>{
+	dbModel=userDbConn
+	calistir()
 }

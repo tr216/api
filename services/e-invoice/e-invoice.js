@@ -241,7 +241,7 @@ function checkInboxInvoicesStatus(dbModel,eIntegratorDoc,callback){
 		createdDate:{$gte:(new Date()).addDays(-30)}
 	}
 
-	dbModel.e_invoices.find(filter).select('_id uuid ID invoiceStatus').exec((err,docs)=>{
+	dbModel.invoices.find(filter).select('_id uuid ID invoiceStatus').exec((err,docs)=>{
 		if(!err){
 			var invoiceList=[];
 			docs.forEach((e)=>{
@@ -258,7 +258,7 @@ function checkInboxInvoicesStatus(dbModel,eIntegratorDoc,callback){
 									var index=0;
 									function calistir(cb){
 										if(index>=guncellenmisInvoiceList.length) return cb(null);
-										dbModel.e_invoices.updateOne({_id:guncellenmisInvoiceList[index]._id},{$set:{invoiceStatus:guncellenmisInvoiceList[index].status}},(err)=>{
+										dbModel.invoices.updateOne({_id:guncellenmisInvoiceList[index]._id},{$set:{invoiceStatus:guncellenmisInvoiceList[index].status}},(err)=>{
 											index++;
 											setTimeout(calistir,0,cb);
 										});
@@ -298,7 +298,7 @@ function checkOutboxInvoicesStatus(dbModel,eIntegratorDoc,callback){
 		createdDate:{$gte:(new Date()).addDays(-30)}
 	}
 
-	dbModel.e_invoices.find(filter).select('_id uuid ID invoiceStatus').exec((err,docs)=>{
+	dbModel.invoices.find(filter).select('_id uuid ID invoiceStatus').exec((err,docs)=>{
 		if(!err){
 			var invoiceList=[];
 			docs.forEach((e)=>{
@@ -315,7 +315,7 @@ function checkOutboxInvoicesStatus(dbModel,eIntegratorDoc,callback){
 									var index=0;
 									function calistir(cb){
 										if(index>=guncellenmisInvoiceList.length) return cb(null);
-										dbModel.e_invoices.updateOne({_id:guncellenmisInvoiceList[index]._id},{$set:{invoiceStatus:guncellenmisInvoiceList[index].status}},(err)=>{
+										dbModel.invoices.updateOne({_id:guncellenmisInvoiceList[index]._id},{$set:{invoiceStatus:guncellenmisInvoiceList[index].status}},(err)=>{
 											index++;
 											setTimeout(calistir,0,cb);
 										});

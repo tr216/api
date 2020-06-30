@@ -443,7 +443,7 @@ function approveDeclineDespatch(type, activeDb,member,req,res,callback){
         }
     });
 
-    var filter={despatchStatus:'WaitingForAprovement',_id:{$in:idList}};
+    var filter={despatchStatus:'WaitingForApprovement',_id:{$in:idList}};
 
     activeDb.despatches.find(filter).select(select).populate(populate).exec((err,docs)=>{
         if (dberr(err,callback)) {

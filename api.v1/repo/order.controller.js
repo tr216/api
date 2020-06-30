@@ -792,7 +792,7 @@ function approveDeclineOrder(type, activeDb,member,req,res,callback){
 		}
 	});
 
-	var filter={orderStatus:'WaitingForAprovement',_id:{$in:idList}};
+	var filter={orderStatus:'WaitingForApprovement',_id:{$in:idList}};
 
 	activeDb.orders.find(filter).select(select).populate(populate).exec((err,docs)=>{
 		if (dberr(err,callback)) {

@@ -66,7 +66,7 @@ function getList(activeDb,member,req,res,callback){
     if((req.query.passive || '') !=''){
         filter['passive']=req.query.passive;
     }
-    activeDb.e_integrators.paginate(filter,options,(err, resp)=>{
+    activeDb.integrators.paginate(filter,options,(err, resp)=>{
         if (dberr(err,callback)) {
             callback({success: true,data: resp});
         } else {
@@ -83,7 +83,7 @@ function getOne(activeDb,member,req,res,callback){
         {path:'document.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'}
     ]
         
-    activeDb.e_integrators.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
+    activeDb.integrators.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
         if (dberr(err,callback)) {
             if(doc==null){
                 return callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
@@ -101,14 +101,14 @@ function post(activeDb,member,req,res,callback){
     
     data=cleanDataEmptyLocalConnector(data);
     saveFiles(activeDb,data,(err,data)=>{
-        var newdoc = new activeDb.e_integrators(data);
+        var newdoc = new activeDb.integrators(data);
         var err=epValidateSync(newdoc);
         if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
         newdoc.save(function(err, newdoc2) {
             if (!err) {
                 if(newdoc2.isDefault){
-                    activeDb.e_integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
+                    activeDb.integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
                         callback({success:true,data:newdoc2});
                     });
                 }else{
@@ -132,7 +132,7 @@ function put(activeDb,member,req,res,callback){
         data._id = req.params.param1;
         data.modifiedDate = new Date();
 
-        activeDb.e_integrators.findOne({ _id: data._id},(err,doc)=>{
+        activeDb.integrators.findOne({ _id: data._id},(err,doc)=>{
             if (!err) {
                 if(doc==null){
                     callback({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}});
@@ -141,14 +141,14 @@ function put(activeDb,member,req,res,callback){
                     data=cleanDataEmptyLocalConnector(data);
                     saveFiles(activeDb,data,(err,data)=>{
                         var doc2 = Object.assign(doc, data);
-                        var newdoc = new activeDb.e_integrators(doc2);
+                        var newdoc = new activeDb.integrators(doc2);
                         var err=epValidateSync(newdoc);
                         if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 
                         newdoc.save(function(err, newdoc2) {
                             if (!err) {
                                 if(newdoc2.isDefault){
-                                    activeDb.e_integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
+                                    activeDb.integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
                                         callback({success:true,data:newdoc2});
                                     });
                                 }else{
@@ -343,7 +343,7 @@ function deleteItem(activeDb,member,req,res,callback){
     }else{
         var data = req.body || {};
         data._id = req.params.param1;
-        activeDb.e_integrators.removeOne(member,{ _id: data._id},(err,doc)=>{
+        activeDb.integrators.removeOne(member,{ _id: data._id},(err,doc)=>{
             if (!err) {
                 callback({success: true});
             }else{

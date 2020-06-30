@@ -83,11 +83,11 @@ function einvoice_approve(dbModel,taskDoc,cb){
 	if(taskDoc['document']['eIntegrator'] && dbModel){
 		services.eInvoice.approveInvoice(dbModel,taskDoc['document'],(err)=>{
 			if(!err){
-				//dbModel.e_invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
+				//dbModel.invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
 					taskHelper.setCompleted(taskDoc,cb);
 				//});
 			}else{
-				dbModel.e_invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
+				dbModel.invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
 					if(!err33){
 						if(doc!=null){
 							doc.invoiceErrors.push({code:(err.name || err.code || 'APPROVE_INVOICE'),message:(err.message || 'Fatura onaylanirken hata olustu')});
@@ -117,11 +117,11 @@ function einvoice_decline(dbModel,taskDoc,cb){
 	if(taskDoc['document']['eIntegrator'] && dbModel){
 		services.eInvoice.declineInvoice(dbModel,taskDoc['document'],(err)=>{
 			if(!err){
-				//dbModel.e_invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
+				//dbModel.invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
 					taskHelper.setCompleted(taskDoc,cb);
 				//});
 			}else{
-				dbModel.e_invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
+				dbModel.invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
 					if(!err33){
 						if(doc!=null){
 							doc.invoiceErrors.push({code:(err.name || err.code || 'DECLINE_INVOICE'),message:(err.message || 'Fatura reddedilirken hata olustu')});
@@ -155,11 +155,11 @@ function einvoice_send_to_gib(dbModel,taskDoc,cb){
 		taskDoc['document'].uuid.value=yeniUUID;
 		services.eInvoice.sendToGib(dbModel,taskDoc['document'],(err)=>{
 			if(!err){
-				dbModel.e_invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
+				dbModel.invoices.updateOne({_id:taskDoc.documentId} , {$set:{invoiceStatus:'Processing',invoiceErrors:[],'uuid.value':yeniUUID}},(err2)=>{
 					taskHelper.setCompleted(taskDoc,cb);
 				});
 			}else{
-				dbModel.e_invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
+				dbModel.invoices.findOne({_id:taskDoc.documentId},(err33,doc)=>{
 					if(!err33){
 						if(doc!=null){
 							doc.invoiceErrors.push({code:(err.name || err.code || 'SEND_TO_GIB'),message:(err.message || 'Gib e gonderimde hata olustu')});

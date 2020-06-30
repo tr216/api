@@ -20,11 +20,13 @@
     "path":"/var/log/api.tr216.com.access.log",
     "active": false
   },
+  "tmpDir":"/tmp",
   "enabled_services":{
     "tasks":true,
     "posDevice":true,
     "scheduler":true,
     "eInvoice":true,
+    "eDespatch":true,
     "eLedger":true,
     "localConnector":true
   }

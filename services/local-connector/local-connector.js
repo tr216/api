@@ -19,7 +19,7 @@ net.Socket.prototype.lastcheck = new Date();
 function request_CONNECT(sc,data){
     
 
-    db.etulia_connectors.findOne({connectorId:data.connectinfo.id,connectorPass:data.connectinfo.password,uuid:data.connectinfo.uuid},function(err,doc){
+    db.local_connectors.findOne({connectorId:data.connectinfo.id,connectorPass:data.connectinfo.password,uuid:data.connectinfo.uuid},function(err,doc){
         if(err){
             mrutil.socketwrite(sc,mrutil.resPackage(data.connectinfo,data.command,{success:false,error:{code:'REJECTED',message:'Connection failed'}},data.requestid));
         }else{
@@ -96,7 +96,7 @@ function request_NEWPASS(sc,data){
         mrutil.socketwrite(sc,mrutil.resPackage(data.connectinfo,'NEW_PASS',{success:false,error:{code:'NEW_PASS_ERROR0',message:'newPassword is required.'}},data.requestid));
         //sc.end();
     }else{
-        db.etulia_connectors.findOne({connectorId:sc.connectorId,connectorPass:sc.connectorPass,uuid:sc.uuid},function(err,doc){
+        db.local_connectors.findOne({connectorId:sc.connectorId,connectorPass:sc.connectorPass,uuid:sc.uuid},function(err,doc){
             if(err){
                 mrutil.socketwrite(sc,mrutil.resPackage(data.connectinfo,'NEW_PASS',{success:false,error:{code:'NEW_PASS_ERROR1',message:err.message}},data.requestid));
                 //sc.end();
@@ -139,7 +139,7 @@ function request_NEWPASS(sc,data){
 function request_NEWID(sc,data){
     var d={connectorPass: mrutil.randomNumber(1001,9998).toString(),uuid:uuid.v4(), ip:sc.remoteAddress};
 
-    var newresonance=new db.etulia_connectors(d);
+    var newresonance=new db.local_connectors(d);
 
     newresonance.save((err,doc)=>{
         if(err){
@@ -158,7 +158,7 @@ function request_NEWID(sc,data){
 
 function keepAlive(sc,data){
     
-    db.etulia_connectors.findOne({connectorId:data.connectinfo.id,connectorPass:data.connectinfo.password,uuid:data.connectinfo.uuid},function(err,doc){
+    db.local_connectors.findOne({connectorId:data.connectinfo.id,connectorPass:data.connectinfo.password,uuid:data.connectinfo.uuid},function(err,doc){
         if(err){
             
             mrutil.socketwrite(sc,mrutil.resPackage(data.connectinfo,'KEEPALIVE',{success:false,error:{code:'REJECTED',message:'Connection failed'}},data.requestid));

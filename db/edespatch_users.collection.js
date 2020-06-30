@@ -35,4 +35,4 @@ schema.on('init', function(model) {
 
 
 
-module.exports = dbconn.model('einvoice_users', schema);
+module.exports = dbconn.model('edespatch_users', schema);

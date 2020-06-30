@@ -103,7 +103,7 @@ function getErrors(activeDb,member,req,res,callback){
 	var select='_id profileId ID invoiceTypeCode localDocumentId issueDate ioType eIntegrator invoiceErrors localErrors invoiceStatus localStatus';
 	
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id},select).exec((err,doc)=>{
+	activeDb.invoices.findOne({_id:_id},select).exec((err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				var data=doc.toJSON();
@@ -117,7 +117,7 @@ function post(activeDb,member,req,res,callback){
 	data._id=undefined;
 	
 	data=mrutil.amountValueFixed2Digit(data,'');
-	var newDoc = new activeDb.e_invoices(data);
+	var newDoc = new activeDb.invoices(data);
 	var err=epValidateSync(newDoc);
 	if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 	newDoc.uuid.value=uuid.v4();
@@ -179,7 +179,7 @@ function put(activeDb,member,req,res,callback){
 	data._id = req.params.param2;
 	data.modifiedDate = new Date();
 	eventLog('put sonra buraya geldi');
-	activeDb.e_invoices.findOne({ _id: data._id},(err,doc)=>{
+	activeDb.invoices.findOne({ _id: data._id},(err,doc)=>{
 		if (!err) {
 			if(doc==null){
 				eventLog('doc==null');
@@ -187,7 +187,7 @@ function put(activeDb,member,req,res,callback){
 			}else{
 				data=mrutil.amountValueFixed2Digit(data,'');
 				var doc2 = Object.assign(doc, data);
-				var newDoc = new activeDb.e_invoices(doc2);
+				var newDoc = new activeDb.invoices(doc2);
 				var err=epValidateSync(newDoc);
 				if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 				newDoc=calculateInvoiceTotals(newDoc);
@@ -438,7 +438,7 @@ function getInvoiceList(ioType,activeDb,member,req,res,callback){
 		}
 	}
 	
-	activeDb.e_invoices.paginate(filter,options,(err, resp)=>{
+	activeDb.invoices.paginate(filter,options,(err, resp)=>{
 		if (dberr(err,callback)) {
 			var liste=[]
 			resp.docs.forEach((e,index)=>{
@@ -547,7 +547,7 @@ function getInvoice(activeDb,member,req,res,callback){
 	if(includeAdditionalDocumentReference==true) select='';
 	
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id},select).exec((err,doc)=>{
+	activeDb.invoices.findOne({_id:_id},select).exec((err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				var data=doc.toJSON();
@@ -559,7 +559,7 @@ function getInvoice(activeDb,member,req,res,callback){
 function invoiceView(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
+	activeDb.invoices.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				callback({file: doc.html});
@@ -570,7 +570,7 @@ function invoiceView(activeDb,member,req,res,callback){
 function invoicePdf(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
+	activeDb.invoices.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				
@@ -582,7 +582,7 @@ function invoicePdf(activeDb,member,req,res,callback){
 function getInvoiceXmlXslt(activeDb,member,req,res,callback){
 	var _id= req.params.param2 || req.query._id || '';
 	if(_id=='') return callback({success:false,error:{code:'WRONG_PARAMETER',message:'Hatali Parametre'}});
-	activeDb.e_invoices.findOne({_id:_id},(err,doc)=>{
+	activeDb.invoices.findOne({_id:_id},(err,doc)=>{
 		if(dberr(err,callback))
 			if(dbnull(doc,callback)){
 				var invoice=doc.toJSON();
@@ -653,7 +653,7 @@ function sendToGib(activeDb,member,req,res,callback){
 	});
 	var filter={invoiceStatus:{$in:['Draft','Error']},_id:{$in:idList}};
 
-	activeDb.e_invoices.find(filter).populate(populate).exec((err,docs)=>{
+	activeDb.invoices.find(filter).populate(populate).exec((err,docs)=>{
 		if (dberr(err,callback)) {
 			var index=0;
 
@@ -662,7 +662,7 @@ function sendToGib(activeDb,member,req,res,callback){
 					cb(null);
 				}else{
 					
-					var taskdata={taskType:'einvoice_send_to_gib',collectionName:'e_invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
+					var taskdata={taskType:'einvoice_send_to_gib',collectionName:'invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
 					taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
 						if(!err){
 							switch(taskDoc.status){
@@ -747,9 +747,9 @@ function approveDeclineInvoice(type, activeDb,member,req,res,callback){
 		}
 	});
 
-	var filter={invoiceStatus:'WaitingForAprovement',_id:{$in:idList}};
+	var filter={invoiceStatus:'WaitingForApprovement',_id:{$in:idList}};
 
-	activeDb.e_invoices.find(filter).select(select).populate(populate).exec((err,docs)=>{
+	activeDb.invoices.find(filter).select(select).populate(populate).exec((err,docs)=>{
 		if (dberr(err,callback)) {
 			var index=0;
 			
@@ -760,7 +760,7 @@ function approveDeclineInvoice(type, activeDb,member,req,res,callback){
 					cb(null);
 				}else{
 					
-					var taskdata={taskType: taskType,collectionName:'e_invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
+					var taskdata={taskType: taskType,collectionName:'invoices',documentId:docs[index]._id,document:docs[index].toJSON()}
 					taskHelper.newTask(activeDb, taskdata,(err,taskDoc)=>{
 						if(!err){
 							

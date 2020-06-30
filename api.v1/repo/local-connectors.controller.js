@@ -69,7 +69,7 @@ function getList(activeDb,member,req,res,callback){
             resp.docs.forEach((item)=>{
                 filter.$or.push({connectorId:item.connectorId,connectorPass:item.connectorPass});
             });
-            db.etulia_connectors.find(filter,(err,docs)=>{
+            db.local_connectors.find(filter,(err,docs)=>{
                 if(dberr(err,callback)){
                     resp.docs.forEach((item)=>{
                         var connectedItem= docs.find((e)=>{return (item.connectorId==e.connectorId && item.connectorPass==e.connectorPass)});
