@@ -14,6 +14,7 @@ global.uyumsoftVkn='9000068418'
 require("tls").DEFAULT_MIN_VERSION = 'TLSv1'
 
 
+
 global.uuid = require('node-uuid')
 global.path_module = require('path')
 global.fs=require('fs')
@@ -134,18 +135,16 @@ function onError(error) {
 		throw error
 	}
 
-	var bind = typeof port === 'string'
-	? 'Pipe ' + port
-	: 'Port ' + port
+	
 
 	// handle specific listen errors with friendly messages
 	switch (error.code) {
 		case 'EACCES':
-		console.error(bind + ' requires elevated privileges')
+		console.error('port:',config.httpserver.port,' requires elevated privileges')
 		process.exit(1)
 		break
 		case 'EADDRINUSE':
-		console.error(bind + ' is already in use')
+		console.error('port:',config.httpserver.port,' is already in use')
 		process.exit(1)
 		break
 		default:
