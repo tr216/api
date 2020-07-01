@@ -3,11 +3,11 @@ module.exports=function(conn){
         ioType :{ type: Number,default: 0, index:true}, // 0 - cikis , 1- giris
         eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'integrators', required: true},
         // location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', required: [true, 'Lokasyon gereklidir']},
-        location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
-        subLocation: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null},
+        location: {type: mongoose.Schema.Types.ObjectId, ref: 'locations'},
+        subLocation: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations'},
         // location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', required: [true, 'Lokasyon 2 gereklidir']},
-        location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations', default:null},
-        subLocation2: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations', default:null},
+        location2: {type: mongoose.Schema.Types.ObjectId, ref: 'locations'},
+        subLocation2: {type: mongoose.Schema.Types.ObjectId, ref: 'sub_locations'},
         profileId: { 
             value: { type: String,default: '', trim:true, enum:['TEMELIRSALIYE'], required: true}
         },

@@ -1,7 +1,7 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
         name: {type: String, required: [true,'Isim gereklidir.']},
-        importerType: {type: String, enum:['','e-invoice','e-ledger','zreport']},
+        importerType: {type: String, enum:['','invoice','despatch','order','e-invoice','e-ledger','zreport']},
         importFileExtensions:{type: String, trim:true, default:'*.*;'},
         startFile:{type: mongoose.Schema.Types.ObjectId, ref: 'files'},
         files:[{type: mongoose.Schema.Types.ObjectId, ref: 'files'}],

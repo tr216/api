@@ -175,7 +175,7 @@ function post(activeDb,member,req,res,callback){
 	if(err) return callback({success: false, error: {code: err.name, message: err.message}});
 	newDoc.uuid.value=uuid.v4();
 	newDoc=calculateOrderTotals(newDoc);
-	activeDb.e_integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
+	activeDb.integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
 		if(dberr(err,callback)){
 			if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Sipariste entegrator bulanamadi.'}});
 			documentHelper.yeniSiparisNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
@@ -350,7 +350,7 @@ function calculateOrderTotals(order){
 
 function transferImport(activeDb,member,req,res,callback){
 	
-	activeDb.e_integrators.find({passive:false,'localConnectorImportOrder.localConnector':{$ne:null}}).populate(['localConnectorImportOrder.localConnector']).exec((err,docs)=>{
+	activeDb.integrators.find({passive:false,'localConnectorImportOrder.localConnector':{$ne:null}}).populate(['localConnectorImportOrder.localConnector']).exec((err,docs)=>{
 		if (dberr(err,callback)) {
 			if(docs.length==0){
 				return callback({success:false,error:{code:'NOT_DEFINED',message:'Local connectoru tanimlanmis aktif bir entegrator bulunmamaktadir.'}})
@@ -364,10 +364,10 @@ function transferImport(activeDb,member,req,res,callback){
 				if(index>=docs.length){
 					cb(null);
 				}else{
-					activeDb.tasks.findOne({taskType:'connector_import_eorder',collectionName:'e_integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
+					activeDb.tasks.findOne({taskType:'connector_import_eorder',collectionName:'integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
 						if (dberr(err,callback)) {
 							if(doc==null){
-								var taskdata={taskType:'connector_import_eorder',collectionName:'e_integrators',documentId:docs[index]._id,document:docs[index]}
+								var taskdata={taskType:'connector_import_eorder',collectionName:'integrators',documentId:docs[index]._id,document:docs[index]}
 								taskHelper.newTask(activeDb,taskdata,(err,taskDoc)=>{
 									if(!err){
 										switch(taskDoc.status){

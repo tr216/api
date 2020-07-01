@@ -1,6 +1,6 @@
 var dbModel
 var processList=[]
-var repeatInterval=50000
+var repeatInterval=60000*10
 var SinifGrubu=require('./uyumsoft/DespatchIntegration.class.js')
 var downloadInterval=5000 
 
@@ -89,7 +89,7 @@ function getDespatch(ioType,integrator,listItem,callback){
 				}
 				GetDespatch(listItem.docId,(err,data)=>{
 					if(!err){
-						fs.writeFileSync(path.join(config.tmpDir,`${ioBox(ioType)}_${listItem.document.despatchNumber}.json`),JSON.stringify(data,null,2),'utf8')
+						// fs.writeFileSync(path.join(config.tmpDir,`${ioBox(ioType)}_${listItem.document.despatchNumber}.json`),JSON.stringify(data,null,2),'utf8')
 						var newDoc=new dbModel.despatches(data.value.despatchAdvice)
 						newDoc.eIntegrator=integrator._id
 						newDoc.ioType=ioType
@@ -251,19 +251,69 @@ function defaultStartDate(){
 	return (new Date((new Date()).getFullYear(),5,30,0,0,0)).toISOString()
 }
 
-// function defaultEndDate(){
-	
-// 	return (new Date((new Date()).getFullYear(),0,31,23,59+(new Date()).getTimezoneOffset()*-1,59)).toISOString()
-// }
-
 function endDate(){
 	var a=new Date()
 	a.setMinutes(a.getMinutes()+(new Date()).getTimezoneOffset()*-1)
 	return a.toISOString()
 }
 
+function xsltView(despatchDoc,callback){
+	var wsIrsaliye=new SinifGrubu.DespatchIntegration(despatchDoc.eIntegrator.despatch.url,despatchDoc.eIntegrator.despatch.username,despatchDoc.eIntegrator.despatch.password)
+	var GetDespatchView=(despatchId,cb)=>{
+			if(despatchDoc.ioType==0){
+				wsIrsaliye.GetOutboxDespatchView(despatchId,cb)
+			}else{
+				wsIrsaliye.GetInboxDespatchView(despatchId,cb)
+			}
+		}
+	
+	GetDespatchView(despatchDoc.uuid.value,(err,data)=>{
+		if(!err){
+			callback(null,data.value.html)
+		}else{
+			callback(err)
+		}
+		
+	})
+}
 
-exports.run=(userDbConn)=>{
+
+function logs(despatchDoc,callback){
+	var wsIrsaliye=new SinifGrubu.DespatchIntegration(despatchDoc.eIntegrator.despatch.url,despatchDoc.eIntegrator.despatch.username,despatchDoc.eIntegrator.despatch.password)
+	var GetDespatchStatusWithLogs=(despatchIds,cb)=>{
+			if(despatchDoc.ioType==0){
+				wsIrsaliye.GetOutboxDespatchStatusWithLogs(despatchIds,cb)
+			}else{
+				wsIrsaliye.GetInboxDespatchStatusWithLogs(despatchIds,cb)
+			}
+		}
+	
+	GetDespatchStatusWithLogs([despatchDoc.uuid.value],(err,data)=>{
+		if(!err){
+			fs.writeFileSync(path.join(config.tmpDir,'logs_${despatchDoc.ID.value}.json'),JSON.stringify(data,null,2),'utf8')
+			callback(null,data.value)
+		}else{
+			callback(err)
+		}
+		
+	})
+}
+
+// exports.run=(userDbConn)=>{
+// 	dbModel=userDbConn
+// 	calistir()
+// }
+
+module.exports=(userDbConn)=>{
 	dbModel=userDbConn
-	calistir()
+	return {
+		run:()=>{
+			setTimeout(()=>{
+				calistir()	
+			},repeatInterval)
+			
+		},
+		xsltView:xsltView,
+		logs:logs
+	}
 }

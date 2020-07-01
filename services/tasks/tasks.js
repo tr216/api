@@ -299,7 +299,7 @@ function connector_import_einvoice_calistir(dbModel,taskDoc,cb){
         	}
         ]
 
-		dbModel.e_integrators.findOne({_id:taskDoc.documentId}).populate(populate).exec((err,eIntegratorDoc)=>{
+		dbModel.integrators.findOne({_id:taskDoc.documentId}).populate(populate).exec((err,eIntegratorDoc)=>{
 			if(!err){
 				eventLog('eIntegrator:',eIntegratorDoc.eIntegrator);
 				eventLog('name:',eIntegratorDoc.name);
@@ -308,11 +308,11 @@ function connector_import_einvoice_calistir(dbModel,taskDoc,cb){
 					if(!err){
 						documentHelper.insertEInvoice(dbModel,eIntegratorDoc,result.data,(err,docs)=>{
 							if(!err){
-								dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'transferred','localConnectorExportInvoice.error':null}},(err)=>{
+								dbModel.integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'transferred','localConnectorExportInvoice.error':null}},(err)=>{
 									taskHelper.setCompleted(taskDoc,cb);
 								});
 							}else{
-								dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error','localConnectorExportInvoice.error':err}},(err2)=>{
+								dbModel.integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error','localConnectorExportInvoice.error':err}},(err2)=>{
 									
 									taskHelper.setError(taskDoc,err,cb);
 									
@@ -328,13 +328,13 @@ function connector_import_einvoice_calistir(dbModel,taskDoc,cb){
 								taskHelper.setPending(taskDoc,cb);
 							}else{
 
-								dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error', 'localConnectorExportInvoice.error':err}},(err2)=>{
+								dbModel.integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error', 'localConnectorExportInvoice.error':err}},(err2)=>{
 									taskHelper.setError(taskDoc,err,cb);
 								});
 							}
 						}else{
 							
-							dbModel.e_integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error','localConnectorExportInvoice.error':err}},(err2)=>{
+							dbModel.integrators.updateOne({_id:taskDoc.documentId} , {$set:{'localConnectorExportInvoice.status':'error','localConnectorExportInvoice.error':err}},(err2)=>{
 								taskHelper.setError(taskDoc,err,cb);
 							});
 							

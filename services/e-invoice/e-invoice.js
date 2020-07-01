@@ -107,9 +107,9 @@ setTimeout(()=>{
 
 function checkDbAndDownloadOutboxInvoices(dbModel,callback){
 	try{
-		if(dbModel.e_integrators==undefined) return callback(null);
+		if(dbModel.integrators==undefined) return callback(null);
 		eventLog('checkDbAndDownloadOutboxInvoices :',dbModel.dbName);
-		dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
+		dbModel.integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
 			if(!err){
 				var index=0;
 				function calistir(cb){
@@ -163,8 +163,8 @@ function checkDbAndDownloadOutboxInvoices(dbModel,callback){
 
 function checkDbAndCheckOutboxInvoicesStatus(dbModel,callback){
 	try{
-		if(dbModel.e_integrators==undefined) return callback(null);
-		dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
+		if(dbModel.integrators==undefined) return callback(null);
+		dbModel.integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
 			if(!err){
 				var index=0;
 				function calistir(cb){
@@ -199,8 +199,8 @@ function checkDbAndCheckOutboxInvoicesStatus(dbModel,callback){
 
 function checkDbAndCheckInboxInvoicesStatus(dbModel,callback){
 	try{
-		if(dbModel.e_integrators==undefined) return callback(null);
-		dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
+		if(dbModel.integrators==undefined) return callback(null);
+		dbModel.integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
 			if(!err){
 				var index=0;
 				function calistir(cb){
@@ -348,9 +348,9 @@ function checkOutboxInvoicesStatus(dbModel,eIntegratorDoc,callback){
 
 
 function checkDbAndDownloadInboxInvoices(dbModel,callback){
-	if(dbModel.e_integrators==undefined) return callback(null);
+	if(dbModel.integrators==undefined) return callback(null);
 	eventLog('checkDbAndDownloadInboxInvoices :',dbModel.dbName);
-	dbModel.e_integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
+	dbModel.integrators.find({url:{$ne:''},passive:false},(err,eIntegratorDocs)=>{
 		if(!err){
 			var index=0;
 			function calistir(cb){
@@ -391,7 +391,7 @@ function downloadInboxInvoices(dbModel,eIntegratorDoc,cb){
 
 exports.sendToGib=function(dbModel,eInvoice,cb){
 	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).populate('eInvoice.xslt').exec((err,eIntegratorDoc)=>{
+		dbModel.integrators.findOne({_id:eInvoice.eIntegrator._id}).populate('eInvoice.xslt').exec((err,eIntegratorDoc)=>{
 			if(!err){
 				var xsltEkle=false;
 				if(eIntegratorDoc.eInvoice.xslt)
@@ -449,7 +449,7 @@ exports.sendToGib=function(dbModel,eInvoice,cb){
 
 exports.approveInvoice=function(dbModel,eInvoice,cb){
 	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
+		dbModel.integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
 			
 			switch(eInvoice.eIntegrator.eIntegrator){
 				case 'uyumsoft':
@@ -469,7 +469,7 @@ exports.approveInvoice=function(dbModel,eInvoice,cb){
 
 exports.declineInvoice=function(dbModel,eInvoice,cb){
 	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
+		dbModel.integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
 			
 			switch(eInvoice.eIntegrator.eIntegrator){
 				case 'uyumsoft':
@@ -489,7 +489,7 @@ exports.declineInvoice=function(dbModel,eInvoice,cb){
 
 exports.returnInvoice=function(dbModel,eInvoice,cb){
 	try{
-		dbModel.e_integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
+		dbModel.integrators.findOne({_id:eInvoice.eIntegrator._id}).exec((err,eIntegratorDoc)=>{
 			
 			switch(eInvoice.eIntegrator.eIntegrator){
 				case 'uyumsoft':
