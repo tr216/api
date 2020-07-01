@@ -139,7 +139,7 @@ function post(activeDb,member,req,res,callback){
     
     activeDb.integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
         if(dberr(err,callback)){
-            if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Faturada entegrator bulanamadi.'}})
+            if(eIntegratorDoc==null) return callback({success: false,error: {code: 'ENTEGRATOR', message: 'Entegrator bulanamadi.'}})
             documentHelper.yeniIrsaliyeNumarasi(activeDb,eIntegratorDoc,newDoc,(err,newDoc)=>{
                 newDoc.save(function(err, newDoc2) {
                     if(dberr(err,callback)){
@@ -189,13 +189,22 @@ function put(activeDb,member,req,res,callback){
 
 function fazlaliklariTemizleDuzelt(data){
     // if(data.docTypeCode!='TRANSFER'){
-        data.location2=data.location
-        data.subLocation2=data.subLocation
-    // }
-    if((data.subLocation || '')=='') data.subLocation=undefined
-    if((data.subLocation2 || '')=='') data.subLocation2=undefined
+    if((data.location || '')=='')
+    	data.location=undefined
+    if((data.location2 || '')=='')
+    	data.location2=undefined
+    if((data.subLocation || '')=='') 
+    	data.subLocation=undefined
+    if((data.subLocation2 || '')=='') 
+    	data.subLocation2=undefined
     
-    
+    if(data.despatchLine){
+    	data.despatchLine.forEach((e)=>{
+    		if(e.item)
+    			if((e.item._id || '')=='')
+    				e.item._id=undefined
+    	})
+    }
     return data
 
 }
