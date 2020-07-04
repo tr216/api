@@ -26,9 +26,9 @@
     "posDevice":false,
     "scheduler":false,
     "eInvoice":false,
-    "eDespatch":true,
+    "eDespatch":false,
     "eLedger":false,
-    "localConnector":true
+    "localConnector":false
   }
 
 }

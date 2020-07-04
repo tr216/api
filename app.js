@@ -2,10 +2,14 @@ require('./eventlog.js')
 eventLog('starting')
 global.express = require('express')
 global.path = require('path')
+global.fs=require('fs')
+
 var favicon = require('serve-favicon')
 var logger = require('morgan')
 var cookieParser = require('cookie-parser')
 var bodyParser = require('body-parser')
+global.dbLoader=require('./db/db-loader')
+
 global.colors = require('colors')
 global.os = require('os')
 
@@ -13,11 +17,8 @@ global.uyumsoftVkn='9000068418'
 
 require("tls").DEFAULT_MIN_VERSION = 'TLSv1'
 
-
-
 global.uuid = require('node-uuid')
-global.path_module = require('path')
-global.fs=require('fs')
+
 
 global.config = require('./config.json')
 global.config['status']='dist'
@@ -32,19 +33,18 @@ if(process.argv.length>=3){
 	global.config['status']='test'
 }
 
-
-
-global.dbType=require('./lib/db_object_types.js')
+// global.dbType=require('./lib/db_object_types.js')
 global.mrutil = require('./lib/mrutil.js')
 global.printHelper = require('./lib/print_helper.js')
-
-
 
 
 global.ttext = require('./lib/language.js')
 global.passport = require('./lib/passport.js')
 global.passportRepo = require('./lib/passport_repo.js')
 global.rootDir=__dirname
+global.masterDir=path.join(__dirname,'master')
+global.clientDir=path.join(__dirname,'client')
+
 global.WcfHelper=require('./lib/wcf-helper.js').WcfHelper
 global.documentHelper=require('./lib/document_helper.js')
 // global.eDespatchHelper=require('./lib/edespatch_helper.js')
@@ -58,20 +58,28 @@ var flash = require('connect-flash')
 app.set('port', config.httpserver.port)
 
 app.use(logger('dev'))
-app.use(bodyParser.json({limit: "500mb"}))
-app.use(bodyParser.urlencoded({limit: "500mb", extended: true, parameterLimit:50000}))
+app.use(bodyParser.json({limit: "50mb"}))
+app.use(bodyParser.urlencoded({limit: "50mb", extended: true, parameterLimit:50000}))
 
 app.use(cookieParser())
 
 app.use('/downloads',express.static(path.join(__dirname, 'downloads')))
 app.use(flash())
 
+var http=require('./http-server.js')
+http(app)
 
-require('./lib/loader_db.js')((err)=>{
-	if(!err){
-		require('./lib/loader_api_v1.js')(app,(err)=>{
-			if(!err){
-				global.services=require('./services/services.js')
+global.master=require('./master/master.js')(app)
+global.client=require('./client/client.js')(app)
+
+dbLoader((err)=>{
+	master.load((err)=>{
+		if(!err){
+			eventLog('master.module loaded')
+			client.load((err)=>{
+				if(!err){
+					eventLog('client.modules loaded')
+				}
 				switch(config.status){
 					case 'test':
 					eventLog('API is running on '.yellow + 'test'.cyan + ' platform.'.yellow)
@@ -83,89 +91,91 @@ require('./lib/loader_db.js')((err)=>{
 					eventLog('API is running '.yellow + 'release'.red + ' mode.'.yellow)
 					break
 				}
-			}else{
-				errorLog('loader_api_v1.js ERROR:',err)
-			}
-		})
-	}else{
-		errorLog('loader_db.js ERROR:',err)
-	}
+				handlerApi(app)
+			})
+		}else{
+			errorLog('master module error:',err)
+		}
+		
+	})
 })
 
 
 
+// client.apiLoader(app).load((err)=>{
+// 	if(!err){
+// 		eventLog('client api loaded')
+// 		master.apiLoader(app).load((err)=>{
+// 			if(!err){
+// 				eventLog('master api loaded')
+// 			}else{
+// 				errorLog('master.apiLoader error:',err)
+// 			}
+// 		})
+// 	}else{
+// 		errorLog('client.apiLoader error:',err)
+// 	}
+// })
 
+//global.client=require('./client/client.js')(app)
 
-
-
-//============= HTTP SERVER ==================
-//var debug = require('debug')('node-sbadmin:server')
-var http = require('http')
-
-
-
-var server = http.createServer(app)
-
-
-server.listen(config.httpserver.port)
-server.on('error', onError)
-server.on('listening', onListening)
-
-
-
-function normalizePort(val) {
-	var port = parseInt(val, 10)
-
-	if (isNaN(port)) {
-		// named pipe
-		return val
-	}
-
-	if (port >= 0) {
-		// port number
-		return port
-	}
-
-	return false
-}
-
-
-function onError(error) {
-	if (error.syscall !== 'listen') {
-		throw error
-	}
+// require('./lib/loader_db.js')((err)=>{
+// 	if(!err){
+// 		require('./lib/loader_api_v1.js')(app,(err)=>{
+// 			if(!err){
+// 				global.services=require('./services/services.js')
+// 				switch(config.status){
+// 					case 'test':
+// 					eventLog('API is running on '.yellow + 'test'.cyan + ' platform.'.yellow)
+// 					break
+// 					case 'dev':
+// 					eventLog('API is running on '.yellow + 'development'.cyan + ' platform.'.yellow)
+// 					break
+// 					case 'dist':
+// 					eventLog('API is running '.yellow + 'release'.red + ' mode.'.yellow)
+// 					break
+// 				}
+// 			}else{
+// 				errorLog('loader_api_v1.js ERROR:',err)
+// 			}
+// 		})
+// 	}else{
+// 		errorLog('loader_db.js ERROR:',err)
+// 	}
+// })
 
 	
 
-	// handle specific listen errors with friendly messages
-	switch (error.code) {
-		case 'EACCES':
-		console.error('port:',config.httpserver.port,' requires elevated privileges')
-		process.exit(1)
-		break
-		case 'EADDRINUSE':
-		console.error('port:',config.httpserver.port,' is already in use')
-		process.exit(1)
-		break
-		default:
-		throw error
-	}
+function handlerApi(app){
+    // catch 404 and forward to error handler
+    app.use(function(req, res, next) {
+        eventLog(req.params)
+        var err = new Error('Not Found')
+        err.status = 404
+        //next(err)
+        res.status(err.status)
+        res.end('{success:false,error: {code:404,message:"' + err.message + '"}}')
+    })
+
+    if (config.status == 'dev') {
+        app.use(function(err, req, res, next) {
+          res.status(err.status || 500)
+          eventLog(err)
+          res.end('{success:false,error: {code:500,message:"' + err.message + '"}}')
+        })
+    }
+
+
+    app.use(function(err, req, res, next) {
+        res.status(err.status || 500)
+        res.end('{success:false,error: {code:500,message:"' + err.message + '"}}')
+    })
 }
 
-function onListening() {
-	var addr = server.address()
-	var bind = typeof addr === 'string'
-	? 'pipe ' + addr
-	: 'port ' + addr.port
-	//debug('Listening on ' + bind)
-}
 
-// ==========HTTP SERVER /===========
-
-
-if(config.status!='dev'){
+if(config.status!='dev111'){
 	process.on('uncaughtException', function (err) {
-	errorLog('Caught exception: ', err)
+		errorLog('Caught exception: ', err)
 	})
 }
 

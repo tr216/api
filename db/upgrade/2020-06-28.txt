@@ -1,5 +1,0 @@
-db.getCollection('e_integrators').renameCollection('integrators');
-
-db.getCollection('etulia_connectors').renameCollection('local_connectors');
-
-

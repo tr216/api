@@ -33,6 +33,6 @@ global.errorLog=function(obj,...placeholders){
     //     placeholders.unshift( obj );
     //     placeholders.unshift( simdi() + " %j" );
     // }
-    console.error(simdi().cyan ,obj,...placeholders)
+    console.error(simdi().red ,obj,...placeholders)
     // console.error(placeholders)
 }
