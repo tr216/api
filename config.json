@@ -1,33 +1,57 @@
 {
-  "httpserver":{
-  	"port" : 3500
-  },
-  "host":{
-    "url" : "http://localhost:3500"
-  },
-  "mongodb": {
-  	"address":"mongodb://localhost:27017/etuliaportal",
-  	"userAddress":"mongodb://localhost:27017/"
-  },
-  "connector_service":{
-  	"port":33216
-  },
-  "error_log":{
-    "path":"/var/log/api.tr216.com.error.log",
-    "active": false
-  },
-  "event_log":{
-    "path":"/var/log/api.tr216.com.access.log",
-    "active": false
-  },
-  "tmpDir":"/tmp",
-  "enabled_services":{
-    "tasks":true,
-    "posDevice":true,
-    "scheduler":true,
-    "eInvoice":true,
-    "eDespatch":true,
-    "eLedger":true,
-    "localConnector":true
-  }
+	"release":{
+		"httpserver":{
+			"port" : 3500
+		},
+		"mongodb": {
+			"address":"mongodb://localhost:27017/etuliaportal",
+			"userAddress":"mongodb://localhost:27017/"
+		},
+		"eDespatchService":{
+			"url":"http://localhost:3002",
+			"enabled":true
+		},
+		"localConnectorService":{
+			"url":"http://localhost:3002",
+			"enabled":true
+		},
+		"tmpDir":"/tmp"
+	},
+	"development":{
+		"httpserver":{
+			"port" : 3500
+		},
+		"mongodb": {
+			"address":"mongodb://localhost:27017/etuliaportal",
+			"userAddress":"mongodb://localhost:27017/"
+		},
+		"eDespatchService":{
+			"url":"http://localhost:3002",
+			"enabled":true
+		},
+		"localConnectorService":{
+			"url":"http://localhost:3002",
+			"enabled":true
+		},
+		"tmpDir":"C:\\arge\\tr216\\temp"
+	},
+	"test":{
+		"httpserver":{
+			"port" : 3501
+		},
+		"mongodb": {
+			"address":"mongodb://localhost:27017/tr216-test",
+			"userAddress":"mongodb://localhost:27017/"
+		},
+		"eDespatchService":{
+			"url":"http://localhost:3002",
+			"enabled":true
+		},
+		"localConnectorService":{
+			"url":"http://localhost:3002",
+			"enabled":true
+		},
+		"tmpDir":"C:\\arge\\tr216\\temp"
+	}
 }
+
