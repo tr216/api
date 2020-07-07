@@ -1,25 +1,25 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel,member,req,res,cb)
+			getOne(dbModel, member, req, res, next, cb)
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
 		if(req.params.param1=='copy'){
-			copy(dbModel,member,req,res,cb)
+			copy(dbModel, member, req, res, next, cb)
 		}else{
-			post(dbModel,member,req,res,cb)
+			post(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'PUT':
-		put(dbModel,member,req,res,cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
-		deleteItem(dbModel,member,req,res,cb)
+		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
 		error.method(req)
@@ -28,7 +28,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 
 }
 
-function copy(dbModel,member,req,res,cb){
+function copy(dbModel, member, req, res, next, cb){
 	var id=req.params.param2 || req.body['id'] || req.query.id || ''
 	var newName=req.body['newName'] || req.body['name'] || ''
 
@@ -36,8 +36,8 @@ function copy(dbModel,member,req,res,cb){
 		error.param2(req)
 
 	dbModel.account_groups.findOne({ _id: id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var data=doc.toJSON()
 				data._id=undefined
 				delete data._id
@@ -51,7 +51,7 @@ function copy(dbModel,member,req,res,cb){
 				epValidateSync(newdoc)
 
 				newdoc.save((err, newdoc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						cb(newdoc2)
 					}
 				})
@@ -60,7 +60,7 @@ function copy(dbModel,member,req,res,cb){
 	})
 }
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1),
 		populate:[
 		{path:'account',select:'_id accountCode name'},
@@ -84,21 +84,21 @@ function getList(dbModel,member,req,res,cb){
 		filter['name']={ '$regex': '.*' + req.query.name + '.*' ,'$options': 'i' }
 
 	dbModel.account_groups.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		}
 	})
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	dbModel.account_groups.findOne({_id:req.params.param1}).exec((err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(doc)
 		}
 	})
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
@@ -108,13 +108,13 @@ function post(dbModel,member,req,res,cb){
 	epValidateSync(newdoc)
 
 	newdoc.save((err, newdoc2)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(newdoc2)
 		}
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param2(req)
 
@@ -125,14 +125,14 @@ function put(dbModel,member,req,res,cb){
 	data=veriTemizle(data)
 
 	dbModel.account_groups.findOne({ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
 				var newdoc = new dbModel.account_groups(doc2)
 				epValidateSync(newdoc)
 
 				newdoc.save((err, newdoc2)=>{
-					if(dberr(err))
+					if(dberr(err,next))
 						cb(newdoc2)
 				})
 			}
@@ -158,13 +158,13 @@ function veriTemizle(data){
 	return data
 }
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.account_groups.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(null)
 		}
 	})

@@ -23,7 +23,6 @@ module.exports=(app)=>{
 		res.status(404).json({ success:false, error:{code:'404',message:'function not found'}})
 	})
 
-
 	app.use((err,req, res, next)=>{
 		var error={code:'403',message:''}
 		if(typeof err=='string'){
@@ -38,6 +37,7 @@ module.exports=(app)=>{
 		res.status(403).json({ success:false, error:error})
 	})
 }
+
 
 function clientControllers(app){
 	app.all('/api/v1/:dbId/*', (req, res, next)=>{
@@ -65,8 +65,7 @@ function clientControllers(app){
 	function setRepoAPIFunctions(req,res,next){
 		passport(req,res,(member)=>{
 			var ctl=getRepoController(req.params.func)
-			ctl(repoDb[req.params.dbId],member,req,res,(data)=>{
-
+			ctl(repoDb[req.params.dbId],member,req,res,next,(data)=>{
 				if(data==undefined)
 					res.json({success:true})
 				else if(data==null)
@@ -79,13 +78,18 @@ function clientControllers(app){
 				}
 			})
 		})
+
+		// process.on('uncaughtException', function (err) {
+		// 	errorLog('setRepoAPIFunctions Caught exception: ', err)
+		// 	sendError(err,res)
+		// })
 	}
 
 	function getRepoController(funcName){
 
 		var controllerName=path.join(__dirname,'../controllers/repo',`${funcName}.controller.js`)
 		if(fs.existsSync(controllerName)==false){
-			throw Error(`'${funcName}' controller function was not found`)
+			throw `'${funcName}' controller function was not found`
 		}else{
 			return require(controllerName)
 		}
@@ -119,6 +123,7 @@ function masterControllers(app){
 	function setAPIFunctions(req, res,next){
 		passport(req,res,(member)=>{
 			var ctl=getController(req.params.func)
+
 			ctl(member,req,res,(data)=>{
 				
 				if(data==undefined)
@@ -133,17 +138,35 @@ function masterControllers(app){
 				}
 			})
 		})
+		// process.on('uncaughtException', function (err) {
+		// 	errorLog('setAPIFunctions Caught exception: ', err)
+		// 	sendError(err,res)
+		// })
     }
 
 	function getController(funcName){
 
-		var controllerName=path.join(__dirname,'../controllers',`${funcName}.controller.js`)
+		var controllerName=path.join(__dirname,'../controllers/master',`${funcName}.controller.js`)
 		if(fs.existsSync(controllerName)==false){
 			throw Error(`'${funcName}' controller function was not found`)
 		}else{
 			return require(controllerName)
 		}
 	}
+}
+
+function sendError(err,res){
+	var error={code:'403',message:''}
+	if(typeof err=='string'){
+		error.message=err
+	}else{
+		error.code=err.code || err.name || 'ERROR'
+		if(err.message)
+			error.message=err.message
+		else
+			error.message=err.name || ''
+	}
+	res.status(403).json({ success:false, error:error})
 }
 
 function clearProtectedFields(funcName,data,cb){

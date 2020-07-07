@@ -112,6 +112,7 @@ function init(callback){
 		}else{
 			if(!cb){
 				throw err
+				return false
 			}else{
 				cb(err)
 				return false
@@ -126,6 +127,7 @@ function init(callback){
 			var err={code:'RECORD_NOT_FOUND',message:'Kayıt bulunamadı'}
 			if(!cb){
 				throw err
+				return false
 			}else{
 				cb(err)
 				return false

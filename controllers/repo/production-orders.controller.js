@@ -1,42 +1,42 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
 			if(req.params.param1.lcaseeng()=='salesorders'){
-				salesOrders(dbModel,member,req,res,cb)
+				salesOrders(dbModel, member, req, res, next, cb)
 			}else{
-				getOne(dbModel,member,req,res,cb)
+				getOne(dbModel, member, req, res, next, cb)
 			}
 
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
 		if(req.params.param1!=undefined){
 			if(req.params.param1=='approve'){
-				approveDecline('Approved',dbModel,member,req,res,cb)
+				approveDecline('Approved', dbModel, member, req, res, next, cb)
 			}else if(req.params.param1=='decline'){
-				approveDecline('Declined',dbModel,member,req,res,cb)
+				approveDecline('Declined', dbModel, member, req, res, next, cb)
 			}else if(req.params.param1=='start'){
-				approveDecline('Processing',dbModel,member,req,res,cb)
+				approveDecline('Processing', dbModel, member, req, res, next, cb)
 			}else if(req.params.param1.toLowerCase()=='setdraft'){
-				approveDecline('Draft',dbModel,member,req,res,cb)
+				approveDecline('Draft', dbModel, member, req, res, next, cb)
 			}else if(req.params.param1.toLowerCase()=='complete'){
-				approveDecline('Completed',dbModel,member,req,res,cb)
+				approveDecline('Completed', dbModel, member, req, res, next, cb)
 			}else{
 				cb({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}})
 			}
 		}else{
-			post(dbModel,member,req,res,cb)
+			post(dbModel, member, req, res, next, cb)
 		}
 
 		break
 		case 'PUT':
-		put(dbModel,member,req,res,cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
-		deleteItem(dbModel,member,req,res,cb)
+		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
 		error.method(req)
@@ -53,11 +53,11 @@ function approveDecline(status, dbModel,member,req,res,cb){
 	data._id = req.params.param2
 	data.modifiedDate = new Date()
 	dbModel.production_orders.findOne({ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				doc.status=status
 				doc.save((err, doc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						cb(doc2)
 					}
 				})
@@ -66,7 +66,7 @@ function approveDecline(status, dbModel,member,req,res,cb){
 	})
 }
 
-function salesOrders(dbModel,member,req,res,cb){
+function salesOrders(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1) ,
 
 	}
@@ -115,13 +115,13 @@ function salesOrders(dbModel,member,req,res,cb){
 	var myAggregate = dbModel.orders.aggregate(aggregateProject)
 
 	dbModel.orders.aggregatePaginate(myAggregate,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		}
 	})
 }
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1), 
 		select:'-process',
 		populate:[
@@ -160,9 +160,9 @@ function getList(dbModel,member,req,res,cb){
 		filter['orderLineReference.orderReference.buyerCustomerParty.party.partyName.name.value']={ '$regex': '.*' + (req.query.musteri || req.query.customer || req.query.customerName) + '.*' , '$options': 'i' }
 
 	applyOtherFilters(dbModel,req,filter,(err,filter2)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			dbModel.production_orders.paginate(filter2,options,(err, resp)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					cb(resp)
 				}
 			})
@@ -217,7 +217,7 @@ function applyOtherFilters(dbModel,req,mainFilter,cb){
 	})
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	var populate=[
 	{ path:'process.station', select:'_id name'},
 	{ path:'process.step', select:'_id name useMaterial'},
@@ -234,8 +234,8 @@ function getOne(dbModel,member,req,res,cb){
 	]
 
 	dbModel.production_orders.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				if(!req.query.print){
 					var populate2=[
 					{path:'docLine.item', select:'_id name description unitPacks tracking passive'},
@@ -246,7 +246,7 @@ function getOne(dbModel,member,req,res,cb){
                     // {path:'docLine.size', select:'_id name'} //qwerty
 
                     dbModel.inventory_fiches.find({productionOrderId:doc._id}).populate(populate2).exec((err,invFiches)=>{
-                    	if(dberr(err)){
+                    	if(dberr(err,next)){
                     		doc=doc.toJSON()
                     		doc['inventory_fiches']=invFiches
                     		cb(doc)
@@ -254,7 +254,7 @@ function getOne(dbModel,member,req,res,cb){
                     })
                 }else{
                 	doc.populate('item').execPopulate((err,doc2)=>{
-                		if(dberr(err)){
+                		if(dberr(err,next)){
                 			var designId=req.query.designId || ''
                 			printHelper.print(dbModel,'mrp-production-order',doc2, designId, (err,html)=>{
                 				if(!err){
@@ -271,7 +271,7 @@ function getOne(dbModel,member,req,res,cb){
     })
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 	verileriDuzenle(dbModel,data,(err,data)=>{
@@ -281,7 +281,7 @@ function post(dbModel,member,req,res,cb){
 
 			newdoc=calculateMaterialSummary(newdoc)
 			newdoc.save((err, newdoc2)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					var populate=[
 					{ path:'process.station', select:'_id name'},
 					{ path:'process.step', select:'_id name useMaterial'},
@@ -293,7 +293,7 @@ function post(dbModel,member,req,res,cb){
 					{ path:'outputSummary.item', select:'_id itemType name description'}
 					]
 					dbModel.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							cb(newdoc3)
 						}
 					})
@@ -303,7 +303,7 @@ function post(dbModel,member,req,res,cb){
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
@@ -312,8 +312,8 @@ function put(dbModel,member,req,res,cb){
 	data.modifiedDate = new Date()
 	verileriDuzenle(dbModel,data,(err,data)=>{
 		dbModel.production_orders.findOne({ _id: data._id},(err,doc)=>{
-			if(dberr(err)){
-				if(dbnull(doc)){
+			if(dberr(err,next)){
+				if(dbnull(doc,next)){
 					doc.orderLineReference=[]
 					doc.process=[]
 					var doc2 = Object.assign(doc, data)
@@ -322,7 +322,7 @@ function put(dbModel,member,req,res,cb){
 
 					newdoc=calculateMaterialSummary(newdoc)
 					newdoc.save((err, newdoc2)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							var populate=[
 							{ path:'process.station', select:'_id name'},
 							{ path:'process.step', select:'_id name useMaterial'},
@@ -334,7 +334,7 @@ function put(dbModel,member,req,res,cb){
 							{ path:'outputSummary.item', select:'_id itemType name description'}
 							]
 							dbModel.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
-								if(dberr(err)){
+								if(dberr(err,next)){
 									cb(newdoc3)
 								}
 							})
@@ -408,13 +408,13 @@ function verileriDuzenle(dbModel,data,cb){
 }
 
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.production_orders.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(null)
 		}
 	})

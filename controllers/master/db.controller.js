@@ -36,7 +36,7 @@ function resonance_test(member,req,res,cb){
     db.resonanceIds.findOne({resonanceId:resonanceId,resonancePassword:resonancePassword},(err,doc)=>{
         if(dberr(err))
         	if(dbnull(doc))
-        		service_resonance.sendCommand({id:doc.resonanceId,password:doc.resonancePassword,uuid:doc.resonanceUuid},"TIME","",(result)=>{
+        		services.tr216LocalConnector.sendCommand({id:doc.resonanceId,password:doc.resonancePassword,uuid:doc.resonanceUuid},"TIME","",(result)=>{
                     cb(result.data)
                 })
     })
@@ -56,7 +56,7 @@ function resonance_mssqltest(member,req,res,cb){
          if(dberr(err))
         	if(dbnull(doc)){
                 var params={connection:{user:user,password:password,server:server,database:database,port:port}}
-                service_resonance.sendCommand({id:doc.resonanceId,password:doc.resonancePassword,uuid:doc.resonanceUuid},"MSSQL_CONNECTION_TEST",params,(result)=>{
+                services.tr216LocalConnector.sendCommand({id:doc.resonanceId,password:doc.resonancePassword,uuid:doc.resonanceUuid},"MSSQL_CONNECTION_TEST",params,(result)=>{
                     if(result.success){
                 		cb(result.data)
                 	}else{
@@ -81,7 +81,7 @@ function resonance_mysqltest(member,req,res,cb){
         if(dberr(err))
         	if(dbnull(doc)){
                 var params={connection:{user:user,password:password,server:server,database:database,port:port}}
-                service_resonance.sendCommand({id:doc.resonanceId,password:doc.resonancePassword,uuid:doc.resonanceUuid},"MYSQL_CONNECTION_TEST",params,(result)=>{
+                services.tr216LocalConnector.sendCommand({id:doc.resonanceId,password:doc.resonancePassword,uuid:doc.resonanceUuid},"MYSQL_CONNECTION_TEST",params,(result)=>{
                     if(result.success){
                 		cb(result.data)
                 	}else{
@@ -115,7 +115,7 @@ function resonance_mssql(member,req,res,cb){
                     if(dberr(err))
         				if(dbnull(resonanceDoc,cb)){
                             var params={query:query, connection:{user:doc.resonanceOptions.mssql.user,password:doc.resonanceOptions.mssql.password,server:doc.resonanceOptions.mssql.server,database:doc.resonanceOptions.mssql.database,port:doc.resonanceOptions.mssql.port}}
-                            service_resonance.sendCommand({id:resonanceDoc.resonanceId,password:resonanceDoc.resonancePassword,uuid:resonanceDoc.uuid},"MSSQL_QUERY",params,(result)=>{
+                            services.tr216LocalConnector.sendCommand({id:resonanceDoc.resonanceId,password:resonanceDoc.resonancePassword,uuid:resonanceDoc.uuid},"MSSQL_QUERY",params,(result)=>{
                             	if(result.success){
                             		cb(result.data)
                             	}else{
@@ -151,7 +151,7 @@ function resonance_mysql(member,req,res,cb){
                     if(dberr(err))
         				if(dbnull(resonanceDoc,cb)){
                             var params={query:query, connection:{user:doc.resonanceOptions.mysql.user,password:doc.resonanceOptions.mysql.password,server:doc.resonanceOptions.mysql.server,database:doc.resonanceOptions.mysql.database,port:doc.resonanceOptions.mysql.port}}
-                            service_resonance.sendCommand({id:resonanceDoc.resonanceId,password:resonanceDoc.resonancePassword,uuid:resonanceDoc.uuid},"MYSQL_QUERY",params,(result)=>{
+                            services.tr216LocalConnector.sendCommand({id:resonanceDoc.resonanceId,password:resonanceDoc.resonancePassword,uuid:resonanceDoc.uuid},"MYSQL_QUERY",params,(result)=>{
 								if(result.success){
                             		cb(result.data)
                             	}else{

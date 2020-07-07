@@ -5,7 +5,7 @@ var log=require('./bin/event-log')
 
 require('./app')((err,app)=>{
 	if(!err){
-		
+		global.eDespatchService = require('./bin/rest-helper')(config.eDespatchService.url)
 		var http=require('./bin/http-server.js')(app)
 		eventLog(`application name:\t ${app.get('name').yellow}`)
 		eventLog(`version:\t\t ${app.get('version').yellow}`)

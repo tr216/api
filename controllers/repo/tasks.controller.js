@@ -1,14 +1,14 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
     switch(req.method){
         case 'GET':
         if(req.params.param1!=undefined){
-            getOne(dbModel,member,req,res,cb)
+            getOne(dbModel, member, req, res, next, cb)
         }else{
-            getList(dbModel,member,req,res,cb)
+            getList(dbModel, member, req, res, next, cb)
         }
         break
         case 'DELETE':
-        deleteItem(dbModel,member,req,res,cb)
+        deleteItem(dbModel, member, req, res, next, cb)
         break
         default:
         error.method(req)
@@ -17,7 +17,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 
 }
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
     var options={ page: (req.query.page || 1),
         sort:{startDate:'desc'},
         select:'-document'
@@ -46,28 +46,28 @@ function getList(dbModel,member,req,res,cb){
     }
 
     dbModel.tasks.paginate(filter,options,(err, resp)=>{
-        if(dberr(err)){
+        if(dberr(err,next)){
             cb(resp)
         }
     })
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
     dbModel.tasks.findOne({_id:req.params.param1},(err,doc)=>{
-        if(dberr(err)){
+        if(dberr(err,next)){
             cb(doc)
         }
     })
 }
 
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.tasks.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(null)
 		}
 	})

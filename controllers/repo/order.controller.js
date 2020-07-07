@@ -1,4 +1,4 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	if(req.params.param1==undefined)
 		error.param1(req)
 
@@ -7,31 +7,31 @@ module.exports = (dbModel, member, req, res, cb)=>{
 		switch(req.params.param1.lcaseeng()){
 
 			case 'inboxorderlist':
-			return getOrderList(1,dbModel,member,req,res,cb)
+			return getOrderList(1, dbModel, member, req, res, next, cb)
 			case 'inboxwaitingorders':
-			return waitingOrders(1,dbModel,member,req,res,cb)
+			return waitingOrders(1, dbModel, member, req, res, next, cb)
 
 			case 'outboxorderlist':
-			return getOrderList(0,dbModel,member,req,res,cb)
+			return getOrderList(0, dbModel, member, req, res, next, cb)
 			case 'outboxwaitingorders':
-			return waitingOrders(0,dbModel,member,req,res,cb)
+			return waitingOrders(0, dbModel, member, req, res, next, cb)
 
 			case 'order':
-			return getOrder(dbModel,member,req,res,cb)
+			return getOrder(dbModel, member, req, res, next, cb)
 
 			case 'orderview':
-			return orderView(dbModel,member,req,res,cb)
+			return orderView(dbModel, member, req, res, next, cb)
 			case 'orderpdf':
-			return orderPdf(dbModel,member,req,res,cb)
+			return orderPdf(dbModel, member, req, res, next, cb)
 			case 'orderxmlxslt':
 			case 'orderxml':
 			case 'orderxslt':
 			case 'orderxsltxml':
-			return getOrderXmlXslt(dbModel,member,req,res,cb)
+			return getOrderXmlXslt(dbModel, member, req, res, next, cb)
 			case 'eorderuserlist':
-			return getEOrderUserList(dbModel,member,req,res,cb)
+			return getEOrderUserList(dbModel, member, req, res, next, cb)
 			case 'errors':
-			return getErrors(dbModel,member,req,res,cb)
+			return getErrors(dbModel, member, req, res, next, cb)
 
 			default:
 			error.method(req)
@@ -42,7 +42,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 		switch(req.params.param1.lcaseeng()){
 			case 'transfer':
 			if(req.params.param2.lcaseeng()=='import'){
-				transferImport(dbModel,member,req,res,cb)
+				transferImport(dbModel, member, req, res, next, cb)
 			}else if(req.params.param2.lcaseeng()=='export'){
 				error.method(req)
 			}else{
@@ -50,7 +50,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 			}
 			break
 			case 'sendtogib':
-			return sendToGib(dbModel,member,req,res,cb)
+			return sendToGib(dbModel, member, req, res, next, cb)
 			case 'approve':
 			return approveDeclineOrder('approve', dbModel,member,req,res,cb)
 			case 'decline':
@@ -58,11 +58,11 @@ module.exports = (dbModel, member, req, res, cb)=>{
 			case 'saveinboxorder':
 			case 'saveoutboxorder':
 			case 'order':
-			return post(dbModel,member,req,res,cb)
+			return post(dbModel, member, req, res, next, cb)
 			case 'findgtipno':
-			return findGTIPNO(dbModel,member,req,res,cb)
+			return findGTIPNO(dbModel, member, req, res, next, cb)
 			case 'importoutboxorder':
-			return importOutboxOrder(dbModel,member,req,res,cb)
+			return importOutboxOrder(dbModel, member, req, res, next, cb)
 			default:
 			error.method(req)
 			break
@@ -73,7 +73,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 			case 'saveinboxorder':
 			case 'saveoutboxorder':
 			case 'order':
-			return put(dbModel,member,req,res,cb)
+			return put(dbModel, member, req, res, next, cb)
 
 			default:
 			error.method(req)
@@ -87,7 +87,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 }
 
 
-function waitingOrders(ioType,dbModel,member,req,res,cb){
+function waitingOrders(ioType, dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1) 
 	}
 
@@ -135,21 +135,21 @@ function waitingOrders(ioType,dbModel,member,req,res,cb){
 var myAggregate = dbModel.orders.aggregate(aggregateProject)
 
 dbModel.orders.aggregatePaginate(myAggregate,options,(err, resp)=>{
-	if(dberr(err)){
+	if(dberr(err,next)){
 		cb(resp)
 	}
 })
 }
 
-function getErrors(dbModel,member,req,res,cb){
+function getErrors(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	var select='_id profileId ID orderTypeCode localDocumentId issueDate ioType eIntegrator orderErrors localErrors orderStatus localStatus'
 	
 	if(_id=='') 
 		error.param2(req)
 	dbModel.orders.findOne({_id:_id},select).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var data=doc.toJSON()
 				cb(data)
 			}
@@ -157,7 +157,7 @@ function getErrors(dbModel,member,req,res,cb){
 	})
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 	
@@ -169,13 +169,13 @@ function post(dbModel,member,req,res,cb){
 	newDoc=calculateOrderTotals(newDoc)
 
 	dbModel.integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			if(eIntegratorDoc==null)
-				throw {code: 'ENTEGRATOR', message: 'Sipariste entegrator bulanamadi.'}
+				return next({code: 'ENTEGRATOR', message: 'Sipariste entegrator bulanamadi.'})
 
 			documentHelper.yeniSiparisNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc)=>{
 				newDoc.save((err, newdoc2)=>{
-					if(dberr(err))
+					if(dberr(err,next))
 						cb(newDoc2)
 				})  
 			})
@@ -183,17 +183,18 @@ function post(dbModel,member,req,res,cb){
 	})
 }
 
-function importOutboxOrder(dbModel,member,req,res,cb){
+function importOutboxOrder(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	
 	if(!data.files)
-		throw {code: 'WRONG_PARAMETER', message: 'files elemani bulunamadi'}
+		return next({code: 'WRONG_PARAMETER', message: 'files elemani bulunamadi'})
 
 	if(!Array.isArray(data.files))
-		throw {code: 'WRONG_PARAMETER', message: 'files elemani array olmak zorundadir'}
+		return next({code: 'WRONG_PARAMETER', message: 'files elemani array olmak zorundadir'})
 
 	if(data.files.length==0)
-		throw {code: 'WRONG_PARAMETER', message: 'files elemani bos olamaz'}
+		return next({code: 'WRONG_PARAMETER', message: 'files elemani bos olamaz'})
+
 	data.files.forEach((e)=>{
 		if(e.base64Data)
 			e['data']=atob(e.base64Data)
@@ -201,16 +202,16 @@ function importOutboxOrder(dbModel,member,req,res,cb){
 
 
 	fileImporter.run(dbModel,(data.fileImporter || ''),data,(err,results)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			documentHelper.findDefaultEIntegrator(dbModel,(data.eIntegrator || ''),(err,eIntegratorDoc)=>{
-				if(dberr(err))
+				if(dberr(err,next))
 					cb('ok')
 			})
 		}
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 
 	if(req.params.param2==undefined)
 		error.param2(req)
@@ -218,15 +219,15 @@ function put(dbModel,member,req,res,cb){
 	data._id = req.params.param2
 	data.modifiedDate = new Date()
 	dbModel.orders.findOne({ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				data=util.amountValueFixed2Digit(data,'')
 				var doc2 = Object.assign(doc, data)
 				var newDoc = new dbModel.orders(doc2)
 				epValidateSync(newDoc)
 				newDoc=calculateOrderTotals(newDoc)
 				newDoc.save((err, newdoc2)=>{
-					if(dberr(err))
+					if(dberr(err,next))
 						cb(newDoc2)
 				})
 			}
@@ -331,12 +332,12 @@ function calculateOrderTotals(order){
 	return order
 }
 
-function transferImport(dbModel,member,req,res,cb){
+function transferImport(dbModel, member, req, res, next, cb){
 
 	dbModel.integrators.find({passive:false,'localConnectorImportOrder.localConnector':{$ne:null}}).populate(['localConnectorImportOrder.localConnector']).exec((err,docs)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			if(docs.length==0)
-				throw {code:'NOT_DEFINED',message:'Local connectoru tanimlanmis aktif bir entegrator bulunmamaktadir.'}
+				return next({code:'NOT_DEFINED',message:'Local connectoru tanimlanmis aktif bir entegrator bulunmamaktadir.'})
 
 			var index=0
 			var kuyrugaAlinan=0
@@ -345,7 +346,7 @@ function transferImport(dbModel,member,req,res,cb){
 				if(index>=docs.length)
 					return cb(null)
 				dbModel.tasks.findOne({taskType:'connector_import_eorder',collectionName:'integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						if(doc==null){
 							var taskdata={taskType:'connector_import_eorder',collectionName:'integrators',documentId:docs[index]._id,document:docs[index]}
 							taskHelper.newTask(dbModel,taskdata,(err,taskDoc)=>{
@@ -394,9 +395,9 @@ function transferImport(dbModel,member,req,res,cb){
 			}
 
 			pushTask((err)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					if(kuyrugaAlinan==0 && zatenKuyrukta>0){
-						throw {code:'ALREADY_IN_PROCESSING',message:'Islem gorev yoneticisine alinmis. Birazdan tamamlanir.'}
+						return next({code:'ALREADY_IN_PROCESSING',message:'Islem gorev yoneticisine alinmis. Birazdan tamamlanir.'})
 					}else{
 						cb(`Gorev yoneticisine ${kuyrugaAlinan.toString()} adet gorev alindi`)
 					}
@@ -406,7 +407,7 @@ function transferImport(dbModel,member,req,res,cb){
 	})
 }
 
-function getOrderList(ioType,dbModel,member,req,res,cb){
+function getOrderList(ioType, dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1), 
 		populate:[
 		{path:'eIntegrator',select:'_id eIntegrator name username'}
@@ -459,7 +460,7 @@ function getOrderList(ioType,dbModel,member,req,res,cb){
 	}
 	
 	dbModel.orders.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			var liste=[]
 			resp.docs.forEach((e,index)=>{
 
@@ -559,7 +560,7 @@ function getOrderList(ioType,dbModel,member,req,res,cb){
 	})
 }
 
-function getOrder(dbModel,member,req,res,cb){
+function getOrder(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	var includeAdditionalDocumentReference= req.query.includeAdditionalDocumentReference || false
 	var select='-additionalDocumentReference'
@@ -570,8 +571,8 @@ function getOrder(dbModel,member,req,res,cb){
 		error.param2(req)
 
 	dbModel.orders.findOne({_id:_id}).select(select).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var data=doc.toJSON()
 				cb(data)
 			}
@@ -579,41 +580,41 @@ function getOrder(dbModel,member,req,res,cb){
 	})
 }
 
-function orderView(dbModel,member,req,res,cb){
+function orderView(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
 		error.param2(req)
 	dbModel.orders.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				cb({file: doc.html})
 			}
 		}
 	})
 }
 
-function orderPdf(dbModel,member,req,res,cb){
+function orderPdf(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
 		error.param2(req)
 
 	dbModel.orders.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				cb({file: doc.pdf})
 			}
 		}
 	})
 }
 
-function getOrderXmlXslt(dbModel,member,req,res,cb){
+function getOrderXmlXslt(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
 		error.param2(req)
 
 	dbModel.orders.findOne({_id:_id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var order=doc.toJSON()
 				var xml=btoa(util.order2xml(order))
 				var xslt=util.orderXslt(order)
@@ -623,7 +624,7 @@ function getOrderXmlXslt(dbModel,member,req,res,cb){
 	})
 }
 
-function getEOrderUserList(dbModel,member,req,res,cb){
+function getEOrderUserList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1), 
 		limit:10
 	}
@@ -648,7 +649,7 @@ function getEOrderUserList(dbModel,member,req,res,cb){
 		filter['postboxAlias']={ $regex: '.*' + req.query.postboxAlias + '.*' ,$options: 'i' }
 	
 	db.eorder_users.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		} 
 	})

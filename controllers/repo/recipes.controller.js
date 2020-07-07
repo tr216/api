@@ -1,20 +1,20 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel,member,req,res,cb)
+			getOne(dbModel, member, req, res, next, cb)
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
-		post(dbModel,member,req,res,cb)
+		post(dbModel, member, req, res, next, cb)
 		break
 		case 'PUT':
-		put(dbModel,member,req,res,cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
-		deleteItem(dbModel,member,req,res,cb)
+		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
 		error.method(req)
@@ -22,7 +22,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 	}
 }
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
 	if(!req.query.page){
 		options.limit=50000
@@ -33,13 +33,13 @@ function getList(dbModel,member,req,res,cb){
 		filter['item']=req.query.item
 
 	dbModel.recipes.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		}
 	})
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	var populate=[
 	{ path:'process.station', select:'_id name'},
 	{ path:'process.step', select:'_id name useMaterial'},
@@ -51,14 +51,14 @@ function getOne(dbModel,member,req,res,cb){
 	{ path:'outputSummary.item', select:'_id itemType name description'}
 	]
 	dbModel.recipes.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			if(!req.query.print){
 				cb(doc)
 			}else{
 				doc.populate('item').execPopulate((err,doc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						printHelper.print(dbModel,'recipe',doc2,(err,html)=>{
-							if(dberr(err)){
+							if(dberr(err,next)){
 								cb({file: {data:html}})
 							}
 						})
@@ -70,7 +70,7 @@ function getOne(dbModel,member,req,res,cb){
 	})
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
@@ -78,9 +78,9 @@ function post(dbModel,member,req,res,cb){
 		error.param1(req)
 
 	dbModel.items.findOne({_id:data.item},(err,itemDoc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			if(itemDoc==null)
-				throw {code: 'ITEM_NOT_FOUND', message: 'item bulunamadi.'}
+				return next({code: 'ITEM_NOT_FOUND', message: 'item bulunamadi.'})
 
 			if(data.process){
 				if(data.process.machines){
@@ -97,7 +97,7 @@ function post(dbModel,member,req,res,cb){
 
 			newdoc=calculateMaterialSummary(newdoc)
 			newdoc.save((err, newdoc2)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					defaultReceteAyarla(dbModel,newdoc2,(err,newdoc3)=>{
 						var populate=[
 						{ path:'process.station', select:'_id name'},
@@ -110,7 +110,7 @@ function post(dbModel,member,req,res,cb){
 						{ path:'outputSummary.item', select:'_id itemType name description'}
 						]
 						dbModel.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
-							if(dberr(err)){
+							if(dberr(err,next)){
 								cb(doc)
 							}
 						})
@@ -121,7 +121,7 @@ function post(dbModel,member,req,res,cb){
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data=req.body || {}
@@ -131,12 +131,12 @@ function put(dbModel,member,req,res,cb){
 		error.param1(req)
 
 	dbModel.items.findOne({_id:data.item},(err,itemDoc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			if(itemDoc==null)
-				throw {code: 'ITEM_NOT_FOUND', message: 'item bulunamadi.'}
+				return next({code: 'ITEM_NOT_FOUND', message: 'item bulunamadi.'})
 			dbModel.recipes.findOne({ _id: data._id},(err,doc)=>{
-				if(dberr(err)){
-					if(dbnull(doc)){
+				if(dberr(err,next)){
+					if(dbnull(doc,next)){
 						if(data.process){
 							if(data.process.machines){
 								data.process.machines.forEach((e)=>{
@@ -165,7 +165,7 @@ function put(dbModel,member,req,res,cb){
 								{ path:'outputSummary.item', select:'_id itemType name description'}
 								]
 								dbModel.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
-									if(dberr(err)){
+									if(dberr(err,next)){
 										cb(doc)
 									}
 								})
@@ -246,13 +246,13 @@ function defaultReceteAyarla(dbModel,doc,cb){
 	}
 }
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.recipes.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			const countQuery = dbModel.recipes.where({ item:doc.item, isDefault:true }).countDocuments()
 			if(countQuery>0)
 				return cb(null)

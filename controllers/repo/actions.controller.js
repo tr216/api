@@ -1,10 +1,10 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
     switch(req.method){
         case 'GET':
         if(req.params.param1!=undefined){
-            getOne(dbModel,member,req,res,cb)
+            getOne(dbModel, member, req, res, next, cb)
         }else{
-            getList(dbModel,member,req,res,cb)
+            getList(dbModel, member, req, res, next, cb)
         }
         break
         
@@ -15,7 +15,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 }
 
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
     var options={page: (req.query.page || 1),
         sort:{issueDate:-1, issueTime:-1}
         
@@ -44,17 +44,17 @@ function getList(dbModel,member,req,res,cb){
         filter['docNo']={ $regex: '.*' + req.query.docNo + '.*' ,$options: 'i' }
 
     dbModel.actions.paginate(filter,options,(err, resp)=>{
-        if(dberr(err)){
+        if(dberr(err,next)){
             cb(resp)
         }
     })
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
     var populate=[] //qwerty
 
     dbModel.actions.findOne({_id:req.params.param1}).populate([]).exec((err,doc)=>{
-        if(dberr(err)){
+        if(dberr(err,next)){
             cb(doc)
         }
     })

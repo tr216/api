@@ -1,46 +1,46 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel,member,req,res,cb)
+			getOne(dbModel, member, req, res, next, cb)
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
 
 		if(req.params.param1=='test'){
-			test(dbModel,member,req,res,cb)
+			test(dbModel, member, req, res, next, cb)
 		}else{
 			if(req.params.param2=='file'){
 
-				saveFile(dbModel,member,req,res,cb)
+				saveFile(dbModel, member, req, res, next, cb)
 			}else if(req.params.param2=='run'){
 
-				runCode(dbModel,member,req,res,cb)
+				runCode(dbModel, member, req, res, next, cb)
 			}else if(req.params.param2=='setstart' || req.params.param2=='setStart'){
-				setStart(dbModel,member,req,res,cb)
+				setStart(dbModel, member, req, res, next, cb)
 			}else{
-				post(dbModel,member,req,res,cb)
+				post(dbModel, member, req, res, next, cb)
 			}
 		}
 		break
 		case 'PUT':
 		if(req.params.param2=='file'){
-			saveFile(dbModel,member,req,res,cb)
+			saveFile(dbModel, member, req, res, next, cb)
 		}else if(req.params.param2=='run'){
-			runCode(dbModel,member,req,res,cb)
+			runCode(dbModel, member, req, res, next, cb)
 		}else if(req.params.param2=='setstart' || req.params.param2=='setStart'){
-			setStart(dbModel,member,req,res,cb)
+			setStart(dbModel, member, req, res, next, cb)
 		}else{
-			put(dbModel,member,req,res,cb)
+			put(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'DELETE':
 		if(req.params.param2=='file'){
-			deleteFile(dbModel,member,req,res,cb)
+			deleteFile(dbModel, member, req, res, next, cb)
 		}else{
-			deleteItem(dbModel,member,req,res,cb)
+			deleteItem(dbModel, member, req, res, next, cb)
 		}
 
 		break
@@ -51,7 +51,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 
 }
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
 	if(!req.query.page)
 		options.limit=50000
@@ -62,19 +62,19 @@ function getList(dbModel,member,req,res,cb){
 		filter['importerType']=req.query.importerType
 
 	dbModel.file_importers.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		}
 	})
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	var populate=[{path:'files',select:'_id name extension fileName type size createdDate modifiedDate'}]
 	var fileId=req.query.fileId || req.query.fileid || ''
 
 	dbModel.file_importers.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				if(doc.startFile!=undefined){
 					doc=doc.toObject()
 					doc.files.forEach((e)=>{
@@ -98,7 +98,7 @@ function getOne(dbModel,member,req,res,cb){
 						cb({success: false,error: {code: 'FILE_NOT_FOUND', message: 'Dosya bulunamadi'}})
 					}else{
 						dbModel.files.findOne({_id:fileId},(err,fileDoc)=>{
-							if(dberr(err)){
+							if(dberr(err,next)){
 
 								if(fileDoc){
 									doc.files.forEach((e)=>{
@@ -120,7 +120,7 @@ function getOne(dbModel,member,req,res,cb){
 	})
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
@@ -128,14 +128,14 @@ function post(dbModel,member,req,res,cb){
 	epValidateSync(newdoc)
 
 	newdoc.save((err, newdoc2)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(newdoc2)
 		}
 	})
 }
 
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined){
 		cb({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}})
 	}else{
@@ -146,14 +146,14 @@ function put(dbModel,member,req,res,cb){
 
 
 		dbModel.file_importers.findOne({ _id: data._id},(err,doc)=>{
-			if(dberr(err)){
-				if(dbnull(doc)){
+			if(dberr(err,next)){
+				if(dbnull(doc,next)){
 					var doc2 = Object.assign(doc, data)
 					var newdoc = new dbModel.file_importers(doc2)
 					epValidateSync(newdoc)
 
 					newdoc.save((err, newdoc2)=>{
-						if(dberr(err))
+						if(dberr(err,next))
 							cb(newdoc2)
 					})
 				}
@@ -162,20 +162,20 @@ function put(dbModel,member,req,res,cb){
 	}
 }
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.file_importers.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err))
+		if(dberr(err,next))
 			cb(null)
 	})
 }
 
 
-function saveFile(dbModel,member,req,res,cb){
+function saveFile(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	if(req.params.param2==undefined)
@@ -191,19 +191,19 @@ function saveFile(dbModel,member,req,res,cb){
 
 
 	dbModel.file_importers.findOne({ _id: req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				if(data._id==undefined){
 
 					var newfileDoc = new dbModel.files(data)
 					epValidateSync(newfileDoc)
 
 					newfileDoc.save((err, newfileDoc2)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							doc.files.push(newfileDoc2._id)
 							doc.modifiedDate=new Date()
 							doc.save((err)=>{
-								if(dberr(err))
+								if(dberr(err,next))
 									cb('')
 							})
 						}
@@ -219,10 +219,10 @@ function saveFile(dbModel,member,req,res,cb){
 						}
 					})
 					if(bFound)
-						throw {code: 'ALREADY_EXISTS', message: 'Ayni dosya isminden baska bir kayit daha var!'}
+						return next({code: 'ALREADY_EXISTS', message: 'Ayni dosya isminden baska bir kayit daha var!'})
 
 					dbModel.files.findOne({_id:data._id},(err,fileDoc)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							if(dbnull(fileDoc)){
 								fileDoc.name=data.name
 								fileDoc.extension=data.extension
@@ -231,12 +231,12 @@ function saveFile(dbModel,member,req,res,cb){
 								fileDoc.size=data.size
 
 								epValidateSync(fileDoc)
-								if(dberr(err)){
+								if(dberr(err,next)){
 									fileDoc.save((err)=>{
-										if(dberr(err)){
+										if(dberr(err,next)){
 											doc.modifiedDate=new Date()
 											doc.save((err)=>{
-												if(dberr(err))
+												if(dberr(err,next))
 													cb('')
 											})
 										}
@@ -251,7 +251,7 @@ function saveFile(dbModel,member,req,res,cb){
 	})
 }
 
-function setStart(dbModel,member,req,res,cb){
+function setStart(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
@@ -259,8 +259,8 @@ function setStart(dbModel,member,req,res,cb){
 
 	var fileId=req.query.fileId || req.query.fileid || ''
 	dbModel.file_importers.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				doc.files.forEach((e,index)=>{
 					if(e==req.query.fileId){
 						doc.startFile=e._id
@@ -268,7 +268,7 @@ function setStart(dbModel,member,req,res,cb){
 					}
 				})
 				doc.save((err,doc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						cb('')
 					}
 				})
@@ -278,7 +278,7 @@ function setStart(dbModel,member,req,res,cb){
 	})
 }
 
-function deleteFile(dbModel,member,req,res,cb){
+function deleteFile(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
@@ -286,8 +286,8 @@ function deleteFile(dbModel,member,req,res,cb){
 
 	var fileId=req.query.fileId || req.query.fileid || ''
 	dbModel.file_importers.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				doc.files.forEach((e,index)=>{
 					if(e==req.query.fileId){
 						doc.files.splice(index,1)
@@ -295,9 +295,9 @@ function deleteFile(dbModel,member,req,res,cb){
 					}
 				})
 				doc.save((err,doc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						dbModel.files.removeOne(member,{ _id: req.query.fileId },(err)=>{
-							if(dberr(err))
+							if(dberr(err,next))
 								cb(doc2)
 						})
 					}
@@ -307,7 +307,7 @@ function deleteFile(dbModel,member,req,res,cb){
 	})
 }
 
-function runCode(dbModel,member,req,res,cb){
+function runCode(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	if(req.params.param2==undefined)
@@ -316,13 +316,13 @@ function runCode(dbModel,member,req,res,cb){
 	var data = req.body || {}
 	var populate=['startFile','files']
 	dbModel.file_importers.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var sampleData={}
 				if(data.sampleData!=undefined)
 					sampleData=data.sampleData
-				master.services.tr216LocalConnector.run(doc,sampleData,(err,resp)=>{
-					if(dberr(err))
+				services.tr216LocalConnector.run(doc,sampleData,(err,resp)=>{
+					if(dberr(err,next))
 						cb(resp || '')
 				})
 			}

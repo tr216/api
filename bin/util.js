@@ -5,9 +5,11 @@ var bcrypt = require('bcrypt-nodejs');
 var parseString = require('xml2js').parseString;
 var js2xmlparser = require("js2xmlparser");
 
+global.os=require('os');
 global.sizeOf=require('object-sizeof');
 global.atob=require('atob');
 global.btoa=require('btoa');
+global.uuid=require('uuid');
 
 require('colors');
 

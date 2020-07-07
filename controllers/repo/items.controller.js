@@ -1,25 +1,25 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel,member,req,res,cb)
+			getOne(dbModel, member, req, res, next, cb)
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
 		if(req.params.param1=='copy'){
-			copy(dbModel,member,req,res,cb)
+			copy(dbModel, member, req, res, next, cb)
 		}else{
-			post(dbModel,member,req,res,cb)
+			post(dbModel, member, req, res, next, cb)
 		}
 
 		break
 		case 'PUT':
-		put(dbModel,member,req,res,cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
-		deleteItem(dbModel,member,req,res,cb)
+		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
 		error.method(req)
@@ -28,7 +28,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 
 }
 
-function copy(dbModel,member,req,res,cb){
+function copy(dbModel, member, req, res, next, cb){
 	var id=req.params.param2 || req.body['id'] || req.query.id || ''
 	var newName=req.body['newName'] || req.body['name'] || ''
 
@@ -36,8 +36,8 @@ function copy(dbModel,member,req,res,cb){
 		error.param2(req)
 
 	dbModel.items.findOne({ _id: id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var data=doc.toJSON()
 				data._id=undefined
 				delete data._id
@@ -52,13 +52,13 @@ function copy(dbModel,member,req,res,cb){
 				var newdoc = new dbModel.items(data)
 				epValidateSync(newdoc)
 				newdoc.save((err, newdoc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						receteleriKaydet(dbModel,doc,newdoc2,(err,newdoc3)=>{
 							if(!err){
 								cb(newdoc3)
 							}else{
 								dbModel.items.deleteOne({_id:newdoc2._id},(err2)=>{
-									return dberr(err)
+									return dberr(err,next)
 								})
 							}
 						})
@@ -115,7 +115,7 @@ function receteleriKaydet(dbModel,itemDoc,newItemDoc,cb){
 	})
 }
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)
 
 	}
@@ -165,13 +165,13 @@ function getList(dbModel,member,req,res,cb){
     	filter['accountGroup']=req.query.accountGroup
 
     dbModel.items.paginate(filter,options,(err, resp)=>{
-    	if(dberr(err)){
+    	if(dberr(err,next)){
     		cb(resp)
     	}
     })
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	var populate=[
 	{path:'images',select:'_id name extension fileName data type size createdDate modifiedDate'},
 	{path:'files',select:'_id name extension fileName data type size createdDate modifiedDate'},
@@ -181,8 +181,8 @@ function getOne(dbModel,member,req,res,cb){
 	{path:'packingOptions.palletType',select:'_id name description width length height maxWeight'}
 	]
 	dbModel.items.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				if(!req.query.print){
 					cb(doc)
 				}else{
@@ -203,7 +203,7 @@ function getOne(dbModel,member,req,res,cb){
 	})
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
@@ -214,14 +214,14 @@ function post(dbModel,member,req,res,cb){
 		var newdoc = new dbModel.items(data)
 		epValidateSync(newdoc)
 		newdoc.save((err, newdoc2)=>{
-			if(dberr(err)){
+			if(dberr(err,next)){
 				cb(newdoc2)
 			} 
 		})
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data=req.body || {}
@@ -231,15 +231,15 @@ function put(dbModel,member,req,res,cb){
 		data.accountGroup=undefined
 
 	dbModel.items.findOne({ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				saveFiles(dbModel,data,(err,data)=>{
 					var doc2 = Object.assign(doc, data)
 					var newdoc = new dbModel.items(doc2)
 					epValidateSync(newdoc)
 
 					newdoc.save((err, newdoc2)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							cb(newdoc2)
 						} 
 					})
@@ -249,13 +249,13 @@ function put(dbModel,member,req,res,cb){
 	})
 }
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.items.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(null)
 		}
 	})

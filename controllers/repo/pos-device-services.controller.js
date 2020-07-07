@@ -1,20 +1,20 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel,member,req,res,cb)
+			getOne(dbModel, member, req, res, next, cb)
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
-		post(dbModel,member,req,res,cb)
+		post(dbModel, member, req, res, next, cb)
 		break
 		case 'PUT':
-		put(dbModel,member,req,res,cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
-		deleteItem(dbModel,member,req,res,cb)
+		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
 		error.method(req)
@@ -24,7 +24,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 }
 
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
 	if(!req.query.page)
 		options.limit=50000
@@ -32,34 +32,34 @@ function getList(dbModel,member,req,res,cb){
 	var filter = {}
 
 	dbModel.pos_device_services.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		}
 	})
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	dbModel.pos_device_services.findOne({_id:req.params.param1},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(doc)
 		}
 	})
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
 	var newdoc = new dbModel.pos_device_services(data)
 	epValidateSync(newdoc)
 	newdoc.save((err, newdoc2)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(newdoc2)
 		}
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
@@ -67,13 +67,13 @@ function put(dbModel,member,req,res,cb){
 	data.modifiedDate = new Date()
 
 	dbModel.pos_device_services.findOne({ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
 				var newdoc = new dbModel.pos_device_services(doc2)
 				epValidateSync(newdoc)
 				newdoc.save((err, newdoc2)=>{
-					if(dberr(err))
+					if(dberr(err,next))
 						cb(newdoc2)
 				})
 
@@ -82,13 +82,13 @@ function put(dbModel,member,req,res,cb){
 	})
 }
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.pos_device_services.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(null)
 		}
 	})

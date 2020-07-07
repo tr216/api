@@ -1,20 +1,20 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel,member,req,res,cb)
+			getOne(dbModel, member, req, res, next, cb)
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
-		post(dbModel,member,req,res,cb)
+		post(dbModel, member, req, res, next, cb)
 		break
 		case 'PUT':
-		put(dbModel,member,req,res,cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
-		deleteItem(dbModel,member,req,res,cb)
+		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
 		error.method(req)
@@ -23,7 +23,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 
 }
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1),
 		populate:[
 		{path:'location',select:'_id locationName'},
@@ -71,9 +71,9 @@ function getList(dbModel,member,req,res,cb){
 		filter['location2']=req.query.location2
 
 	filter_subLocation(dbModel,req,filter,(err,filter2)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			dbModel.inventory_fiches.paginate(filter2,options,(err, resp)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					cb(resp)
 				}
 			})
@@ -162,7 +162,7 @@ function filter_subLocation(dbModel,req,mainFilter,cb){
 }
 
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	var populate=[
 	{path:'docLine.item', select:'_id name description unitPacks tracking passive'},
 	{path:'docLine.pallet', select:'_id name'}
@@ -171,13 +171,13 @@ function getOne(dbModel,member,req,res,cb){
     // {path:'docLine.pattern', select:'_id name'}, //qwerty
     // {path:'docLine.size', select:'_id name'} //qwerty
     dbModel.inventory_fiches.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-    	if(dberr(err)){
+    	if(dberr(err,next)){
     		cb(doc)
     	}
     })
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	if((data.account || '')=='')
 		data.account=undefined
@@ -185,7 +185,7 @@ function post(dbModel,member,req,res,cb){
 	data=fazlaliklariTemizleDuzelt(data)
 	if(data.docTypeCode=='URETIMECIKIS' || data.docTypeCode=='URETIMDENGIRIS'){
 		if((data.productionOrderId || '')==''){
-			throw {code: 'WRONG_DATA', message: 'Üretim emri seçilmemiş'}
+			return next({code: 'WRONG_DATA', message: 'Üretim emri seçilmemiş'})
 		}
 	}
 
@@ -194,7 +194,7 @@ function post(dbModel,member,req,res,cb){
 		documentHelper.yeniStokFisNumarasi(dbModel,yeniDoc,(err11,newDoc)=>{
 			epValidateSync(newDoc)
 			newDoc.save((err, newdoc2)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					cb(newDoc2)
 				} 
 			})
@@ -202,7 +202,7 @@ function post(dbModel,member,req,res,cb){
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 
@@ -212,19 +212,19 @@ function put(dbModel,member,req,res,cb){
 	data=fazlaliklariTemizleDuzelt(data)
 	if(data.docTypeCode=='URETIMECIKIS' || data.docTypeCode=='URETIMDENGIRIS'){
 		if((data.productionOrderId || '')==''){
-			throw {code: 'WRONG_DATA', message: 'Üretim emri seçilmemiş'}
+			return next({code: 'WRONG_DATA', message: 'Üretim emri seçilmemiş'})
 		}
 	}
 	uretimFisiKontrolEt(dbModel,data,(data)=>{
 		dbModel.inventory_fiches.findOne({ _id: data._id},(err,doc)=>{
-			if(dberr(err)){
-				if(dbnull(doc)){
+			if(dberr(err,next)){
+				if(dbnull(doc,next)){
 					var doc2 = Object.assign(doc, data)
 					var newDoc = new dbModel.inventory_fiches(doc2)
 					epValidateSync(newDoc)
 
 					newDoc.save((err, newdoc2)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							cb(newDoc2)
 						} 
 					})
@@ -239,9 +239,9 @@ function uretimFisiKontrolEt(dbModel,data,cb){
 		return cb(data)
 
 	dbModel.production_orders.findOne({_id:data.productionOrderId},(err,proOrder)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			if(proOrder==null) 
-				throw {code:'WRONG_DATA',message:'Uretim emri bulunamadi'}
+				return next({code:'WRONG_DATA',message:'Uretim emri bulunamadi'})
 
 			if(!data.docLine) 
 				return cb(data)
@@ -257,7 +257,7 @@ function uretimFisiKontrolEt(dbModel,data,cb){
 					})
 
 					if(!bFound)
-						throw {code:'WRONG_DATA',message:'Uretim emrinde olmayan bir hammadde ya da malzemeyi uretime cikamazsiniz. Satir:' + (index+1)}
+						return next({code:'WRONG_DATA',message:'Uretim emrinde olmayan bir hammadde ya da malzemeyi uretime cikamazsiniz. Satir:' + (index+1)})
 				})
 			}else if(data.docTypeCode=='URETIMDENGIRIS'){
 				data.docLine.forEach((e,index)=>{
@@ -274,7 +274,7 @@ function uretimFisiKontrolEt(dbModel,data,cb){
 					}
 
 					if(bFound==false)
-						throw {code:'WRONG_DATA',message:'Uretim emrinde tanımsız mamul olamaz. Satir:' + (index+1)}
+						return next({code:'WRONG_DATA',message:'Uretim emrinde tanımsız mamul olamaz. Satir:' + (index+1)})
 				})
 			}
 			cb(data)
@@ -330,13 +330,13 @@ function fazlaliklariTemizleDuzelt(data){
 	return data
 }
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.inventory_fiches.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(null)
 		}
 	})

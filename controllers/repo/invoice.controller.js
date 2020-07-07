@@ -1,4 +1,4 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	if(req.params.param1==undefined)
 		error.param1(req)
 
@@ -7,30 +7,30 @@ module.exports = (dbModel, member, req, res, cb)=>{
 		switch(req.params.param1.lcaseeng()){
 
 			case 'inboxinvoicelist':
-			return getInvoiceList(1,dbModel,member,req,res,cb)
+			return getInvoiceList(1, dbModel, member, req, res, next, cb)
 			break
 			case 'outboxinvoicelist':
-			return getInvoiceList(0,dbModel,member,req,res,cb)
+			return getInvoiceList(0, dbModel, member, req, res, next, cb)
 			break
 			case 'invoice':
-			return getInvoice(dbModel,member,req,res,cb)
+			return getInvoice(dbModel, member, req, res, next, cb)
 			break
 			case 'invoiceview':
-			return invoiceView(dbModel,member,req,res,cb)
+			return invoiceView(dbModel, member, req, res, next, cb)
 			break
 			case 'invoicepdf':
-			return invoicePdf(dbModel,member,req,res,cb)
+			return invoicePdf(dbModel, member, req, res, next, cb)
 			break
 			case 'invoicexmlxslt':
 			case 'invoicexml':
 			case 'invoicexslt':
 			case 'invoicexsltxml':
-			return getInvoiceXmlXslt(dbModel,member,req,res,cb)
+			return getInvoiceXmlXslt(dbModel, member, req, res, next, cb)
 			break
 			case 'einvoiceuserlist':
-			return getEInvoiceUserList(dbModel,member,req,res,cb)
+			return getEInvoiceUserList(dbModel, member, req, res, next, cb)
 			case 'errors':
-			return getErrors(dbModel,member,req,res,cb)
+			return getErrors(dbModel, member, req, res, next, cb)
 
 			default:
 			return error.method(req)
@@ -41,7 +41,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 		switch(req.params.param1.lcaseeng()){
 			case 'transfer':
 			if(req.params.param2.lcaseeng()=='import'){
-				transferImport(dbModel,member,req,res,cb)
+				transferImport(dbModel, member, req, res, next, cb)
 			}else if(req.params.param2.lcaseeng()=='export'){
 				return error.method(req)
 			}else{
@@ -49,7 +49,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 			}
 			break
 			case 'sendtogib':
-			return sendToGib(dbModel,member,req,res,cb)
+			return sendToGib(dbModel, member, req, res, next, cb)
 			case 'approve':
 			return approveDeclineInvoice('approve', dbModel,member,req,res,cb)
 			case 'decline':
@@ -57,9 +57,9 @@ module.exports = (dbModel, member, req, res, cb)=>{
 			case 'saveinboxinvoice':
 			case 'saveoutboxinvoice':
 			case 'invoice':
-			return post(dbModel,member,req,res,cb)
+			return post(dbModel, member, req, res, next, cb)
 			case 'importoutboxinvoice':
-			return importOutboxInvoice(dbModel,member,req,res,cb)
+			return importOutboxInvoice(dbModel, member, req, res, next, cb)
 			default:
 			return error.method(req)
 			break
@@ -71,7 +71,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 			case 'saveinboxinvoice':
 			case 'saveoutboxinvoice':
 			case 'invoice':
-			return put(dbModel,member,req,res,cb)
+			return put(dbModel, member, req, res, next, cb)
 
 			default:
 			return error.method(req)
@@ -84,22 +84,22 @@ module.exports = (dbModel, member, req, res, cb)=>{
 	}
 }
 
-function getErrors(dbModel,member,req,res,cb){
+function getErrors(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	var select='_id profileId ID invoiceTypeCode localDocumentId issueDate ioType eIntegrator invoiceErrors localErrors invoiceStatus localStatus'
 	
 	if(_id=='')
 		error.param2(req)
 	dbModel.invoices.findOne({_id:_id}).select(select).exec((err,doc)=>{
-		if(dberr(err))
-			if(dbnull(doc)){
+		if(dberr(err,next))
+			if(dbnull(doc,next)){
 				var data=doc.toJSON()
 				cb(data)
 			}
 		})
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 	
@@ -110,12 +110,12 @@ function post(dbModel,member,req,res,cb){
 	newDoc=calculateInvoiceTotals(newDoc)
 
 	dbModel.integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			if(eIntegratorDoc==null)
-				throw {code: 'ENTEGRATOR', message: 'Faturada entegrator bulanamadi.'}
+				return next({code: 'ENTEGRATOR', message: 'Faturada entegrator bulanamadi.'})
 			documentHelper.yeniFaturaNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc)=>{
 				newDoc.save((err, newdoc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						cb(newDoc2)
 					}
 				})  
@@ -124,15 +124,15 @@ function post(dbModel,member,req,res,cb){
 	})
 }
 
-function importOutboxInvoice(dbModel,member,req,res,cb){
+function importOutboxInvoice(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	
 	if(!data.files)
-		throw {code: 'WRONG_PARAMETER', message: 'files elemani bulunamadi'}
+		return next({code: 'WRONG_PARAMETER', message: 'files elemani bulunamadi'})
 	if(!Array.isArray(data.files))
-		throw {code: 'WRONG_PARAMETER', message: 'files elemani array olmak zorundadir'}
+		return next({code: 'WRONG_PARAMETER', message: 'files elemani array olmak zorundadir'})
 	if(data.files.length==0)
-		throw {code: 'WRONG_PARAMETER', message: 'files elemani bos olamaz'}
+		return next({code: 'WRONG_PARAMETER', message: 'files elemani bos olamaz'})
 	data.files.forEach((e)=>{
 		if(e.base64Data){
 			e['data']=atob(e.base64Data)
@@ -148,11 +148,11 @@ function importOutboxInvoice(dbModel,member,req,res,cb){
 						if(!err){
 							cb('ok')
 						}else{
-							throw err
+							return next(err)
 						}
 					})
 				}else{
-					throw err
+					return next(err)
 				}
 			})
 
@@ -163,7 +163,7 @@ function importOutboxInvoice(dbModel,member,req,res,cb){
 
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param2==undefined)
 		error.param2(req)
 	var data = req.body || {}
@@ -171,15 +171,15 @@ function put(dbModel,member,req,res,cb){
 	data.modifiedDate = new Date()
 
 	dbModel.invoices.findOne({ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				data=util.amountValueFixed2Digit(data,'')
 				var doc2 = Object.assign(doc, data)
 				var newDoc = new dbModel.invoices(doc2)
 				epValidateSync(newDoc)
 				newDoc=calculateInvoiceTotals(newDoc)
 				newDoc.save((err, newDoc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						cb(newDoc2)
 					}
 				})
@@ -291,12 +291,12 @@ function calculateInvoiceTotals(invoice){
 	return invoice
 }
 
-function transferImport(dbModel,member,req,res,cb){
+function transferImport(dbModel, member, req, res, next, cb){
 
 	dbModel.integrators.find({passive:false,'localConnectorImportInvoice.localConnector':{$ne:null}}).populate(['localConnectorImportInvoice.localConnector']).exec((err,docs)=>{
-		if (dberr(err)){
+		if (dberr(err,next)){
 			if(docs.length==0)
-				throw {code:'NOT_DEFINED',message:'Local connectoru tanimlanmis aktif bir entegrator bulunmamaktadir.'}
+				return next({code:'NOT_DEFINED',message:'Local connectoru tanimlanmis aktif bir entegrator bulunmamaktadir.'})
 
 			var index=0
 			var kuyrugaAlinan=0
@@ -308,7 +308,7 @@ function transferImport(dbModel,member,req,res,cb){
 					cb(null)
 				}else{
 					dbModel.tasks.findOne({taskType:'connector_import_einvoice',collectionName:'integrators',documentId:docs[index]._id, status:{$in:['running','pending']}},(err,doc)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							if(doc==null){
 								var taskdata={taskType:'connector_import_einvoice',collectionName:'integrators',documentId:docs[index]._id,document:docs[index]}
 								taskHelper.newTask(dbModel,taskdata,(err,taskDoc)=>{
@@ -358,9 +358,9 @@ function transferImport(dbModel,member,req,res,cb){
 				}
 			}
 			pushTask((err)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					if(kuyrugaAlinan==0 && zatenKuyrukta>0){
-						throw {code:'ALREADY_IN_PROCESSING',message:'Islem gorev yoneticisine alinmis. Birazdan tamamlanir.'}
+						return next({code:'ALREADY_IN_PROCESSING',message:'Islem gorev yoneticisine alinmis. Birazdan tamamlanir.'})
 					}else{
 						cb('Gorev yoneticisine ' + kuyrugaAlinan.toString() + ' adet gorev alindi')
 					}
@@ -370,7 +370,7 @@ function transferImport(dbModel,member,req,res,cb){
 	})
 }
 
-function getInvoiceList(ioType,dbModel,member,req,res,cb){
+function getInvoiceList(ioType, dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1), 
 		populate:[
 		{path:'eIntegrator',select:'_id eIntegrator name username'}
@@ -423,7 +423,7 @@ function getInvoiceList(ioType,dbModel,member,req,res,cb){
 	}
 	
 	dbModel.invoices.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			var liste=[]
 			resp.docs.forEach((e,index)=>{
 
@@ -524,7 +524,7 @@ function getInvoiceList(ioType,dbModel,member,req,res,cb){
 	})
 }
 
-function getInvoice(dbModel,member,req,res,cb){
+function getInvoice(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	var includeAdditionalDocumentReference= req.query.includeAdditionalDocumentReference || false
 	var select='-additionalDocumentReference'
@@ -535,8 +535,8 @@ function getInvoice(dbModel,member,req,res,cb){
 		error.param2(req)
 
 	dbModel.invoices.findOne({_id:_id},select).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var data=doc.toJSON()
 				cb(data)
 			}
@@ -544,41 +544,41 @@ function getInvoice(dbModel,member,req,res,cb){
 	})
 }
 
-function invoiceView(dbModel,member,req,res,cb){
+function invoiceView(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
 		error.param2(req)
 
 	dbModel.invoices.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				cb({file: doc.html})
 			}
 		}
 	})
 }
 
-function invoicePdf(dbModel,member,req,res,cb){
+function invoicePdf(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
 		error.param2(req)
 
 	dbModel.invoices.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				cb({file: doc.pdf})
 			}
 		}
 	})
 }
 
-function getInvoiceXmlXslt(dbModel,member,req,res,cb){
+function getInvoiceXmlXslt(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
 		error.param2(req)
 	dbModel.invoices.findOne({_id:_id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var invoice=doc.toJSON()
 				var xml=btoa(util.e_invoice2xml(invoice))
 				var xslt=util.e_invoiceXslt(invoice)
@@ -588,7 +588,7 @@ function getInvoiceXmlXslt(dbModel,member,req,res,cb){
 	})
 }
 
-function getEInvoiceUserList(dbModel,member,req,res,cb){
+function getEInvoiceUserList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1), 
 		limit:10
 	}
@@ -614,22 +614,23 @@ function getEInvoiceUserList(dbModel,member,req,res,cb){
 		filter['postboxAlias']={ $regex: '.*' + req.query.postboxAlias + '.*' ,$options: 'i' }
 	
 	db.einvoice_users.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		} 
 	})
 }
 
-function sendToGib(dbModel,member,req,res,cb){
+function sendToGib(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	if(data.list==undefined)
-		throw {code: 'ERROR', message: 'list is required.'}
+		return next({code: 'ERROR', message: 'list is required.'})
 
 	var populate={
 		path:'eIntegrator'
 	}
 
 	var idList=[]
+	var hata=false
 	data.list.forEach((e)=>{
 		if(e && typeof e === 'object' && e.constructor === Object){
 			if(e._id!=undefined){
@@ -637,17 +638,20 @@ function sendToGib(dbModel,member,req,res,cb){
 			}else if(e.id!=undefined){
 				idList.push(e.id)
 			}else{
-				throw {code: 'ERROR', message: 'list is wrong.'}
+				hata=true
+				return
 			}
 		}else{
 			idList.push(e)
 		}
 	})
+	if(hata)
+		return next({code: 'ERROR', message: 'list is wrong.'})
 
 	var filter={invoiceStatus:{$in:['Draft','Error']},_id:{$in:idList}}
 
 	dbModel.invoices.find(filter).populate(populate).exec((err,docs)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			var index=0
 
 			function pushTask(cb){
@@ -689,7 +693,7 @@ function sendToGib(dbModel,member,req,res,cb){
 				}
 			}
 			pushTask((err)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					var resp=[]
 					docs.forEach((e)=>{
 						resp.push(e._id.toString())
@@ -705,7 +709,7 @@ function sendToGib(dbModel,member,req,res,cb){
 function approveDeclineInvoice(type, dbModel,member,req,res,cb){
 	var data = req.body || {}
 	if(data.list==undefined)
-		throw {code: 'ERROR', message: 'list is required.'}
+		return next({code: 'ERROR', message: 'list is required.'})
 
 	var taskType=''
 	switch(type){
@@ -722,6 +726,7 @@ function approveDeclineInvoice(type, dbModel,member,req,res,cb){
 	var select='_id ID uuid eIntegrator'
 
 	var idList=[]
+	var hata=false
 	data.list.forEach((e)=>{
 		if(e && typeof e === 'object' && e.constructor === Object){
 			if(e._id!=undefined){
@@ -729,17 +734,19 @@ function approveDeclineInvoice(type, dbModel,member,req,res,cb){
 			}else if(e.id!=undefined){
 				idList.push(e.id)
 			}else{
-				throw {code: 'ERROR', message: 'list is wrong.'}
+				hata=true
+				return
 			}
 		}else{
 			idList.push(e)
 		}
 	})
-
+	if(hata)
+		return next({code: 'ERROR', message: 'list is wrong.'})
 	var filter={invoiceStatus:'WaitingForApprovement',_id:{$in:idList}}
 
 	dbModel.invoices.find(filter).select(select).populate(populate).exec((err,docs)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			var index=0
 
 			function pushTask(cb){
@@ -770,7 +777,7 @@ function approveDeclineInvoice(type, dbModel,member,req,res,cb){
 				if(err){
 					errorLog(err)
 				}
-				if(dberr(err)){
+				if(dberr(err,next)){
 					var resp=[]
 					
 					docs.forEach((e)=>{

@@ -1,36 +1,36 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
 			if(req.params.param1=='rapor1'){
-				rapor1(dbModel,member,req,res,cb)
+				rapor1(dbModel, member, req, res, next, cb)
 			}else if(req.params.param1=='rapor2'){
-				rapor2(dbModel,member,req,res,cb)
+				rapor2(dbModel, member, req, res, next, cb)
 			}else{
-				getOne(dbModel,member,req,res,cb)
+				getOne(dbModel, member, req, res, next, cb)
 			}
 
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
 		if(req.params.param1=='transfer'){
-			transfer(dbModel,member,req,res,cb)
+			transfer(dbModel, member, req, res, next, cb)
 		}else if(req.params.param1=='rollback'){
-			rollback(dbModel,member,req,res,cb)
+			rollback(dbModel, member, req, res, next, cb)
 		}else if(req.params.param1=='settransferred'){
-			setTransferred(dbModel,member,req,res,cb)
+			setTransferred(dbModel, member, req, res, next, cb)
 		}else{
-			post(dbModel,member,req,res,cb)
+			post(dbModel, member, req, res, next, cb)
 		}
 
 		break
 		case 'PUT':
-		put(dbModel,member,req,res,cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
-		deleteItem(dbModel,member,req,res,cb)
+		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
 		error.method(req)
@@ -40,7 +40,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 }
 
 
-function rapor1(dbModel,member,req,res,cb){
+function rapor1(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
 	if((req.query.pageSize || req.query.limit)){
 		options.limit=req.query.pageSize || req.query.limit
@@ -84,9 +84,9 @@ function rapor1(dbModel,member,req,res,cb){
 	}
 
 	filter_deviceSerialNo(dbModel,req,filter,(err,filter)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			filter_location(dbModel,req,filter,(err,filter)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					var aggregate=[]
 					if(filter!={}){
 						aggregate=[{$match:filter},aggregateGroup]
@@ -95,7 +95,7 @@ function rapor1(dbModel,member,req,res,cb){
 					}
 					var myAggregate = dbModel.pos_device_zreports.aggregate(aggregate)
 					dbModel.pos_device_zreports.aggregatePaginate(myAggregate,options,(err, resp)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							if(resp.docs.length==0){
 								return cb(resp)
 							}
@@ -108,7 +108,7 @@ function rapor1(dbModel,member,req,res,cb){
 							}
 
 							dbModel.pos_device_zreports.populate(resp.docs,populate,(err,docs)=>{
-								if(dberr(err)){
+								if(dberr(err,next)){
 									resp.docs=docs
 									cb(resp)
 								}
@@ -121,7 +121,7 @@ function rapor1(dbModel,member,req,res,cb){
 	})
 }
 
-function rapor2(dbModel,member,req,res,cb){
+function rapor2(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
 	if((req.query.pageSize || req.query.limit)){
 		options.limit=req.query.pageSize || req.query.limit
@@ -141,7 +141,7 @@ function rapor2(dbModel,member,req,res,cb){
 	}
 
 	filter_location(dbModel,req,filter,(err,filter)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			var aggregate=[
 			{
 				$match:filter
@@ -184,7 +184,7 @@ function rapor2(dbModel,member,req,res,cb){
 			]
 
 			dbModel.pos_device_zreports.aggregate(aggregate,(err,docs)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					var populate={
 						path:'location',
 						model: 'locations',
@@ -192,7 +192,7 @@ function rapor2(dbModel,member,req,res,cb){
 					}
 
 					dbModel.pos_device_zreports.populate(docs,populate,(err,docs)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							cb(docs)
 						}
 					})
@@ -203,7 +203,7 @@ function rapor2(dbModel,member,req,res,cb){
 }
 
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
 	if((req.query.pageSize || req.query.limit)){
 		options.limit=req.query.pageSize || req.query.limit
@@ -240,10 +240,10 @@ function getList(dbModel,member,req,res,cb){
 	}
 
 
-	if(req.query.date1)
+	if((req.query.date1 || '')!='')
 		filter['zDate']={$gte:(new Date(req.query.date1))}
 
-	if(req.query.date2){
+	if((req.query.date2 || '')!=''){
 		if(filter['zDate']){
 			filter['zDate']['$lte']=(new Date(req.query.date2))
 		}else{
@@ -252,14 +252,17 @@ function getList(dbModel,member,req,res,cb){
 	}
 
 	filter_deviceSerialNo(dbModel,req,filter,(err,filter)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			filter_location(dbModel,req,filter,(err,filter)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					dbModel.pos_device_zreports.paginate(filter,options,(err, resp)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							resp.docs.forEach((e)=>{
 								e.zDate=e.zDate.yyyymmdd()
-								e.data=dbModel.services.posDevice.zreportDataToString(e.posDevice.service.serviceType,e.data)
+								var str=`ZNo:${e.data.ZNo}, Tarih:${e.data.ZDate.substr(0,10)} ${e.data.ZTime} , Toplam:${e.data.GunlukToplamTutar} Kdv:${e.data.GunlukToplamKDV}`
+								e.data=str
+								// return 'ZNo:' + data.ZNo + ', Tarih:' + data.ZDate.substr(0,10) + ' ' + data.ZTime + ', Toplam:' + data.GunlukToplamTutar.formatMoney(2,',','.') + ', T.Kdv:' + data.GunlukToplamKDV.formatMoney(2,',','.')
+								// zreportDataToString(e.posDevice.service.serviceType,e.data)
 							})
 							cb(resp)
 						}
@@ -325,7 +328,7 @@ function filter_location(dbModel,req,filter,cb){
 }
 
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	var populate={
 		path:'posDevice',
 		select:'_id location service deviceSerialNo deviceModel',
@@ -336,27 +339,27 @@ function getOne(dbModel,member,req,res,cb){
 		]
 	}
 	dbModel.pos_device_zreports.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(doc)
 		}
 	})
 }
 
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
 	var newdoc = new dbModel.pos_device_zreports(data)
 	epValidateSync(newdoc)
 	newdoc.save((err, newdoc2)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(newdoc2)
 		}
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
@@ -364,13 +367,13 @@ function put(dbModel,member,req,res,cb){
 	data.modifiedDate = new Date()
 
 	dbModel.pos_device_zreports.findOne({ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
 				var newdoc = new dbModel.pos_device_zreports(doc2)
 				epValidateSync(newdoc)
 				newdoc.save((err, newdoc2)=>{
-					if(dberr(err)){
+					if(dberr(err,next)){
 						cb(newdoc2)
 					}
 				})
@@ -379,22 +382,22 @@ function put(dbModel,member,req,res,cb){
 	})
 }
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.pos_device_zreports.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(null)
 		}
 	})
 }
 
-function transfer(dbModel,member,req,res,cb){
+function transfer(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	if(data.list==undefined)
-		throw {code: 'ERROR', message: 'list is required.'}
+		return next({code: 'ERROR', message: 'list is required.'})
 
 	var populate={
 		path:'posDevice',
@@ -409,7 +412,7 @@ function transfer(dbModel,member,req,res,cb){
 			}else if(e.id!=undefined){
 				idList.push(e.id)
 			}else{
-				throw {code: 'ERROR', message: 'list is wrong.'}
+				return next({code: 'ERROR', message: 'list is wrong.'})
 			}
 		}else{
 			idList.push(e)
@@ -417,7 +420,7 @@ function transfer(dbModel,member,req,res,cb){
 	})
 	var filter={status:{$nin:['transferred','pending']},_id:{$in:idList}}
 	dbModel.pos_device_zreports.find(filter).populate(populate).exec((err,docs)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			var index=0
 			function pushTask(cb){
 				if(index>=docs.length){
@@ -458,7 +461,7 @@ function transfer(dbModel,member,req,res,cb){
 				}
 			}
 			pushTask((err)=>{
-				if(dberr(err)){
+				if(dberr(err,next)){
 					var resp=[]
 
 					docs.forEach((e)=>{
@@ -472,10 +475,10 @@ function transfer(dbModel,member,req,res,cb){
 }
 
 
-function rollback(dbModel,member,req,res,cb){
+function rollback(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	if(data.list==undefined)
-		throw {code: 'ERROR', message: 'list is required.'}
+		return next({code: 'ERROR', message: 'list is required.'})
 
 	var idList=[]
 	data.list.forEach((e)=>{
@@ -493,7 +496,7 @@ function rollback(dbModel,member,req,res,cb){
 	})
 	var filter={status:{$ne:''},_id:{$in:idList}}
 	dbModel.pos_device_zreports.updateMany(filter,{$set:{status:''}},{multi:true},(err,resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		}
 	})
@@ -501,10 +504,10 @@ function rollback(dbModel,member,req,res,cb){
 
 }
 
-function setTransferred(dbModel,member,req,res,cb){
+function setTransferred(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	if(data.list==undefined)
-		throw {code: 'ERROR', message: 'list is required.'}
+		return next({code: 'ERROR', message: 'list is required.'})
 
 	var idList=[]
 	data.list.forEach((e)=>{
@@ -514,7 +517,7 @@ function setTransferred(dbModel,member,req,res,cb){
 			}else if(e.id!=undefined){
 				idList.push(e.id)
 			}else{
-				return cb({success: false, error: {code: 'ERROR', message: 'rollbackList is wrong.'}})
+				return next({code: 'ERROR', message: 'rollbackList is wrong.'})
 			}
 		}else{
 			idList.push(e)
@@ -522,8 +525,20 @@ function setTransferred(dbModel,member,req,res,cb){
 	})
 	var filter={status:{$ne:'transferred'},_id:{$in:idList}}
 	dbModel.pos_device_zreports.updateMany(filter,{$set:{status:'transferred'}},{multi:true},(err,resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		}
 	})
+}
+
+
+function zreportDataToString(serviceType,data){
+
+	switch(serviceType){
+		case 'ingenico':
+		return 'ZNo:' + data.ZNo + ', Tarih:' + data.ZDate.substr(0,10) + ' ' + data.ZTime + ', Toplam:' + data.GunlukToplamTutar.formatMoney(2,',','.') + ', T.Kdv:' + data.GunlukToplamKDV.formatMoney(2,',','.')
+		// return ingenico.zreportDataToString(data)
+		default:
+		return 'ZREPORT DETAIL...'
+	}
 }

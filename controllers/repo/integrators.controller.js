@@ -1,23 +1,23 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel,member,req,res,cb)
+			getOne(dbModel, member, req, res, next, cb)
 		}else{
-			getList(dbModel,member,req,res,cb)
+			getList(dbModel, member, req, res, next, cb)
 		}
 		break
 		case 'POST':
 
-		post(dbModel,member,req,res,cb)
+		post(dbModel, member, req, res, next, cb)
 		break
 		case 'PUT':
 
-		put(dbModel,member,req,res,cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
 
-		deleteItem(dbModel,member,req,res,cb)
+		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
 		error.method(req)
@@ -25,7 +25,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 	}
 }
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)
 	}
 
@@ -41,13 +41,13 @@ function getList(dbModel,member,req,res,cb){
 	
 
 	dbModel.integrators.paginate(filter,options,(err, resp)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb(resp)
 		} 
 	})
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
 	var populate=[
 	{path:'invoice.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'},
 	{path:'despatch.xsltFiles',select:'_id name extension fileName data type size createdDate modifiedDate'},
@@ -56,15 +56,15 @@ function getOne(dbModel,member,req,res,cb){
 	]
 
 	dbModel.integrators.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				cb(doc)
 			}
 		} 
 	})
 }
 
-function post(dbModel,member,req,res,cb){
+function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 	data=cleanDataEmptyLocalConnector(data)
@@ -72,7 +72,7 @@ function post(dbModel,member,req,res,cb){
 		var newdoc = new dbModel.integrators(data)
 		epValidateSync(newdoc)
 		newdoc.save((err, newdoc2)=>{
-			if(dberr(err)){
+			if(dberr(err,next)){
 				if(newdoc2.isDefault){
 					dbModel.integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
 						cb(newdoc2)
@@ -85,7 +85,7 @@ function post(dbModel,member,req,res,cb){
 	})
 }
 
-function put(dbModel,member,req,res,cb){
+function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	
@@ -95,15 +95,15 @@ function put(dbModel,member,req,res,cb){
 	data.modifiedDate = new Date()
 
 	dbModel.integrators.findOne({ _id: data._id},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
 				data=cleanDataEmptyLocalConnector(data)
 				saveFiles(dbModel,data,(err,data)=>{
 					var doc2 = Object.assign(doc, data)
 					var newdoc = new dbModel.integrators(doc2)
 					epValidateSync(newdoc)
 					newdoc.save((err, newdoc2)=>{
-						if(dberr(err)){
+						if(dberr(err,next)){
 							if(newdoc2.isDefault){
 								dbModel.integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
 									cb(newdoc2)
@@ -309,14 +309,14 @@ function cleanDataEmptyLocalConnector(data){
 }
 
 
-function deleteItem(dbModel,member,req,res,cb){
+function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.integrators.removeOne(member,{ _id: data._id},(err,doc)=>{
-		if(dberr(err))
+		if(dberr(err,next))
 			cb(null)
 	})
 }

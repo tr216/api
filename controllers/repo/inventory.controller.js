@@ -1,10 +1,10 @@
-module.exports = (dbModel, member, req, res, cb)=>{
+module.exports = (dbModel, member, req, res, next, cb)=>{
     switch(req.method){
         case 'GET':
         if(req.params.param1!=undefined){
-            getOne(dbModel,member,req,res,cb)
+            getOne(dbModel, member, req, res, next, cb)
         }else{
-            getList(dbModel,member,req,res,cb)
+            getList(dbModel, member, req, res, next, cb)
         }
         break
         
@@ -16,7 +16,7 @@ module.exports = (dbModel, member, req, res, cb)=>{
 }
 
 
-function getList(dbModel,member,req,res,cb){
+function getList(dbModel, member, req, res, next, cb){
     var options={page: (req.query.page || 1),
         populate:[
             {path:'item',select:'_id name'},
@@ -38,13 +38,13 @@ function getList(dbModel,member,req,res,cb){
    
 
     dbModel.inventory_lives.paginate(filter,options,(err, resp)=>{
-        if(dberr(err)){
+        if(dberr(err,next)){
             cb(resp)
         }
     })
 }
 
-function getOne(dbModel,member,req,res,cb){
+function getOne(dbModel, member, req, res, next, cb){
     var populate=[
         {path:'item',select:'_id name'},
         {path:'details.locationId',select:'_id locationName locationType'}
