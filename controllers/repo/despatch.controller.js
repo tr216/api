@@ -83,6 +83,10 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			break
 		}
 		break
+		case 'DELETE':
+
+		deleteItem(dbModel, member, req, res, next, cb)
+		break
 		default:
 		return error.method(req)
 		break
@@ -367,7 +371,6 @@ function yazdir(dbModel,moduleName,req,res,doc,cb){
 	})
 }
 
-
 function getEDespatchUserList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1), 
 		limit:10
@@ -400,3 +403,28 @@ function getEDespatchUserList(dbModel, member, req, res, next, cb){
 	})
 }
 
+
+function deleteItem(dbModel, member, req, res, next, cb){
+	console.log('despatch.deleteItem calisti')
+	if(req.params.param1==undefined)
+		error.param1(req)
+	
+	var data = req.body || {}
+	data._id = req.params.param1
+
+	dbModel.despatches.findOne({_id:data._id},(err,doc)=>{
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
+				if(!(doc.despatchStatus=='Draft' || doc.despatchStatus=='Error' || doc.despatchStatus=='Canceled' || doc.despatchStatus=='Declined')){
+					return next({code:'PERMISSION_DENIED',message:`Belgenin durumundan dolayi silinemez!`})
+				}else{
+					dbModel.despatches.removeOne(member,{ _id: data._id},(err,doc)=>{
+						if(dberr(err,next)){
+							cb(null)
+						}
+					})
+				}
+			}
+		}
+	})
+}

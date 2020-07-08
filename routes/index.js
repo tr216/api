@@ -34,6 +34,7 @@ module.exports=(app)=>{
 			else
 				error.message=err.name || ''
 		}
+		console.log(`error handler:`,error)
 		res.status(403).json({ success:false, error:error})
 	})
 }

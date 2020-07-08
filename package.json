@@ -3,16 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "postinstall": "bower install",
-    "test": "nodemon app.js",
-    "start": "node app.js"
+    "test": "nodemon start-dev.js",
+    "start": "node start.js"
   },
   "dependencies": {
     "atob": "^2.1.2",
     "bcrypt-nodejs": "*",
     "beepbeep": "^1.2.2",
     "body-parser": "^1.18.3",
-    "bower": "^1.7.7",
     "btoa": "^1.2.1",
     "cluster": "^0.7.7",
     "colors": "^1.4.0",

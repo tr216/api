@@ -32,6 +32,10 @@ exports.run=function(dbModel){
 									setTimeout(taskCalistir,0,cb);
 								});
 								break;
+							case 'edespatch_send_to_gib':
+									index++;
+									setTimeout(taskCalistir,0,cb);
+								break;
 							case 'einvoice_approve':
 								einvoice_approve(dbModel,taskDoc,(err)=>{
 									index++;
