@@ -50,6 +50,7 @@ module.exports=(cb)=>{
 			global.services=require('./services/services.js')
 			global.services.start(()=>{})
 			global.eDespatchService = require('./bin/rest-helper')(config.eDespatchService.url)
+			global.eInvoiceService = require('./bin/rest-helper')(config.eInvoiceService.url)
 			cb(null,app)
 
 		}else{

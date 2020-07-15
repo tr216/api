@@ -15,7 +15,6 @@ exports.get=(endpoint, params, cb)=>{
 		rejectUnauthorized: false,
 		qs: params?params:{}
 	}
-	console.log('get.url:',url)
 
 	request(options, (error, response, body)=>{
 		
