@@ -1,5 +1,6 @@
 global.config=require('./config').test
 config.status='test'
+global.privateConfig=require('./private-config.json')
 
 var log=require('./bin/event-log')
 

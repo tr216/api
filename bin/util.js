@@ -1,6 +1,4 @@
 ﻿var request=require('request');
-var htmlToText = require('html-to-text');
-var emailvalidator = require("email-validator");
 var bcrypt = require('bcrypt-nodejs');
 var parseString = require('xml2js').parseString;
 var js2xmlparser = require("js2xmlparser");
@@ -88,99 +86,6 @@ exports.wait = function (milisecond) {
     return;
 };
 
-
-
-var nodemailer = require('nodemailer');
-
-
-exports.sendadminmail = function (subject, body,callback){
-    try {
-        var smtpTransport = require('nodemailer-smtp-transport');
-        
-        var transporter = nodemailer.createTransport(smtpTransport({
-            host: 'smtp.yandex.com',
-            port: 587,
-            secure:false,
-            auth: {
-                user: 'contact@etulia.com',
-                pass: 'atabar18'
-            },
-            tls: { rejectUnauthorized: false }
-        }));
-        // setup e-mail data with unicode symbols
-        var mailOptions = {
-            from: "Etulia Admin <contact@etulia.com>", 
-            to: 'alitek@gmail.com',  
-
-            subject: subject + '', // Subject line
-            text: body + '', // plaintext body
-            html: body + '' // html body
-        };
-        
-        // send mail with defined transport object
-        transporter.sendMail(mailOptions, (error, info)=>{
-            transporter.close();
-            if (error) {
-                callback(error)
-            }else{
-                callback(null,info.response)
-            }
-            
-        });
-    } catch ( err ) {
-        
-        callback(err);
-    }
-}
-
-
-exports.sendmail = function (mailto,subject, body,callback){
-    try {
-        if(!emailvalidator.validate(mailto)){
-            callback({success:false, error:{code:"EMAIL_NOT_VALID",message:"Email gecersiz."}});
-            return;
-        }
-        var smtpTransport = require('nodemailer-smtp-transport');
-        
-        subject = htmlToText.fromString(subject, {wordwrap: 130});
-        body = htmlToText.fromString(body, {wordwrap: 130});
-        
-        var transporter = nodemailer.createTransport(smtpTransport({
-            host: 'smtp.yandex.com',
-            port: 587,
-            secure:false,
-            auth: {
-                user: 'contact@etulia.com',
-                pass: 'atabar18'
-            },
-            tls: { rejectUnauthorized: false }
-        }));
-
-        // setup e-mail data with unicode symbols
-        var mailOptions = {
-            from: "Etulia <contact@etulia.com>", 
-            to: mailto,  
-
-            subject: subject + '', // Subject line
-            text: body + '', // plaintext body
-            html: body + '' // html body
-        };
-        
-        // send mail with defined transport object
-       transporter.sendMail(mailOptions, (error, info)=>{
-            transporter.close();
-            if (error) {
-                callback(error)
-            }else{
-                callback(null,info.response)
-            }
-            
-        });
-    } catch ( err ) {
-        
-        callback(err);
-    }
-}
 
 
 String.prototype.replaceAll = function (search, replacement) {
