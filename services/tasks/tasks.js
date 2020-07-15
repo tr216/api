@@ -21,32 +21,32 @@ exports.run=function(dbModel){
 								});
 								break;
 							case 'connector_import_einvoice':
-								connector_import_einvoice(dbModel,taskDoc,(err)=>{
+								// connector_import_einvoice(dbModel,taskDoc,(err)=>{
 									index++;
 									setTimeout(taskCalistir,0,cb);
-								});
+								// });
 								break;
 							case 'einvoice_send_to_gib':
-								einvoice_send_to_gib(dbModel,taskDoc,(err)=>{
+								// einvoice_send_to_gib(dbModel,taskDoc,(err)=>{
 									index++;
 									setTimeout(taskCalistir,0,cb);
-								});
+								// });
 								break;
 							case 'edespatch_send_to_gib':
 									index++;
 									setTimeout(taskCalistir,0,cb);
 								break;
 							case 'einvoice_approve':
-								einvoice_approve(dbModel,taskDoc,(err)=>{
+								// einvoice_approve(dbModel,taskDoc,(err)=>{
 									index++;
 									setTimeout(taskCalistir,0,cb);
-								});
+								// });
 								break;
 							case 'einvoice_decline':
-								einvoice_decline(dbModel,taskDoc,(err)=>{
+								// einvoice_decline(dbModel,taskDoc,(err)=>{
 									index++;
 									setTimeout(taskCalistir,0,cb);
-								});
+								// });
 								break;
 							default:
 								taskHelper.setCancelled(taskDoc,(err)=>{

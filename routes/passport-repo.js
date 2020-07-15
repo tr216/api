@@ -1,5 +1,7 @@
 var jwt = require('jsonwebtoken')
 
+
+
 module.exports= function (req, res,cb) {
     var token = req.body.token || req.query.token || req.headers['x-access-token']  || req.headers['token']
     if (token) {

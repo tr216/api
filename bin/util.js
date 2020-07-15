@@ -1446,26 +1446,114 @@ global.moduleLoader=(folder,suffix,expression,cb)=>{
     }
 }
 
-global.downloadFile=(file,req,res)=>{
-    var contentType=file.contentType || file.type || 'text/plain'
-    var data
-    res.contentType(contentType)
-    if(contentType.indexOf('text')>-1){
-        data=file.data
-    }else{
-        var raw = atob(file.data)
-        var rawLength = raw.length
-        var array = new Uint8Array(new ArrayBuffer(rawLength))
-        raw.forEach((e,index)=>{
-        	array[index] = raw.charCodeAt(index)
-        })
-        
-        eventLog('rawLength:',rawLength)
-        eventLog('array.Length:',array.length)
-        data=Buffer.from(array)
-        res.set('Content-Disposition','attachment filename=' + file.fileName )
-    }
-
-    // res.status(200).send(data, { 'Content-Disposition': 'attachment filename=' + file.fileName })
-    res.status(200).send(data)
+global.sendFileId=(dbModel,fileId,req,res,next)=>{
+	if(fileId){
+		dbModel.files.findOne({_id:fileId},(err,doc)=>{
+			if(dberr(err,next)){
+				if(dbnull(doc,next)){
+					sendFile(doc,req,res,next)
+				}
+			}
+		})
+	}else{
+		next({code:'WRONG_ID',message:'fileId bos'})
+	}
 }
+
+global.sendFile=(file,req,res,next)=>{
+	var tmpFile=path.join(os.tmpdir(),`${uuid.v4()}.api`)
+	try{
+		if(file.data){
+			var fileName=file.fileName || 'file'
+			var data=file.data
+			if(file.data.indexOf('data:')==0 && file.data.indexOf('base64,')>-1){
+				data=b64DecodeUnicode(file.data.split('base64,')[1])
+			}else{
+				data=file.data
+			}
+
+			fs.writeFileSync(tmpFile,data,'utf8')
+			
+			res.sendFile(tmpFile,{},(err)=>{
+				fs.unlinkSync(tmpFile)
+				if(err)
+					next(err)
+			})
+			
+				
+		}else{
+			next({code:'FILE_EMPTY',message:'Dosya icerigi bos'})
+		}
+		
+	}catch(tryErr){
+		if(fs.existsSync(tmpFile)){
+			fs.unlinkSync(tmpFile)
+		}
+		next(tryErr)
+	}
+    
+}
+
+
+global.downloadFileId=(dbModel,fileId,req,res,next)=>{
+	if(fileId){
+		dbModel.files.findOne({_id:fileId},(err,doc)=>{
+			if(dberr(err,next)){
+				if(dbnull(doc,next)){
+					downloadFile(doc,req,res,next)
+				}
+			}
+		})
+	}else{
+		next({code:'WRONG_ID',message:'fileId bos'})
+	}
+}
+
+global.downloadFile=(file,req,res,next)=>{
+	var tmpFile=path.join(os.tmpdir(),`${uuid.v4()}.api`)
+	try{
+		if(file.data){
+			var fileName=file.fileName || 'file'
+			var data=file.data
+			if(file.data.indexOf('data:')==0 && file.data.indexOf('base64,')>-1){
+				data=b64DecodeUnicode(file.data.split('base64,')[1])
+			}else{
+				data=file.data
+			}
+
+			fs.writeFileSync(tmpFile,data,'utf8')
+			
+			res.download(tmpFile,fileName,(err)=>{
+				fs.unlinkSync(tmpFile)
+				if(err)
+					next(err)
+			})
+			
+				
+		}else{
+			next({code:'FILE_EMPTY',message:'Dosya icerigi bos'})
+		}
+		
+	}catch(tryErr){
+		if(fs.existsSync(tmpFile)){
+			fs.unlinkSync(tmpFile)
+		}
+		next(tryErr)
+	}
+    
+}
+
+global.b64EncodeUnicode=(str)=>{
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function toSolidBytes(match, p1) {
+            return String.fromCharCode('0x' + p1)
+    }))
+}
+
+global.b64DecodeUnicode=(str)=>{
+    return decodeURIComponent(atob(str).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    }).join(''))
+}
+
+

@@ -3,29 +3,42 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		error.param1(req)
 	switch(req.method){
 		case 'GET':
+			return get()
+		break
+		case 'POST':
+			return post()
+		break
+		case 'PUT':
+			return put()
+		break
+		case 'DELETE':
+			deleteItem(dbModel, member, req, res, next, cb)
+		break
+		default:
+			return error.method(req)
+		break
+	}
+
+	function get(){
 		switch(req.params.param1.lcaseeng()){
-			case 'inboxdespatchlist':
+			case 'inbox':
 			return getDespatchList(1, dbModel, member, req, res, next, cb)
 			break
-			case 'outboxdespatchlist':
+			case 'outbox':
 			return getDespatchList(0, dbModel, member, req, res, next, cb)
 			break
-			case 'despatch':
-			return getDespatch(dbModel, member, req, res, next, cb)
-			break
+			// case 'despatch':
+			// return getDespatch(dbModel, member, req, res, next, cb)
+			// break
 			case 'logs':
-			eDespatchService.get(dbModel,`/logs/${req.params.param2}`,{},(err,data)=>{
-				if(dberr(err,next)){
-					cb(data)
-				}
-			})
-			break
 			case 'view':
-			eDespatchService.get(dbModel,`/view/${req.params.param2}`,{},(err,data)=>{
-				if(dberr(err,next)){
-					cb(data)
-				}
-			})
+			case 'xslt':
+			case 'xml':
+				eDespatchService.get(dbModel,`/${req.params.param1}/${req.params.param2}`,{},(err,data)=>{
+					if(dberr(err,next)){
+						cb(data)
+					}
+				})
 			break
 			
 			case 'edespatchuserlist':
@@ -34,11 +47,11 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			return getErrors(dbModel, member, req, res, next, cb)
 
 			default:
-			return error.method(req)
-			break
+			return getDespatch(dbModel, member, req, res, next, cb)
 		}
-		break
-		case 'POST':
+	}
+
+	function post(){
 		switch(req.params.param1.lcaseeng()){
 			case 'send':
 			if(req.params.param2!=undefined){
@@ -59,39 +72,67 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			return approveDeclineDespatch('approve', dbModel,member,req,res,cb)
 			case 'decline':
 			return approveDeclineDespatch('decline', dbModel,member,req,res,cb)
-			case 'saveinboxdespatch':
-			case 'saveoutboxdespatch':
-			case 'despatch':
-			return post(dbModel, member, req, res, next, cb)
+			
 			case 'importoutbox':
 			return importOutbox(dbModel, member, req, res, next, cb)
 			default:
-			return error.method(req)
+			return post(dbModel, member, req, res, next, cb)
 			break
 		}
+	}
 
-		break
-		case 'PUT':
+	function put(){
 		switch(req.params.param1.lcaseeng()){
-			case 'saveinboxdespatch':
-			case 'saveoutboxdespatch':
-			case 'despatch':
-			return put(dbModel, member, req, res, next, cb)
+				case 'saveinboxdespatch':
+				case 'saveoutboxdespatch':
+				case 'despatch':
+				return put(dbModel, member, req, res, next, cb)
 
-			default:
-			return error.method(req)
-			break
-		}
-		break
-		case 'DELETE':
-
-		deleteItem(dbModel, member, req, res, next, cb)
-		break
-		default:
-		return error.method(req)
-		break
+				default:
+				return error.method(req)
+				break
+			}
 	}
 }
+
+// function xsltFile___(dbModel, member, req, res, next, cb){
+// 	var _id= req.params.param2 || req.query._id || ''
+// 	if(_id=='')
+// 		error.param2(req)
+
+// 	dbModel.despatches.findOne({_id:_id}).populate('eIntegrator').exec((err,doc)=>{
+// 		if(dberr(err,next)){
+// 			if(dbnull(doc,next)){
+
+// 				cb({fileId:doc.eIntegrator.despatch.xslt})
+// 			}
+// 		}
+// 	})
+// }
+
+// function xmlFile____(dbModel, member, req, res, next, cb){
+// 	var _id= req.params.param2 || req.query._id || ''
+// 	if(_id=='')
+// 		error.param2(req)
+// 	dbModel.despatches.findOne({_id:_id}).populate('eIntegrator').exec((err,doc)=>{
+// 		if(dberr(err,next)){
+// 			if(dbnull(doc,next)){
+				
+// 				if(doc.ioType==0){
+// 					doc.despatchSupplierParty.party=doc.eIntegrator.party
+// 					doc.sellerSupplierParty.party=doc.eIntegrator.party
+// 					doc.buyerCustomerParty.party=doc.deliveryCustomerParty.party
+// 				}
+// 				var xmlstr=`<?xml version="1.0" encoding="utf-8"?>` + util.e_despatch2xml(doc)
+// 				xmlstr=xmlstr.replaceAll('<DespatchAdvice','<q1:DespatchAdvice').replaceAll('</DespatchAdvice','</q1:DespatchAdvice')
+				
+// 				cb({file:{fileName:`${doc.ID.value}.xml`,data:xmlstr}})
+						
+				
+// 			}
+// 		}
+// 	})
+// }
 
 
 function importOutbox(dbModel, member, req, res, next, cb){
@@ -173,8 +214,8 @@ function post(dbModel, member, req, res, next, cb){
 
 
 function put(dbModel, member, req, res, next, cb){
-	if(req.params.param2==undefined)
-		error.param2(req)
+	if(req.params.param1==undefined)
+		error.param1(req)
 
 	var data = req.body || {}
 	data._id = req.params.param2
@@ -328,14 +369,14 @@ function getDespatchList(ioType, dbModel, member, req, res, next, cb){
 }
 
 function getDespatch(dbModel, member, req, res, next, cb){
-	var _id= req.params.param2 || req.query._id || ''
+	var _id= req.params.param1 || req.query._id || ''
 	var includeAdditionalDocumentReference= req.query.includeAdditionalDocumentReference || false
 	var select='-additionalDocumentReference'
 	if(includeAdditionalDocumentReference==true)
 		select=''
 
 	if(_id=='')
-		error.param2(req)
+		error.param1(req)
 
 	dbModel.despatches.findOne({_id:_id}).select(select).exec((err,doc)=>{
 		if(dberr(err,next)){

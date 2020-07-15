@@ -8,7 +8,11 @@
 			"userAddress":"mongodb://localhost:27017/"
 		},
 		"eDespatchService":{
-			"url":"http://localhost:3600",
+			"url":"http://localhost:3600/eDespatch",
+			"enabled":true
+		},
+		"eInvoiceService":{
+			"url":"http://localhost:3600/eInvoice",
 			"enabled":true
 		},
 		"connector_service":{
@@ -29,7 +33,11 @@
 			"userAddress":"mongodb://localhost:27017/"
 		},
 		"eDespatchService":{
-			"url":"http://localhost:3600",
+			"url":"http://localhost:3600/eDespatch",
+			"enabled":true
+		},
+		"eInvoiceService":{
+			"url":"http://localhost:3600/eInvoice",
 			"enabled":true
 		},
 		"connector_service":{
@@ -53,7 +61,11 @@
 			"port":33218
 		},
 		"eDespatchService":{
-			"url":"http://localhost:3601",
+			"url":"http://localhost:3601/eDespatch",
+			"enabled":true
+		},
+		"eInvoiceService":{
+			"url":"http://localhost:3601/eInvoice",
 			"enabled":true
 		},
 		"localConnectorService":{

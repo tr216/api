@@ -9,6 +9,8 @@ var logger = require('morgan')
 var favicon = require('serve-favicon')
 var methodOverride = require('method-override')
 
+global.__root=__dirname
+
 global.util = require('./bin/util')
 
 
@@ -47,6 +49,7 @@ module.exports=(cb)=>{
 			global.taskHelper=require('./bin/taskhelper')
 			global.services=require('./services/services.js')
 			global.services.start(()=>{})
+			global.eDespatchService = require('./bin/rest-helper')(config.eDespatchService.url)
 			cb(null,app)
 
 		}else{
