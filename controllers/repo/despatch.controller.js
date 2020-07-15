@@ -34,6 +34,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			case 'view':
 			case 'xslt':
 			case 'xml':
+			console.log(`param1 param2:`,`/${req.params.param1}/${req.params.param2}`)
 				eDespatchService.get(dbModel,`/${req.params.param1}/${req.params.param2}`,{},(err,data)=>{
 					if(dberr(err,next)){
 						cb(data)
