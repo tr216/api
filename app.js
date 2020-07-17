@@ -12,6 +12,7 @@ var methodOverride = require('method-override')
 global.__root=__dirname
 
 global.util = require('./bin/util')
+global.mail=require('./bin/mail')
 
 
 var indexRouter = require('./routes/index')
@@ -40,7 +41,14 @@ app.set('port',config.httpserver.port)
 
 
 process.on('uncaughtException', function (err) {
-	errorLog('app.js Caught exception: ', err);
+	errorLog('Caught exception: ', err)
+	
+	mail.sendErrorMail(`Err ${app.get('name')}`,err,(mailErr,info)=>{
+		if(mailErr)
+			console.log(`mailErr:`,mailErr)
+		console.log(`mail info:`,info)
+		process.exit(0)
+	})
 })
 
 module.exports=(cb)=>{

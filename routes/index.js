@@ -23,20 +23,9 @@ module.exports=(app)=>{
 		res.status(404).json({ success:false, error:{code:'404',message:'function not found'}})
 	})
 
-	app.use((err,req, res, next)=>{
-		var error={code:'403',message:''}
-		if(typeof err=='string'){
-			error.message=err
-		}else{
-			error.code=err.code || err.name || 'ERROR'
-			if(err.message)
-				error.message=err.message
-			else
-				error.message=err.name || ''
-		}
-		console.log(`error handler:`,error)
-		res.status(403).json({ success:false, error:error})
-	})
+	// app.use((err,req, res, next)=>{
+	// 	sendError(err,res)
+	// })
 }
 
 
@@ -86,10 +75,7 @@ function clientControllers(app){
 			})
 		})
 
-		// process.on('uncaughtException', function (err) {
-		// 	errorLog('setRepoAPIFunctions Caught exception: ', err)
-		// 	sendError(err,res)
-		// })
+		
 	}
 
 	function getRepoController(funcName){

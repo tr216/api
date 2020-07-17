@@ -1,4 +1,5 @@
-﻿var request=require('request');
+﻿var htmlToText = require('html-to-text')
+var request=require('request');
 var bcrypt = require('bcrypt-nodejs');
 var parseString = require('xml2js').parseString;
 var js2xmlparser = require("js2xmlparser");
@@ -1222,7 +1223,7 @@ global.clone=(obj)=>{
     return JSON.parse(JSON.stringify(obj));
 }
 
-global.iteration=(dizi, fonksiyon, interval=0, errContinue=false, callback)=>{
+global.iteration=(dizi, fonksiyon, interval, errContinue, callback)=>{
 	var index=0
 	var result=[]
 	var errors=''
@@ -1230,12 +1231,15 @@ global.iteration=(dizi, fonksiyon, interval=0, errContinue=false, callback)=>{
 	function tekrar(cb){
 		if(index>=dizi.length)
 			return cb(null)
-		if(config.status=='dev' && index>=3){
-			return cb(null)
-		}
+
+		// if(config.status=='development' && index>=3){
+		// 	return cb(null)
+		// }
+
 		fonksiyon(dizi[index],(err,data)=>{
 			if(!err){
-				if(data) result.push(result)
+				if(data)
+					result.push(result)
 				index++
 				setTimeout(tekrar,interval,cb)
 			}else{
@@ -1255,12 +1259,15 @@ global.iteration=(dizi, fonksiyon, interval=0, errContinue=false, callback)=>{
 	tekrar((err)=>{
 		if(!err){
 			if(errContinue && errors!=''){
-				callback({code:'IterationError',message:errors},result)
+				if(callback)
+					callback({code:'IterationError',message:errors},result)
 			}else{
-				callback(null,result)
+				if(callback)
+					callback(null,result)
 			}
 		}else{
-			callback(err,result)
+			if(callback)
+				callback(err,result)
 		}
 		
 	})

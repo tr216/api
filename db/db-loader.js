@@ -120,11 +120,11 @@ function init(callback){
 		}
 	}
 
-	global.dbnull=(doc,cb)=>{
+	global.dbnull=(doc,cb,msg='Kayıt bulunamadı')=>{
 		if(doc!=null){
 			return true
 		}else{
-			var err={code:'RECORD_NOT_FOUND',message:'Kayıt bulunamadı'}
+			var err={code:'RECORD_NOT_FOUND',message:msg}
 			if(!cb){
 				throw err
 				return false

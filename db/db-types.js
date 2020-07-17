@@ -700,6 +700,18 @@ const actionType={
     }
 
 }
+
+class receiptAdviceLineInfoType {
+	lineId=''
+    timingComplaint=''
+    receivedQuantity=0
+    rejectedQuantity=0
+    rejectReason=''
+    rejectReasonCode=''
+    shortQuantity=0
+    oversupplyQuantity=0
+}
+
 module.exports = Object.freeze({
     valueType:valueType,
     idType:idType,
@@ -756,5 +768,6 @@ module.exports = Object.freeze({
     transactionConditionsType:transactionConditionsType,
     deliveryTermsType:deliveryTermsType,
     invoiceType:invoiceType,
-    actionType:actionType
+    actionType:actionType,
+    receiptAdviceLineInfoType:receiptAdviceLineInfoType
 });

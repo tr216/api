@@ -1,45 +1,16 @@
 module.exports=function(conn){
     var schema = mongoose.Schema({
-        ioType :{ type: Number,default: 0}, // 0 - cikis , 1- giris
-        eIntegrator: {type: mongoose.Schema.Types.ObjectId, ref: 'integrators', required: true},
-        profileId: { 
-            value: { type: String,default: '', trim:true, enum:['TEMELIRSALIYE'], required: true}
-        },
-        ID: dbType.idType,
-        uuid: dbType.valueType,
-        issueDate: {value :{ type: String,  required: [true,'Fatura tarihi gereklidir']}},
-        issueTime: {value :{ type: String,default: '00:00:00.0000000+03:00'}},
-        receiptAdviceTypeCode: dbType.codeType,
-        note:[dbType.valueType],
-        despatchDocumentReference:dbType.documentReferenceType,
-
-        additionalDocumentReference:[dbType.documentReferenceType],
-        orderReference:[dbType.orderReferenceType],
-        originatorDocumentReference:[dbType.documentReferenceType],
-        despatchSupplierParty:{
-            party:dbType.partyType,
-            despatchContact:dbType.contactType
-        },
-        deliveryCustomerParty:{
-            party:dbType.partyType,
-            deliveryContact:dbType.contactType
-        },
-        sellerSupplierParty:{
-            party:dbType.partyType,
-            despatchContact:dbType.contactType
-        },
-        buyerCustomerParty:{
-            party:dbType.partyType,
-            deliveryContact:dbType.contactType
-        },
-        shipment:dbType.shipmentType,
-        lineCountNumeric:dbType.numberValueType,
-        receiptLine:[dbType.receiptLineType],
+        despatch: {type: mongoose.Schema.Types.ObjectId, ref: 'despatches', required: true},
+        receiptAdviceNumber: dbType.idType,
         localDocumentId: {type: String, default: ''},
-        receiptStatus: {type: String, default: 'Draft',enum:['Draft','Pending','Queued', 'Processing','SentToGib','Approved','PartialApproved','Declined','WaitingForApprovement','Error']},
-        receiptErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
-        receiptStatus: {type: String, default: '',enum:['','transferring','pending','transferred','error']},
-        receiptErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
+        inboxDespatchId:dbType.valueType, //uuid from despatchId
+        note:dbType.valueType, 
+        deliveryContactName:dbType.valueType, 
+        despatchContactName:dbType.valueType, 
+        actualDeliveryDate:dbType.valueType, 
+        receiptAdviceLineInfo:[], //receiptAdviceLineInfoType
+        receiptAdviceStatus: {type: String, default: '',enum:['','Pending','Sent','Error']},
+        receiptAdviceErrors:[{_date:{ type: Date,default: Date.now}, code:'',message:''}],
         createdDate: { type: Date,default: Date.now},
         modifiedDate:{ type: Date,default: Date.now}
     });
@@ -47,12 +18,7 @@ module.exports=function(conn){
     
 
     schema.pre('save', function(next) {
-        if(this.receiptLine){
-            this.lineCountNumeric.value=this.receiptLine.length;
-        }
-        
-
-       
+               
         next();
         //bir seyler ters giderse 
         // next(new Error('ters giden birseyler var'));
@@ -77,16 +43,14 @@ module.exports=function(conn){
     schema.plugin(mongooseAggregatePaginate);
     
     schema.index({
-        "ioType":1,
-        "ID.value":1,
-        "issueDate.value":1,
-        "uuid.value":1,
-        "eIntegrator":1,
-        "profileId.value":1,
-        "despatchTypeCode.value":1,
+        "despatch":1,
+        "receiptAdviceNumber.value":1,
         "localDocumentId":1,
-        "despatchStatus":1,
-        "localStatus":1,
+        "inboxDespatchId":1,
+        "deliveryContactName.value":1,
+        "despatchContactName.value":1,
+        "actualDeliveryDate.value":1,
+        "status":1,
         "createdDate":1
     });
 
