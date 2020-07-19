@@ -230,7 +230,7 @@ function getDespatchList(ioType, dbModel, member, req, res, next, cb){
 		],
 		limit:10
 		,
-		select:'_id eIntegrator profileId ID uuid issueDate issueTime despatchAdviceTypeCode lineCountNumeric despatchLine localDocumentId deliveryCustomerParty despatchSupplierParty despatchReceiptAdvice despatchStatus despatchErrors localStatus localErrors',
+		select:'_id ioType eIntegrator profileId ID uuid issueDate issueTime despatchAdviceTypeCode lineCountNumeric despatchLine localDocumentId deliveryCustomerParty despatchSupplierParty receiptAdvice despatchStatus despatchErrors localStatus localErrors',
 		sort:{'issueDate.value':'desc' , 'ID.value':'desc'}
 	}
 
@@ -281,7 +281,7 @@ function getDespatchList(ioType, dbModel, member, req, res, next, cb){
 				})
 				
 			},0,true,(err)=>{
-				console.log(`liste.length:`,liste.length)
+				
 				resp.docs=liste
 				cb(resp)
 			})
@@ -343,34 +343,47 @@ function listeDuzenle(dbModel,e,cb){
 	e.despatchLine.forEach((e2)=>{
 		obj.totalDeliveredQuantity+=Number(e2.deliveredQuantity.value)
 	})
-	obj['despatchReceiptAdvice']={
+	obj['receiptAdvice']={
 		_id:'',
-		receiptAdviceNumber:'', 
-		deliveryContactName:'', 
-		despatchContactName:'', 
+		profileId:'',
+		ID:'',
+		uuid:'',
+		issueDate:'',
+		issueTime:'',
+		receiptAdviceTypeCode:'',
+		receiptStatus:'',
+		deliveryContactName:'',
+		despatchContactName:'',
 		actualDeliveryDate:'',
-		receiptAdviceStatus:'',
+		actualDeliveryTime:'',
 		totalReceivedQuantity:0,
 		totalRejectedQuantity:0
 	}
 	if((e.despatchReceiptAdvice || '')!=''){
 		dbModel.despatches_receipt_advice.findOne({_id:e.despatchReceiptAdvice},(err,receiptAdviceDoc)=>{
 			if(!err){
-
 				if(receiptAdviceDoc){
-					obj.despatchReceiptAdvice._id=receiptAdviceDoc._id
-					obj.despatchReceiptAdvice.receiptAdviceStatus=receiptAdviceDoc.receiptAdviceStatus
-					obj.despatchReceiptAdvice.receiptAdviceNumber=receiptAdviceDoc.receiptAdviceNumber.value
-					obj.despatchReceiptAdvice.deliveryContactName=receiptAdviceDoc.deliveryContactName.value
-					obj.despatchReceiptAdvice.despatchContactName=receiptAdviceDoc.despatchContactName.value
-					obj.despatchReceiptAdvice.actualDeliveryDate=receiptAdviceDoc.actualDeliveryDate.value
-					receiptAdviceDoc.receiptAdviceLineInfo.forEach((line)=>{
+					obj.receiptAdvice._id=receiptAdviceDoc._id
+					obj.receiptAdvice.profileId=receiptAdviceDoc.profileId.value
+					obj.receiptAdvice.ID=receiptAdviceDoc.ID.value
+					obj.receiptAdvice.uuid=receiptAdviceDoc.uuid.value
+					obj.receiptAdvice.issueDate=receiptAdviceDoc.issueDate.value
+					obj.receiptAdvice.issueTime=receiptAdviceDoc.issueTime.value
+					obj.receiptAdvice.receiptAdviceTypeCode=receiptAdviceDoc.receiptAdviceTypeCode.value
+					obj.receiptAdvice.receiptStatus=receiptAdviceDoc.receiptStatus
+					obj.receiptAdvice.despatchContactName=receiptAdviceDoc.despatchSupplierParty.despatchContact.name.value
+					obj.receiptAdvice.deliveryContactName=receiptAdviceDoc.deliveryCustomerParty.deliveryContact.name.value
+					obj.receiptAdvice.actualDeliveryDate=receiptAdviceDoc.shipment.delivery.actualDeliveryDate.value
+					obj.receiptAdvice.actualDeliveryTime=receiptAdviceDoc.shipment.delivery.actualDeliveryTime.value
+
+					obj.receiptAdvice.receiptStatus=receiptAdviceDoc.receiptStatus
+					
+					receiptAdviceDoc.receiptAdviceLineInfos.forEach((line)=>{
 						obj.despatchReceiptAdvice.totalReceivedQuantity += Number(line.receivedQuantity.value)
 						obj.despatchReceiptAdvice.totalRejectedQuantity += Number(line.rejectedQuantity.value)
 					})
 
 				}
-
 			}
 			
 			return cb(null,obj)

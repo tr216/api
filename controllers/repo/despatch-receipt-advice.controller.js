@@ -16,8 +16,21 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		}
 		break
 		case 'POST':
-		if(req.params.param1=='copy'){
-			copy(dbModel, member, req, res, next, cb)
+		
+		if(req.params.param1=='send'){
+			if(req.params.param2!=undefined){
+				eDespatchService.post(dbModel,`/send-receipt-advice/${req.params.param2}`,req.body,(err,data)=>{
+					if(dberr(err,next)){
+						cb(data)
+					}
+				})
+			}else{
+				eDespatchService.post(dbModel,`/send-receipt-advice`,req.body,(err,data)=>{
+					if(dberr(err,next)){
+						cb(data)
+					}
+				})
+			}
 		}else{
 			post(dbModel, member, req, res, next, cb)
 		}
@@ -68,16 +81,24 @@ function post(dbModel, member, req, res, next, cb){
 	if(data.despatch=='')
 		return next({code:'WRONG_VALUE',message:'despatch elemani bos olamaz'})
 
-	var newDoc = new dbModel.despatches_receipt_advice(data)
-	epValidateSync(newDoc)
 	dbModel.despatches.findOne({_id:data.despatch,ioType:1},(err,despatchDoc)=>{
 		if(dberr(err,next)){
 			if(dbnull(despatchDoc,next,`Irsaliye bulunamadi _id:${data.despatch}`)){
-				newDoc.save((err, newDoc2)=>{
+
+				var newDoc = new dbModel.despatches_receipt_advice(data)
+				epValidateSync(newDoc)
+				newDoc.uuid.value=uuid.v4()
+				newDoc.receiptStatus='Draft'
+				
+				dbModel.integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
 					if(dberr(err,next)){
-						despatchDoc.despatchReceiptAdvice=newDoc2._id
-						despatchDoc.save((err,despatchDoc2)=>{
-							cb(newDoc2)	
+						if(eIntegratorDoc==null) 
+							return next({code: 'ENTEGRATOR', message: 'Entegrator bulanamadi.'})
+						documentHelper.yeniIrsaliyeYanitNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc)=>{
+							newDoc.save((err, newDoc2)=>{
+								if(dberr(err,next))
+									cb(newDoc2)
+							})  
 						})
 					}
 				})
@@ -90,7 +111,7 @@ function post(dbModel, member, req, res, next, cb){
 
 function getErrors(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
-	var select='-receiptAdviceLineInfo'
+	var select='-receiptAdviceLineInfos'
 
 	if(_id=='') 
 		error.param2(req)
@@ -144,7 +165,6 @@ function put(dbModel, member, req, res, next, cb){
 	})
 }
 
-
 function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
@@ -155,7 +175,7 @@ function deleteItem(dbModel, member, req, res, next, cb){
 	dbModel.despatches_receipt_advice.findOne({_id:data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
-				if(doc.status=='Sent'){
+				if(doc.receiptStatus!='Draft' || doc.receiptStatus!='Error'){
 					return next({code:'PERMISSION_DENIED',message:`Belgenin durumundan dolayi silinemez!`})
 				}else{
 					dbModel.despatches_receipt_advice.removeOne(member,{ _id: data._id},(err,doc)=>{

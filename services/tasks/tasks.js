@@ -49,10 +49,10 @@ exports.run=function(dbModel){
 								// });
 								break;
 							default:
-								taskHelper.setCancelled(taskDoc,(err)=>{
+								// taskHelper.setCancelled(taskDoc,(err)=>{
 									index++;
 									setTimeout(taskCalistir,0,cb);
-								});
+								// });
 								break;
 						}
 					}catch(tryErr){
