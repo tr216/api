@@ -48,11 +48,12 @@ function copy(dbModel, member, req, res, next, cb){
 				yeniHesapKodu(dbModel,doc,(yeniKod)=>{
 					if(dberr(err,next)){
 						data.code=yeniKod
-						var newdoc = new dbModel.accounts(data)
-						epValidateSync(newdoc)
-						newdoc.save((err, newdoc2)=>{
+						var newDoc = new dbModel.accounts(data)
+						if(!epValidateSync(newDoc,next))
+					return
+						newDoc.save((err, newDoc2)=>{
 							if(dberr(err,next))
-								cb(newdoc2)
+								cb(newDoc2)
 						})
 					}
 				})
@@ -109,13 +110,14 @@ function post(dbModel, member, req, res, next, cb){
 	if((data.parentAccount || '')=='')
 		data.parentAccount=undefined
 
-	var newdoc = new dbModel.accounts(data)
+	var newDoc = new dbModel.accounts(data)
 
-	epValidateSync(newdoc)
+	if(!epValidateSync(newDoc,next))
+		return
 
-	newdoc.save((err, newdoc2)=>{
+	newDoc.save((err, newDoc2)=>{
 		if(dberr(err,next)){
-			cb(newdoc2)
+			cb(newDoc2)
 		}
 	})
 }
@@ -131,12 +133,13 @@ function put(dbModel, member, req, res, next, cb){
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
-				var newdoc = new dbModel.accounts(doc2)
-				epValidateSync(newdoc)
+				var newDoc = new dbModel.accounts(doc2)
+				if(!epValidateSync(newDoc,next))
+					return
 
-				newdoc.save((err, newdoc2)=>{
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next))
-						cb(newdoc2)
+						cb(newDoc2)
 				})
 			}
 		}

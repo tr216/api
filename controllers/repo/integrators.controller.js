@@ -69,16 +69,17 @@ function post(dbModel, member, req, res, next, cb){
 	data._id=undefined
 	data=cleanDataEmptyLocalConnector(data)
 	saveFiles(dbModel,data,(err,data)=>{
-		var newdoc = new dbModel.integrators(data)
-		epValidateSync(newdoc)
-		newdoc.save((err, newdoc2)=>{
+		var newDoc = new dbModel.integrators(data)
+		if(!epValidateSync(newDoc,next))
+		return
+		newDoc.save((err, newDoc2)=>{
 			if(dberr(err,next)){
-				if(newdoc2.isDefault){
-					dbModel.integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
-						cb(newdoc2)
+				if(newDoc2.isDefault){
+					dbModel.integrators.updateMany({isDefault:true,_id:{$ne:newDoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
+						cb(newDoc2)
 					})
 				}else{
-					cb(newdoc2)
+					cb(newDoc2)
 				}
 			}
 		})
@@ -100,16 +101,17 @@ function put(dbModel, member, req, res, next, cb){
 				data=cleanDataEmptyLocalConnector(data)
 				saveFiles(dbModel,data,(err,data)=>{
 					var doc2 = Object.assign(doc, data)
-					var newdoc = new dbModel.integrators(doc2)
-					epValidateSync(newdoc)
-					newdoc.save((err, newdoc2)=>{
+					var newDoc = new dbModel.integrators(doc2)
+					if(!epValidateSync(newDoc,next))
+					return
+					newDoc.save((err, newDoc2)=>{
 						if(dberr(err,next)){
-							if(newdoc2.isDefault){
-								dbModel.integrators.updateMany({isDefault:true,_id:{$ne:newdoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
-									cb(newdoc2)
+							if(newDoc2.isDefault){
+								dbModel.integrators.updateMany({isDefault:true,_id:{$ne:newDoc2._id}},{$set:{isDefault:false}},{multi:true},(err,resp)=>{
+									cb(newDoc2)
 								})
 							}else{
-								cb(newdoc2)
+								cb(newDoc2)
 							}
 						}
 					})

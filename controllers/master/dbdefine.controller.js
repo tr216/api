@@ -1,4 +1,4 @@
-module.exports = (member, req, res, cb)=>{
+module.exports = (member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
@@ -17,7 +17,7 @@ module.exports = (member, req, res, cb)=>{
 		deleteItem(member,req,res,cb)
 		break
 		default:
-		error.method(req)
+		error.method(req,next)
 		break
 	}
 }
@@ -28,7 +28,7 @@ function getOne(member,req,res,cb){
 	var filter = {owner: member._id, deleted:false}
 	filter._id=req.params.param1
 	db.dbdefines.findOne(filter, function(err, doc) {
-		if(dberr(err))
+		if(dberr(err, next))
 			cb(doc)
 	})
 }
@@ -42,7 +42,7 @@ function getList(member,req,res,cb){
 	var filter = {owner: member._id, deleted:false}
 
 	db.dbdefines.paginate(filter,options,(err, resp)=>{
-		if(dberr(err))
+		if(dberr(err, next))
 			cb(resp)
 
 	})
@@ -67,22 +67,22 @@ function post(member,req,res,cb){
 
 
 	db.dbdefines.findOne({owner:member._id,dbName:data.dbName,deleted:false},function(err,foundDoc){
-		if(dberr(err))
+		if(dberr(err, next))
 			if(foundDoc!=null){
 				throw {code: `DB_ALREADY_EXISTS`, message: `Database '${data.dbName}' already exists.`}
 			}else{
-				var newdoc = new db.dbdefines(data)
-				newdoc.save(function(err, newdoc2) {
+				var newDoc = new db.dbdefines(data)
+				newDoc.save(function(err, newDoc2) {
 					if (!err) {
-						var userDb=`userdb-${newdoc2._id}`
+						var userDb=`userdb-${newDoc2._id}`
 						var userDbHost=config.mongodb.userAddress
-						var dbName=newdoc2.dbName
-						newUserDb(newdoc2._id,userDb,userDbHost,dbName,(err)=>{
+						var dbName=newDoc2.dbName
+						newUserDb(newDoc2._id,userDb,userDbHost,dbName,(err)=>{
 							if(!err){
-								newdoc2.userDb = userDb
-								newdoc2.userDbHost = userDbHost
-								newdoc2.save(function(err,newdoc3){
-									result.data=newdoc3
+								newDoc2.userDb = userDb
+								newDoc2.userDbHost = userDbHost
+								newDoc2.save(function(err,newDoc3){
+									result.data=newDoc3
 
 									cb(result)
 								})
@@ -123,13 +123,13 @@ function put(member,req,res,cb){
 	
 	data.modifiedDate = new Date()
 	db.dbdefines.findOne({ _id: data._id, owner : member._id}, (err, doc)=>{
-		if(dberr(err))
-			if(dbnull(doc)){
+		if(dberr(err, next))
+			if(dbnull(doc, next)){
 				var doc2 = Object.assign(doc, data)
-				var newdoc = new db.dbdefines(doc2)
-				newdoc.save(function(err, newdoc2) {
-					if(dberr(err))
-						cb(newdoc2)
+				var newDoc = new db.dbdefines(doc2)
+				newDoc.save(function(err, newDoc2) {
+					if(dberr(err, next))
+						cb(newDoc2)
 				})
 			}
 	})
@@ -143,11 +143,11 @@ function deleteItem(member,req,res,cb){
 	data._id = req.params.param1
 
 	db.dbdefines.findOne({ _id: data._id, owner : member._id, deleted:false}, (err, doc)=>{
-		if(dberr(err))
-			if(dbnull(doc)){
+		if(dberr(err, next))
+			if(dbnull(doc, next)){
 				doc.deleted=true
 				doc.modifiedDate = new Date()
-				doc.save(function(err, newdoc2) {
+				doc.save(function(err, newDoc2) {
 					if (err) {
 						throw {code: err.name, message: err.message}
 					} else {

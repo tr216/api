@@ -1,5 +1,5 @@
 
-module.exports= function (member,req, res,cb) {
+module.exports= function (member,req, res, next, cb) {
 	cb(provinces)
 }
 

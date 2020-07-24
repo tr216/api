@@ -1150,16 +1150,20 @@ exports.execCmd=function(executeCommand,params,cb){
     const child = cp.spawn(executeCommand, params);
 
     let buf = ''
+    let stderr=''
+
     child.stdout.on('data', (c) => {
       buf += c
     })
 
     child.stderr.on('data', (data) => {
-        cb({name:'child_process Error', message:data.toString('UTF-8')},'',data.toString('UTF-8'));
+    	stderr+=data.toString('UTF-8')
+        // cb({name:'child_process Error', message:data.toString('UTF-8')},'',data.toString('UTF-8'));
     });
 
     child.stdout.on('end', () => {
-      cb(null,buf.toString('UTF-8'),'');
+    	
+      cb(null,buf.toString('UTF-8'),stderr)
     })
 }
 
@@ -1316,11 +1320,15 @@ exports.renameInvoiceObjects=(obj,renameFunction)=>{
 }
 
 global.tempLog=(fileName,text)=>{
-	if(config.status!='dev')
+	if(config.status!='development')
 		return
-	if((config.tmpDir || '')=='')
-		return
-	fs.writeFileSync(path.join(config.tmpDir,fileName),text,'utf8')
+	var tmpDir=os.tmpdir()
+	if(config){
+		if(config.tmpDir){
+			tmpDir=config.tmpDir
+		}
+	}
+	fs.writeFileSync(path.join(tmpDir,fileName),text,'utf8')
 }
 
 global.moduleLoader=(folder,suffix,expression,cb)=>{
@@ -1469,3 +1477,6 @@ global.b64DecodeUnicode=(str)=>{
 }
 
 
+global.encodeURIComponent2=(str)=>{
+  return encodeURIComponent(str).replace(/[!'()*]/g, escape)
+}

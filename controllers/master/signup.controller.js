@@ -1,7 +1,7 @@
 var https = require('https')
 var http = require('http')
 
-module.exports= (member, req, res,cb)=>{
+module.exports= (member, req, res, next, cb)=>{
 	if(req.method=='GET' || req.method=='POST'){
 		var IP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || ''
 
@@ -18,7 +18,7 @@ module.exports= (member, req, res,cb)=>{
 			throw {code:'USERNAME_EMPTY',message:'Telefon numarasi veya email bos olamaz.'}
 
 		db.members.findOne({username:formdata.username},(err,doc)=>{
-			if(dberr(err)){
+			if(dberr(err, next)){
 				if(doc!=null){
 					if(doc.verified)
 						throw {code:'USER_EXISTS',message:'Kullanici zaten kayitli.'}
@@ -46,7 +46,7 @@ module.exports= (member, req, res,cb)=>{
 			}
 		})
 	}else{
-		error.method(req)
+		error.method(req,next)
 	}
 }
 
@@ -72,14 +72,14 @@ function signup(formdata,cb){
 		deviceid:formdata.deviceid,
 		devicetoken:formdata.devicetoken
 	})
-	newmember.save((err,newdoc)=>{
-		if(dberr(err)){
+	newmember.save((err,newDoc)=>{
+		if(dberr(err, next)){
 			if(ismobile){
-				smssend(newdoc.username,newdoc.authCode,(data)=>{
+				smssend(newDoc.username,newDoc.authCode,(data)=>{
 					cb(data)
 				})
 			}else{
-				mailsend(newdoc.username,newdoc.authCode,(data)=>{
+				mailsend(newDoc.username,newDoc.authCode,(data)=>{
 					cb(data)
 				})
 			}

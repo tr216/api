@@ -105,7 +105,8 @@ function post(dbModel, member, req, res, next, cb){
 	
 	data=util.amountValueFixed2Digit(data,'')
 	var newDoc = new dbModel.invoices(data)
-	epValidateSync(newDoc)
+	if(!epValidateSync(newDoc,next))
+		return
 	newDoc.uuid.value=uuid.v4()
 	newDoc=calculateInvoiceTotals(newDoc)
 
@@ -114,7 +115,7 @@ function post(dbModel, member, req, res, next, cb){
 			if(eIntegratorDoc==null)
 				return next({code: 'ENTEGRATOR', message: 'Faturada entegrator bulanamadi.'})
 			documentHelper.yeniFaturaNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc)=>{
-				newDoc.save((err, newdoc2)=>{
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
 						cb(newDoc2)
 					}
@@ -176,7 +177,8 @@ function put(dbModel, member, req, res, next, cb){
 				data=util.amountValueFixed2Digit(data,'')
 				var doc2 = Object.assign(doc, data)
 				var newDoc = new dbModel.invoices(doc2)
-				epValidateSync(newDoc)
+				if(!epValidateSync(newDoc,next))
+					return
 				newDoc=calculateInvoiceTotals(newDoc)
 				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){

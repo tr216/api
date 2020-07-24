@@ -53,11 +53,12 @@ function copy(dbModel, member, req, res, next, cb){
 
 				data.createdDate=new Date()
 				data.modifiedDate=new Date()
-				var newdoc = new dbModel.packing_types(data)
-				epValidateSync(newdoc)
-				newdoc.save((err, newdoc2)=>{
+				var newDoc = new dbModel.packing_types(data)
+				if(!epValidateSync(newDoc,next))
+					return
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
-						cb(newdoc2)
+						cb(newDoc2)
 					} 
 				})
 			}
@@ -126,12 +127,13 @@ function getOne(dbModel, member, req, res, next, cb){
     	var data = req.body || {}
     	data._id=undefined
     	
-    	var newdoc = new dbModel.packing_types(data)
-    	epValidateSync(newdoc)
+    	var newDoc = new dbModel.packing_types(data)
+    	if(!epValidateSync(newDoc,next))
+		return
 
-    	newdoc.save((err, newdoc2)=>{
+    	newDoc.save((err, newDoc2)=>{
     		if (!err) {
-    			cb(newdoc2)
+    			cb(newDoc2)
     		} else {
     			cb({success: false, error: {code: err.name, message: err.message}})
     		}
@@ -151,12 +153,13 @@ function getOne(dbModel, member, req, res, next, cb){
     				cb({success: false,error: {code: 'RECORD_NOT_FOUND', message: 'Kayit bulunamadi'}})
     			}else{
     				var doc2 = Object.assign(doc, data)
-    				var newdoc = new dbModel.packing_types(doc2)
-    				epValidateSync(newdoc)
+    				var newDoc = new dbModel.packing_types(doc2)
+    				if(!epValidateSync(newDoc,next))
+					return
     				
-    				newdoc.save((err, newdoc2)=>{
+    				newDoc.save((err, newDoc2)=>{
     					if (!err) {
-    						cb(newdoc2)
+    						cb(newDoc2)
     					} else {
     						cb({success: false, error: {code: err.name, message: err.message}})
     					}

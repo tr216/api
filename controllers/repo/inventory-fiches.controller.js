@@ -192,8 +192,9 @@ function post(dbModel, member, req, res, next, cb){
 	uretimFisiKontrolEt(dbModel,data,(err,data)=>{
 		var yeniDoc = new dbModel.inventory_fiches(data)
 		documentHelper.yeniStokFisNumarasi(dbModel,yeniDoc,(err11,newDoc)=>{
-			epValidateSync(newDoc)
-			newDoc.save((err, newdoc2)=>{
+			if(!epValidateSync(newDoc,next))
+		return
+			newDoc.save((err, newDoc2)=>{
 				if(dberr(err,next)){
 					cb(newDoc2)
 				} 
@@ -221,9 +222,10 @@ function put(dbModel, member, req, res, next, cb){
 				if(dbnull(doc,next)){
 					var doc2 = Object.assign(doc, data)
 					var newDoc = new dbModel.inventory_fiches(doc2)
-					epValidateSync(newDoc)
+					if(!epValidateSync(newDoc,next))
+					return
 
-					newDoc.save((err, newdoc2)=>{
+					newDoc.save((err, newDoc2)=>{
 						if(dberr(err,next)){
 							cb(newDoc2)
 						} 

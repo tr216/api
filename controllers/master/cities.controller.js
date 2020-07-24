@@ -1,7 +1,7 @@
-module.exports = (member,req, res, cb)=>{
+module.exports = (member, req, res, next, cb)=>{
 	var province = req.body.province || req.query.province || req.body.provincename || req.query.provincename || ''
 	if (province == '') {
-		throw 'Sehir bos olamaz'
+		next('Sehir bos olamaz')
 	} else {
 		var sonuc = []
 		cities.forEach((e)=>{

@@ -86,7 +86,8 @@ function post(dbModel, member, req, res, next, cb){
 			if(dbnull(despatchDoc,next,`Irsaliye bulunamadi _id:${data.despatch}`)){
 
 				var newDoc = new dbModel.despatches_receipt_advice(data)
-				epValidateSync(newDoc)
+				if(!epValidateSync(newDoc,next))
+					return
 				newDoc.uuid.value=uuid.v4()
 				newDoc.receiptStatus='Draft'
 				
@@ -96,8 +97,14 @@ function post(dbModel, member, req, res, next, cb){
 							return next({code: 'ENTEGRATOR', message: 'Entegrator bulanamadi.'})
 						documentHelper.yeniIrsaliyeYanitNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc)=>{
 							newDoc.save((err, newDoc2)=>{
-								if(dberr(err,next))
-									cb(newDoc2)
+								if(dberr(err,next)){
+									despatchDoc.receiptAdvice=newDoc2._id
+									despatchDoc.save((err)=>{
+										if(dberr(err,next)){
+											cb(newDoc2)
+										}
+									})
+								}
 							})  
 						})
 					}
@@ -147,7 +154,8 @@ function put(dbModel, member, req, res, next, cb){
 						if(dbnull(doc,next)){
 							var doc2 = Object.assign(doc, data)
 							var newDoc = new dbModel.despatches_receipt_advice(doc2)
-							epValidateSync(newDoc)
+							if(!epValidateSync(newDoc,next))
+								return
 							newDoc.save((err, newDoc2)=>{
 								if(dberr(err,next)){
 									despatchDoc.despatchReceiptAdvice=newDoc2._id

@@ -1,9 +1,9 @@
-module.exports = (member, req, res, cb)=>{
+module.exports = (member, req, res, next, cb)=>{
     switch(req.method){
         
         case 'POST':
         case 'PUT':
-            login(member,req,res,cb)
+            login(member,req,res,next, cb)
         break
         default:
             error.method(req)
@@ -13,7 +13,7 @@ module.exports = (member, req, res, cb)=>{
 
 
 
-function login(member,req,res,cb){
+function login(member,req,res,next, cb){
     if(req.params.param1==undefined){
         cb({success: false,error: {code: 'WRONG_PARAMETER', message: 'Para metre hatali'}})
     }else{
@@ -21,13 +21,13 @@ function login(member,req,res,cb){
         
         data._id = req.params.param1
         db.members.findOne({_id:data._id},function(err,doc){
-            if(dberr(err)){
+            if(dberr(err,next)){
                 if(doc==null)
-                	throw {code:'LOGIN_FAILED',message:'Giriş başarısız'}
+                	next({code:'LOGIN_FAILED',message:'Giriş başarısız'})
                 if(doc.passive) 
-                	throw {code:'USER_PASSIVE',message:'Kullanici pasif duruma alinmis.'}
+                	next({code:'USER_PASSIVE',message:'Kullanici pasif duruma alinmis.'})
                 if(doc.verified==false) 
-                	throw {code:'USER_NOT_VERIFIED',message:'Kullanici onay kodu alinmamis.'}
+                	next({code:'USER_NOT_VERIFIED',message:'Kullanici onay kodu alinmamis.'})
                 
                 var IP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || ''
                 var userinfo = { 

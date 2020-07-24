@@ -100,12 +100,13 @@ function post(dbModel, member, req, res, next, cb){
 	if((data.account || '')=='')
 		data.account=undefined
 
-	var newdoc = new dbModel.mrp_machines(data)
-	epValidateSync(newdoc)
+	var newDoc = new dbModel.mrp_machines(data)
+	if(!epValidateSync(newDoc,next))
+		return
 
-	newdoc.save((err, newdoc2)=>{
+	newDoc.save((err, newDoc2)=>{
 		if(dberr(err,next)){
-			cb(newdoc2)
+			cb(newDoc2)
 		} 
 	})
 }
@@ -123,11 +124,12 @@ function put(dbModel, member, req, res, next, cb){
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
-				var newdoc = new dbModel.mrp_machines(doc2)
-				epValidateSync(newdoc)
-				newdoc.save((err, newdoc2)=>{
+				var newDoc = new dbModel.mrp_machines(doc2)
+				if(!epValidateSync(newDoc,next))
+					return
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
-						cb(newdoc2)
+						cb(newDoc2)
 					} 
 				})
 			}

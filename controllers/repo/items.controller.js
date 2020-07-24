@@ -49,15 +49,16 @@ function copy(dbModel, member, req, res, next, cb){
 				data.createdDate=new Date()
 				data.modifiedDate=new Date()
 
-				var newdoc = new dbModel.items(data)
-				epValidateSync(newdoc)
-				newdoc.save((err, newdoc2)=>{
+				var newDoc = new dbModel.items(data)
+				if(!epValidateSync(newDoc,next))
+					return
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
-						receteleriKaydet(dbModel,doc,newdoc2,(err,newdoc3)=>{
+						receteleriKaydet(dbModel,doc,newDoc2,(err,newDoc3)=>{
 							if(!err){
-								cb(newdoc3)
+								cb(newDoc3)
 							}else{
-								dbModel.items.deleteOne({_id:newdoc2._id},(err2)=>{
+								dbModel.items.deleteOne({_id:newDoc2._id},(err2)=>{
 									return dberr(err,next)
 								})
 							}
@@ -211,11 +212,12 @@ function post(dbModel, member, req, res, next, cb){
 		data.accountGroup=undefined
 
 	saveFiles(dbModel,data,(err,data)=>{
-		var newdoc = new dbModel.items(data)
-		epValidateSync(newdoc)
-		newdoc.save((err, newdoc2)=>{
+		var newDoc = new dbModel.items(data)
+		if(!epValidateSync(newDoc,next))
+		return
+		newDoc.save((err, newDoc2)=>{
 			if(dberr(err,next)){
-				cb(newdoc2)
+				cb(newDoc2)
 			} 
 		})
 	})
@@ -235,12 +237,13 @@ function put(dbModel, member, req, res, next, cb){
 			if(dbnull(doc,next)){
 				saveFiles(dbModel,data,(err,data)=>{
 					var doc2 = Object.assign(doc, data)
-					var newdoc = new dbModel.items(doc2)
-					epValidateSync(newdoc)
+					var newDoc = new dbModel.items(doc2)
+					if(!epValidateSync(newDoc,next))
+					return
 
-					newdoc.save((err, newdoc2)=>{
+					newDoc.save((err, newDoc2)=>{
 						if(dberr(err,next)){
-							cb(newdoc2)
+							cb(newDoc2)
 						} 
 					})
 				})

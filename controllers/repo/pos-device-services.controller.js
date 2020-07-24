@@ -50,11 +50,12 @@ function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
-	var newdoc = new dbModel.pos_device_services(data)
-	epValidateSync(newdoc)
-	newdoc.save((err, newdoc2)=>{
+	var newDoc = new dbModel.pos_device_services(data)
+	if(!epValidateSync(newDoc,next))
+		return
+	newDoc.save((err, newDoc2)=>{
 		if(dberr(err,next)){
-			cb(newdoc2)
+			cb(newDoc2)
 		}
 	})
 }
@@ -70,11 +71,12 @@ function put(dbModel, member, req, res, next, cb){
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
-				var newdoc = new dbModel.pos_device_services(doc2)
-				epValidateSync(newdoc)
-				newdoc.save((err, newdoc2)=>{
+				var newDoc = new dbModel.pos_device_services(doc2)
+				if(!epValidateSync(newDoc,next))
+					return
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next))
-						cb(newdoc2)
+						cb(newDoc2)
 				})
 
 			}

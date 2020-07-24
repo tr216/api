@@ -1,4 +1,4 @@
-module.exports = (member, req, res, cb)=>{
+module.exports = (member, req, res, next, cb)=>{
 	if(req.params.param1==undefined)
 		error.param1(req)
 
@@ -24,7 +24,7 @@ module.exports = (member, req, res, cb)=>{
 		deleteItem(member,req,res,cb)
 		break
 		default:
-		error.method(req)
+		error.method(req,next)
 		break
 	}
 }
@@ -35,8 +35,8 @@ function getList(member,req,res,cb){
 	var filter={}
 	filter={deleted:false,_id:req.params.param1,owner:member._id}
 	db.dbdefines.findOne(filter).populate([{path:'authorizedMembers.memberId', select:'_id username'}]).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc))
+		if(dberr(err, next)){
+			if(dbnull(doc, next))
 				cb(doc)
 		}
 	})
@@ -47,8 +47,8 @@ function getOne(member,req,res,cb){
 	filter={deleted:false, _id:req.params.param1,owner:member._id , $or:[{'authorizedMembers.memberId':req.params.param2},{'authorizedMembers._id':req.params.param2}]}
 
 	db.dbdefines.findOne(filter).populate([{path:'authorizedMembers.memberId', select:'_id username'}]).exec((err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err, next)){
+			if(dbnull(doc, next)){
 				var result={_id:doc._id,dbName:doc.dbName,
 					memberId:doc.authorizedMembers[0].memberId._id,
 					username:doc.authorizedMembers[0].memberId.username,
@@ -69,7 +69,7 @@ function getMemberList(member,req,res,cb){
 	}
 
 	db.members.find(filter).limit(5).select('_id username name lastName').exec((err,docs)=>{
-		if(dberr(err))
+		if(dberr(err, next))
 			cb(docs)
 	})
 }
@@ -83,8 +83,8 @@ function post(member,req,res,cb){
 		throw {code:'WRONG_PARAMETER',message:'memberId gereklidir.'}
 
 	db.dbdefines.findOne({owner:member._id,_id:req.params.param1,deleted:false},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err, next)){
+			if(dbnull(doc, next)){
 				var bFound=false
 				doc.authorizedMembers.forEach((e)=>{
 					if(e.memberId==data.memberId){
@@ -101,7 +101,7 @@ function post(member,req,res,cb){
 					canDelete:(data.canDelete || false)
 				})
 				doc.save((err,doc2)=>{
-					if(dberr(err))
+					if(dberr(err, next))
 						cb(doc2.authorizedMembers)
 				})
 			}
@@ -119,8 +119,8 @@ function put(member,req,res,cb){
 		error.param2(req)
 
 	db.dbdefines.findOne({owner:member._id,_id:req.params.param1,deleted:false, $or:[{'authorizedMembers.memberId':req.params.param2},{'authorizedMembers._id':req.params.param2}]},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err, next)){
+			if(dbnull(doc, next)){
 				var bFound=false
 				doc.authorizedMembers.forEach((e)=>{
 					if(e.memberId==req.params.param2 || e._id==req.params.param2){
@@ -135,7 +135,7 @@ function put(member,req,res,cb){
 					dbnull(null)
 
 				doc.save((err,doc2)=>{
-					if(dberr(err)){
+					if(dberr(err, next)){
 						cb(doc2.authorizedMembers)
 					}
 				})
@@ -150,8 +150,8 @@ function deleteItem(member,req,res,cb){
 		error.param2(req)
 
 	db.dbdefines.findOne({owner:member._id,_id:req.params.param1,deleted:false, $or:[{'authorizedMembers.memberId':req.params.param2},{'authorizedMembers._id':req.params.param2}]},(err,doc)=>{
-		if(dberr(err)){
-			if(dbnull(doc)){
+		if(dberr(err, next)){
+			if(dbnull(doc, next)){
 				var bFound=false
 				doc.authorizedMembers.forEach((e,index)=>{
 					if(e.memberId==req.params.param2  || e._id==req.params.param2){
@@ -164,7 +164,7 @@ function deleteItem(member,req,res,cb){
 					dbnull(null)
 
 				doc.save((err,doc2)=>{
-					if(dberr(err)){
+					if(dberr(err, next)){
 						cb(doc2.authorizedMembers)
 					}
 				})

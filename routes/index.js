@@ -23,9 +23,9 @@ module.exports=(app)=>{
 		res.status(404).json({ success:false, error:{code:'404',message:'function not found'}})
 	})
 
-	// app.use((err,req, res, next)=>{
-	// 	sendError(err,res)
-	// })
+	app.use((err,req, res, next)=>{
+		sendError(err,res)
+	})
 }
 
 
@@ -59,16 +59,16 @@ function clientControllers(app){
 				if(data==undefined)
 					res.json({success:true})
 				else if(data==null)
-                    res.json({success:true})
-                else if(data.file!=undefined)
-                    downloadFile(data.file,req,res,next)
-                else if(data.fileId!=undefined)
-                    downloadFileId(repoDb[req.params.dbId],data.fileId,req,res,next)
-                else if(data.sendFile!=undefined)
-                    sendFile(data.sendFile,req,res,next)
-                else if(data.sendFileId!=undefined)
-                    sendFileId(repoDb[req.params.dbId],data.sendFileId,req,res,next)
-                else{
+					res.json({success:true})
+				else if(data.file!=undefined)
+					downloadFile(data.file,req,res,next)
+				else if(data.fileId!=undefined)
+					downloadFileId(repoDb[req.params.dbId],data.fileId,req,res,next)
+				else if(data.sendFile!=undefined)
+					sendFile(data.sendFile,req,res,next)
+				else if(data.sendFileId!=undefined)
+					sendFileId(repoDb[req.params.dbId],data.sendFileId,req,res,next)
+				else{
 					data=clearProtectedFields(req.params.func,data)
 					res.status(200).json({ success:true, data: data })
 				}
@@ -91,53 +91,49 @@ function clientControllers(app){
 
 function masterControllers(app){
 	app.all('/api', function(req, res) {
-        res.status(200).json({success: true, data:`Welcome to TR216.master API V1. Last modified:${appJsModifiedDate}. Your path:/api ,Please use: /api/v1[/:dbId]/:func/[:param1]/[:param2]/[:param3] . Methods: GET, POST, PUT, DELETE`})
-    })
+		res.status(200).json({success: true, data:`Welcome to TR216.master API V1. Last modified:${appJsModifiedDate}. Your path:/api ,Please use: /api/v1[/:dbId]/:func/[:param1]/[:param2]/[:param3] . Methods: GET, POST, PUT, DELETE`})
+	})
 
-    app.all('/api/v1', function(req, res) {
-        res.status(200).json({success: true, data:`Welcome to TR216.master API V1. Last modified:${appJsModifiedDate}. Your path:/api/v1 ,Please use: /api/v1[/:dbId]/:func/[:param1]/[:param2]/[:param3] . Methods: GET, POST, PUT, DELETE`})
-    })
-   
-    app.all('/api/v1/:func', function(req, res,next) {
-        setAPIFunctions(req,res,next)
-    })
-    app.all('/api/v1/:func/:param1', function(req, res,next) {
-        setAPIFunctions(req,res,next)
-    })
+	app.all('/api/v1', function(req, res) {
+		res.status(200).json({success: true, data:`Welcome to TR216.master API V1. Last modified:${appJsModifiedDate}. Your path:/api/v1 ,Please use: /api/v1[/:dbId]/:func/[:param1]/[:param2]/[:param3] . Methods: GET, POST, PUT, DELETE`})
+	})
+	
+	app.all('/api/v1/:func', function(req, res,next) {
+		setAPIFunctions(req,res,next)
+	})
+	app.all('/api/v1/:func/:param1', function(req, res,next) {
+		setAPIFunctions(req,res,next)
+	})
 
-    app.all('/api/v1/:func/:param1/:param2', function(req, res,next) {
-        setAPIFunctions(req,res,next)
-    })
+	app.all('/api/v1/:func/:param1/:param2', function(req, res,next) {
+		setAPIFunctions(req,res,next)
+	})
 
-    app.all('/api/v1/:func/:param1/:param2/:param3', function(req, res,next) {
-        setAPIFunctions(req,res,next)
-    })
+	app.all('/api/v1/:func/:param1/:param2/:param3', function(req, res,next) {
+		setAPIFunctions(req,res,next)
+	})
 
 	function setAPIFunctions(req, res,next){
 		passport(req,res,(member)=>{
 			var ctl=getController(req.params.func)
 
-			ctl(member,req,res,(data)=>{
+			ctl(member,req,res,next,(data)=>{
 				
 				if(data==undefined)
 					res.json({success:true})
 				else if(data==null)
-                    res.json({success:true})
-                else if(data.file!=undefined)
-                    downloadFile(data.file,req,res,next)
-                else if(data.fileId!=undefined)
-                    downloadFileId(db,data.fileId,req,res,next)
-                else{
+					res.json({success:true})
+				else if(data.file!=undefined)
+					downloadFile(data.file,req,res,next)
+				else if(data.fileId!=undefined)
+					downloadFileId(db,data.fileId,req,res,next)
+				else{
 					data=clearProtectedFields(req.params.func,data)
 					res.status(200).json({ success:true, data: data })
 				}
 			})
 		})
-		// process.on('uncaughtException', function (err) {
-		// 	errorLog('setAPIFunctions Caught exception: ', err)
-		// 	sendError(err,res)
-		// })
-    }
+	}
 
 	function getController(funcName){
 
@@ -170,37 +166,41 @@ function clearProtectedFields(funcName,data,cb){
 			protectedFields[funcName]=protectedFields['standart']
 
 		if(data!=undefined){
-	        if(Array.isArray(data)){
-	        	data.forEach((e)=>{
-	        		e=util.deleteObjectFields(e,protectedFields[funcName].outputFields)
-	        	})
-	            
-	        }else{
-	            if(data.hasOwnProperty('docs')){
-	            	data.docs.forEach((e)=>{
-	            		e=util.deleteObjectFields(e,protectedFields[funcName].outputFields)
-	            	})
-	            }
-	            data=util.deleteObjectFields(data,protectedFields[funcName].outputFields)
-	        }
-	        return data
-	    }else{
-	    	return data
-	    }
+			if(Array.isArray(data)){
+				data.forEach((e)=>{
+					e=util.deleteObjectFields(e,protectedFields[funcName].outputFields)
+				})
+				
+			}else{
+				if(data.hasOwnProperty('docs')){
+					data.docs.forEach((e)=>{
+						e=util.deleteObjectFields(e,protectedFields[funcName].outputFields)
+					})
+				}
+				data=util.deleteObjectFields(data,protectedFields[funcName].outputFields)
+			}
+			return data
+		}else{
+			return data
+		}
 	}else{
 		return data
 	}
 	
 }
 
+
 global.error={
-	param1:(req)=>{
-		throw {code:'WRONG_PARAMETER', message:`function:[/${req.params.func}] [/:param1] is required`}
+	param1:function(req, next){
+		next({code:'WRONG_PARAMETER', message:`function:[/${req.params.func}] [/:param1] is required`})
+		// next({code:'WRONG_PARAMETER', message:`[/:param1] is required`})
 	},
-	param2:(req)=>{
-		throw {code:'WRONG_PARAMETER', message:`function:[/${req.params.func}/$req.params.param1] [/:param2] is required`}
+	param2:function(req, next){
+		next({code:'WRONG_PARAMETER', message:`function:[/${req.params.func}/${req.params.param1}] [/:param2] is required`})
+		// next({code:'WRONG_PARAMETER', message:`/param1 [/:param2] is required`})
 	},
-	method:(req)=>{
-		throw {code:'WRONG_METHOD', message:`function:[/${req.params.func}] WRONG METHOD: ${req.method}`}
+	method:function(req, next){
+		next({code:'WRONG_METHOD', message:`function:${req.params.func} WRONG METHOD: ${req.method}`})
 	}
 }
+

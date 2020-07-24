@@ -1,4 +1,4 @@
-module.exports = (member, req, res, cb)=>{
+module.exports = (member, req, res, next, cb)=>{
 
     switch(req.method){
         case 'GET':
@@ -11,7 +11,7 @@ module.exports = (member, req, res, cb)=>{
         break
         
         default:
-            error.method(req)
+            error.method(req,next)
         break
     }
 }
@@ -54,8 +54,8 @@ function getList(member,req,res,cb){
 
 function getOne(member,req,res,cb){
     db.dbdefines.findOne({_id:req.params.param1, deleted:false, passive:false,owner:member._id}).populate('owner','_id username name lastName modules').populate('authorizedMembers.memberId','_id username name lastName').exec((err,doc)=>{
-        if(dberr(err)){
-            if(dbnull(doc)){
+        if(dberr(err, next)){
+            if(dbnull(doc, next)){
                 cb(doc)
             }
         }

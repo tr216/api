@@ -101,7 +101,8 @@ function post(dbModel, member, req, res, next, cb){
 	data=util.amountValueFixed2Digit(data,'')
 	data=fazlaliklariTemizleDuzelt(data)
 	var newDoc = new dbModel.despatches(data)
-	epValidateSync(newDoc)
+	if(!epValidateSync(newDoc,next))
+		return
 
 	newDoc.uuid.value=uuid.v4()
 
@@ -111,8 +112,10 @@ function post(dbModel, member, req, res, next, cb){
 				return next({code: 'ENTEGRATOR', message: 'Entegrator bulanamadi.'})
 			documentHelper.yeniIrsaliyeNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc)=>{
 				newDoc.save((err, newDoc2)=>{
-					if(dberr(err,next))
+					if(dberr(err,next)){
+
 						cb(newDoc2)
+					}
 				})  
 			})
 		}
@@ -172,9 +175,6 @@ function getErrors(dbModel, member, req, res, next, cb){
 	})
 }
 
-
-
-
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
@@ -190,7 +190,8 @@ function put(dbModel, member, req, res, next, cb){
 				data=util.amountValueFixed2Digit(data,'')
 				var doc2 = Object.assign(doc, data)
 				var newDoc = new dbModel.despatches(doc2)
-				epValidateSync(newDoc)
+				if(!epValidateSync(newDoc,next))
+					return
 				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
 						cb(newDoc2)
@@ -210,8 +211,8 @@ function fazlaliklariTemizleDuzelt(data){
 		data.subLocation=undefined
 	if((data.subLocation2 || '')=='') 
 		data.subLocation2=undefined
-	if((data.despatchReceiptAdvice || '')=='')
-		data.despatchReceiptAdvice=undefined
+	if((data.receiptAdvice || '')=='')
+		data.receiptAdvice=undefined
 
 	if(data.despatchLine){
 		data.despatchLine.forEach((e)=>{
@@ -351,7 +352,7 @@ function listeDuzenle(dbModel,e,cb){
 		issueDate:'',
 		issueTime:'',
 		receiptAdviceTypeCode:'',
-		receiptStatus:'',
+		receiptStatus:'OnTheWay',
 		deliveryContactName:'',
 		despatchContactName:'',
 		actualDeliveryDate:'',
@@ -359,8 +360,8 @@ function listeDuzenle(dbModel,e,cb){
 		totalReceivedQuantity:0,
 		totalRejectedQuantity:0
 	}
-	if((e.despatchReceiptAdvice || '')!=''){
-		dbModel.despatches_receipt_advice.findOne({_id:e.despatchReceiptAdvice},(err,receiptAdviceDoc)=>{
+	if((e.receiptAdvice || '')!=''){
+		dbModel.despatches_receipt_advice.findOne({_id:e.receiptAdvice},(err,receiptAdviceDoc)=>{
 			if(!err){
 				if(receiptAdviceDoc){
 					obj.receiptAdvice._id=receiptAdviceDoc._id
@@ -375,14 +376,11 @@ function listeDuzenle(dbModel,e,cb){
 					obj.receiptAdvice.deliveryContactName=receiptAdviceDoc.deliveryCustomerParty.deliveryContact.name.value
 					obj.receiptAdvice.actualDeliveryDate=receiptAdviceDoc.shipment.delivery.actualDeliveryDate.value
 					obj.receiptAdvice.actualDeliveryTime=receiptAdviceDoc.shipment.delivery.actualDeliveryTime.value
-
-					obj.receiptAdvice.receiptStatus=receiptAdviceDoc.receiptStatus
 					
-					receiptAdviceDoc.receiptAdviceLineInfos.forEach((line)=>{
-						obj.despatchReceiptAdvice.totalReceivedQuantity += Number(line.receivedQuantity.value)
-						obj.despatchReceiptAdvice.totalRejectedQuantity += Number(line.rejectedQuantity.value)
+					receiptAdviceDoc.receiptLine.forEach((line)=>{
+						obj.receiptAdvice.totalReceivedQuantity += Number(line.receivedQuantity.value)
+						obj.receiptAdvice.totalRejectedQuantity += Number(line.rejectedQuantity.value)
 					})
-
 				}
 			}
 			
@@ -470,7 +468,6 @@ function getEDespatchUserList(dbModel, member, req, res, next, cb){
 	})
 }
 
-
 function deleteItem(dbModel, member, req, res, next, cb){
 	console.log('despatch.deleteItem calisti')
 	if(req.params.param1==undefined)
@@ -494,4 +491,29 @@ function deleteItem(dbModel, member, req, res, next, cb){
 			}
 		}
 	})
+}
+
+
+function autoCreateCariKart(dbModel, doc, cb){
+	if(dbModel.settings.despatch_inbox_auto_create_vendor && doc.ioType==1){
+		autoCreateVendor(dbModel,doc,cb)
+	}else if(dbModel.settings.despatch_outbox_auto_create_customer && doc.ioType==0){
+		autoCreateCustomer(dbModel,doc,cb)
+	}else{
+		if(cb)
+			cb(null)
+	}
+}
+
+function autoCreateVendor(dbModel, doc, cb){
+	
+		var newDoc = new dbModel.parties(data)
+	if(!epValidateSync(newDoc,next))
+		return
+
+}
+
+
+function autoCreateCustomer(dbModel, doc, cb){
+
 }

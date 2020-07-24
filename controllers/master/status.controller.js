@@ -1,6 +1,6 @@
-module.exports = (member,req, res, cb)=>{
+module.exports = (member, req, res, next, cb)=>{
 	eDespatchService.get(null,'/',{},(err,data)=>{
-		if(dberr(err)){
+		if(dberr(err,next)){
 			cb({
 				workingMode: config.status,
 				eDespatchService:'working',

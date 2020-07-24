@@ -66,12 +66,14 @@ function getOne(dbModel, member, req, res, next, cb){
 function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
+	data=fazlaliklariTemizleDuzelt(data)
 	
-	var newdoc = new dbModel.mrp_stations(data)
-	epValidateSync(newdoc)
-	newdoc.save((err, newdoc2)=>{
+	var newDoc = new dbModel.mrp_stations(data)
+	if(!epValidateSync(newDoc,next))
+		return
+	newDoc.save((err, newDoc2)=>{
 		if(dberr(err,next)){
-			cb(newdoc2)
+			cb(newDoc2)
 		} 
 	})
 }
@@ -83,21 +85,32 @@ function put(dbModel, member, req, res, next, cb){
 	
 	data._id = req.params.param1
 	data.modifiedDate = new Date()
-
+	data=fazlaliklariTemizleDuzelt(data)
+	
 	dbModel.mrp_stations.findOne({ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
-				var newdoc = new dbModel.mrp_stations(doc2)
-				epValidateSync(newdoc)
-				newdoc.save((err, newdoc2)=>{
+				var newDoc = new dbModel.mrp_stations(doc2)
+				if(!epValidateSync(newDoc,next))
+					return
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
-						cb(newdoc2)
+						cb(newDoc2)
 					} 
 				})
 			}
 		}
 	})
+}
+
+
+function fazlaliklariTemizleDuzelt(data){
+	
+	if((data.account || '')=='')
+		data.account=undefined
+	
+	return data
 }
 
 function deleteItem(dbModel, member, req, res, next, cb){

@@ -1,4 +1,4 @@
-module.exports= function (member, req, res,cb) {
+module.exports= function (member, req, res, next, cb) {
 	if(req.method=='GET' || req.method=='POST'){
 		var IP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || ''
 
@@ -11,15 +11,15 @@ module.exports= function (member, req, res,cb) {
 			throw {code:'USERNAME_EMPTY',message:'Telefon numarasi veya email bos olamaz.'}
 		
 		db.members.findOne({username:username},function(err,doc){
-			if(dberr(err))
-				if(dbnull(doc)){
+			if(dberr(err, next))
+				if(dbnull(doc, next)){
 					if(doc.authCode==authCode){
 						doc.verified=true
 						doc.deviceid = deviceid
 						doc.devicetoken = devicetoken
 
-						doc.save((err,newdoc)=>{
-							if(dberr(err)){
+						doc.save((err,newDoc)=>{
+							if(dberr(err, next)){
 								var userinfo = { 
 									_id : doc._id,
 									username: doc.username,
@@ -53,6 +53,6 @@ module.exports= function (member, req, res,cb) {
 			})
 	
 	}else{
-		error.method(req)
+		error.method(req,next)
 	}
 }

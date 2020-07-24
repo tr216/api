@@ -1,7 +1,7 @@
 var https = require('https')
 var http = require('http')
 
-module.exports= (member, req, res, cb)=>{
+module.exports= (member, req, res, next, cb)=>{
 	if(req.method=='POST' || req.method=='PUT'){
 		var IP = req.headers['x-forwarded-for'] || req.connection.remoteAddress || ''
 
@@ -13,8 +13,8 @@ module.exports= (member, req, res, cb)=>{
 
 
 		db.members.findOne({username:formdata.username},function(err,doc){
-			if(dberr(err))
-				if(dbnull(doc)){
+			if(dberr(err, next))
+				if(dbnull(doc, next)){
 					if(doc.verified==false) 
 						throw {code:'USER_NOT_VERIFIED',message:'Kullanici onay kodu girilmemis. Uye olunuz.'}
 
@@ -32,7 +32,7 @@ module.exports= (member, req, res, cb)=>{
 				}
 			})
 	}else{
-		error.method(req)
+		error.method(req,next)
 	}
 }
 

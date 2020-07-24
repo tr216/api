@@ -1,4 +1,4 @@
-module.exports = (member, req, res, cb)=>{
+module.exports = (member, req, res, next, cb)=>{
     switch(req.method){
         case 'GET':
             getMyProfile(member,req,res,cb)
@@ -13,7 +13,7 @@ module.exports = (member, req, res, cb)=>{
         }
         break
         default:
-            error.method(req)
+            error.method(req,next)
         break
     }
 }
@@ -22,8 +22,8 @@ module.exports = (member, req, res, cb)=>{
 
 function getMyProfile(member,req,res,cb){
     db.members.findOne({_id:member._id},(err,doc)=>{
-        if(dberr(err)){
-            if(dbnull(doc)){
+        if(dberr(err, next)){
+            if(dbnull(doc, next)){
             	var myProfile={
 	                _id:doc._id,
 	                name:doc.name,
@@ -40,8 +40,8 @@ function getMyProfile(member,req,res,cb){
 
 function put(member,req,res,cb){
     db.members.findOne({_id:member._id},(err,doc)=>{
-        if(dberr(err)){
-            if(dbnull(doc)){
+        if(dberr(err, next)){
+            if(dbnull(doc, next)){
             	doc.name=req.body.name || ''
 	            doc.lastName=req.body.lastName || ''
 	            doc.email=req.body.email || ''
@@ -59,7 +59,7 @@ function put(member,req,res,cb){
 	            	throw {code:'REQUIRE_FIELD',message:'Cinsiyet hatali.'}
 
 	            doc.save((err,newDoc)=>{
-	                if(dberr(err)){
+	                if(dberr(err, next)){
 	                    var myProfile={
 	                        _id:newDoc._id,
 	                        name:newDoc.name,
@@ -78,8 +78,8 @@ function put(member,req,res,cb){
 
 function changePassword(member,req,res,cb){
     db.members.findOne({_id:member._id},(err,doc)=>{
-        if(dberr(err)){
-            if(dbnull(doc)){
+        if(dberr(err, next)){
+            if(dbnull(doc, next)){
             	var oldPassword=req.body.oldPassword || ''
 	            var newPassword=req.body.newPassword || ''
 
@@ -89,7 +89,7 @@ function changePassword(member,req,res,cb){
 	            	throw {code:'PASSWORD_WRONG',message:'Eski parola hatali.'}
 	            doc.password=newPassword
 	            doc.save((err,newDoc)=>{
-	                if(dberr(err)){
+	                if(dberr(err, next)){
 	                    var myProfile={
 	                        _id:newDoc._id,
 	                        name:newDoc.name,

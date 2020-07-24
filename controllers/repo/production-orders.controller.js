@@ -276,11 +276,12 @@ function post(dbModel, member, req, res, next, cb){
 	data._id=undefined
 	verileriDuzenle(dbModel,data,(err,data)=>{
 		documentHelper.yeniUretimNumarasi(dbModel,data,(err,data)=>{
-			var newdoc = new dbModel.production_orders(data)
-			epValidateSync(newdoc)
+			var newDoc = new dbModel.production_orders(data)
+			if(!epValidateSync(newDoc,next))
+		return
 
-			newdoc=calculateMaterialSummary(newdoc)
-			newdoc.save((err, newdoc2)=>{
+			newDoc=calculateMaterialSummary(newDoc)
+			newDoc.save((err, newDoc2)=>{
 				if(dberr(err,next)){
 					var populate=[
 					{ path:'process.station', select:'_id name'},
@@ -292,9 +293,9 @@ function post(dbModel, member, req, res, next, cb){
 					{ path:'materialSummary.item', select:'_id itemType name description'},
 					{ path:'outputSummary.item', select:'_id itemType name description'}
 					]
-					dbModel.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
+					dbModel.production_orders.findOne({_id:newDoc2._id}).populate(populate).exec((err,newDoc3)=>{
 						if(dberr(err,next)){
-							cb(newdoc3)
+							cb(newDoc3)
 						}
 					})
 				} 
@@ -317,11 +318,12 @@ function put(dbModel, member, req, res, next, cb){
 					doc.orderLineReference=[]
 					doc.process=[]
 					var doc2 = Object.assign(doc, data)
-					var newdoc = new dbModel.production_orders(doc2)
-					epValidateSync(newdoc)
+					var newDoc = new dbModel.production_orders(doc2)
+					if(!epValidateSync(newDoc,next))
+					return
 
-					newdoc=calculateMaterialSummary(newdoc)
-					newdoc.save((err, newdoc2)=>{
+					newDoc=calculateMaterialSummary(newDoc)
+					newDoc.save((err, newDoc2)=>{
 						if(dberr(err,next)){
 							var populate=[
 							{ path:'process.station', select:'_id name'},
@@ -333,9 +335,9 @@ function put(dbModel, member, req, res, next, cb){
 							{ path:'materialSummary.item', select:'_id itemType name description'},
 							{ path:'outputSummary.item', select:'_id itemType name description'}
 							]
-							dbModel.production_orders.findOne({_id:newdoc2._id}).populate(populate).exec((err,newdoc3)=>{
+							dbModel.production_orders.findOne({_id:newDoc2._id}).populate(populate).exec((err,newDoc3)=>{
 								if(dberr(err,next)){
-									cb(newdoc3)
+									cb(newDoc3)
 								}
 							})
 						} 

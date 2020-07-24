@@ -1,4 +1,4 @@
-module.exports= function (member, req, res, cb) {
+module.exports= function (member, req, res, next, cb) {
 	if(req.method=='GET' || req.method=='POST'){
 		var username= util.clearText(req.body.username || req.query.username || '')
 		var password= util.clearText(req.body.password || req.query.password || '')
@@ -9,7 +9,7 @@ module.exports= function (member, req, res, cb) {
 		if(username.length>5 && username.substr(-5)=='@root'){
 			username=username.substr(0,username.length-5)
 			db.sysusers.findOne({username:username,password:password},(err,doc)=>{
-				if(dberr(err)){
+				if(dberr(err, next)){
 					if(doc==null)
 						throw {code:'LOGIN_FAILED',message:'Giriş başarısız'}
 					if(doc.passive) 
@@ -36,7 +36,7 @@ module.exports= function (member, req, res, cb) {
 		}else{
 
 			db.members.findOne({username:username , password:password},(err,doc)=>{
-				if(dberr(err)){
+				if(dberr(err, next)){
 	                if(doc==null)
 						throw {code:'LOGIN_FAILED',message:'Giriş başarısız'}
 					if(doc.passive) 
@@ -70,7 +70,7 @@ module.exports= function (member, req, res, cb) {
 			})
 		}
 	}else{
-		error.method(req)
+		error.method(req,next)
 	}
 
 }

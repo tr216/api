@@ -81,13 +81,14 @@ function post(dbModel, member, req, res, next, cb){
 		data.account=undefined
 	data._id=undefined
 
-	var newdoc = new dbModel.parties(data)
-	newdoc.partyType='Customer'
-	epValidateSync(newdoc)
+	var newDoc = new dbModel.parties(data)
+	newDoc.partyType='Customer'
+	if(!epValidateSync(newDoc,next))
+		return
 
-	newdoc.save((err, newdoc2)=>{
+	newDoc.save((err, newDoc2)=>{
 		if(dberr(err,next)){
-			cb(newdoc2)
+			cb(newDoc2)
 		} 
 	})
 }
@@ -110,12 +111,13 @@ function put(dbModel, member, req, res, next, cb){
 					return next({code: 'WRONG_PARAMETER', message: 'Yanlis partyType'})
 
 				var doc2 = Object.assign(doc, data)
-				var newdoc = new dbModel.parties(doc2)
-				epValidateSync(newdoc)
+				var newDoc = new dbModel.parties(doc2)
+				if(!epValidateSync(newDoc,next))
+					return
 
-				newdoc.save((err, newdoc2)=>{
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next))
-						cb(newdoc2)
+						cb(newDoc2)
 				})
 			}
 		}

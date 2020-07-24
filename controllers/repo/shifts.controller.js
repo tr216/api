@@ -55,14 +55,15 @@ function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
-	var newdoc = new dbModel.shifts(data)
-	epValidateSync(newdoc)
+	var newDoc = new dbModel.shifts(data)
+	if(!epValidateSync(newDoc,next))
+		return
 
-	timesCheck(newdoc,(err)=>{
+	timesCheck(newDoc,(err)=>{
 		if(dberr(err,next)){
-			newdoc.save((err, newdoc2)=>{
+			newDoc.save((err, newDoc2)=>{
 				if(dberr(err,next)){
-					cb(newdoc2)
+					cb(newDoc2)
 				} 
 			})
 		}
@@ -80,14 +81,15 @@ function put(dbModel, member, req, res, next, cb){
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
-				var newdoc = new dbModel.shifts(doc2)
-				epValidateSync(newdoc)
+				var newDoc = new dbModel.shifts(doc2)
+				if(!epValidateSync(newDoc,next))
+					return
 
-				timesCheck(newdoc,(err)=>{
+				timesCheck(newDoc,(err)=>{
 					if(dberr(err,next)){
-						newdoc.save((err, newdoc2)=>{
+						newDoc.save((err, newDoc2)=>{
 							if(dberr(err,next)){
-								cb(newdoc2)
+								cb(newDoc2)
 							} 
 						})
 					}

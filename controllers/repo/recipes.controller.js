@@ -91,14 +91,15 @@ function post(dbModel, member, req, res, next, cb){
 				}
 			}
 
-			var newdoc = new dbModel.recipes(data)
+			var newDoc = new dbModel.recipes(data)
 
-			epValidateSync(newdoc)
+			if(!epValidateSync(newDoc,next))
+		return
 
-			newdoc=calculateMaterialSummary(newdoc)
-			newdoc.save((err, newdoc2)=>{
+			newDoc=calculateMaterialSummary(newDoc)
+			newDoc.save((err, newDoc2)=>{
 				if(dberr(err,next)){
-					defaultReceteAyarla(dbModel,newdoc2,(err,newdoc3)=>{
+					defaultReceteAyarla(dbModel,newDoc2,(err,newDoc3)=>{
 						var populate=[
 						{ path:'process.station', select:'_id name'},
 						{ path:'process.step', select:'_id name useMaterial'},
@@ -109,7 +110,7 @@ function post(dbModel, member, req, res, next, cb){
 						{ path:'materialSummary.item', select:'_id itemType name description'},
 						{ path:'outputSummary.item', select:'_id itemType name description'}
 						]
-						dbModel.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
+						dbModel.recipes.findOne({_id:newDoc3._id}).populate(populate).exec((err,doc)=>{
 							if(dberr(err,next)){
 								cb(doc)
 							}
@@ -148,12 +149,13 @@ function put(dbModel, member, req, res, next, cb){
 						}
 						doc.process=[]
 						var doc2 = Object.assign(doc, data)
-						var newdoc = new dbModel.recipes(doc2)
-						epValidateSync(newdoc)
+						var newDoc = new dbModel.recipes(doc2)
+						if(!epValidateSync(newDoc,next))
+					return
 
-						newdoc=calculateMaterialSummary(newdoc)
-						newdoc.save((err, newdoc2)=>{
-							defaultReceteAyarla(dbModel,newdoc2,(err,newdoc3)=>{
+						newDoc=calculateMaterialSummary(newDoc)
+						newDoc.save((err, newDoc2)=>{
+							defaultReceteAyarla(dbModel,newDoc2,(err,newDoc3)=>{
 								var populate=[
 								{ path:'process.station', select:'_id name'},
 								{ path:'process.step', select:'_id name useMaterial'},
@@ -164,7 +166,7 @@ function put(dbModel, member, req, res, next, cb){
 								{ path:'materialSummary.item', select:'_id itemType name description'},
 								{ path:'outputSummary.item', select:'_id itemType name description'}
 								]
-								dbModel.recipes.findOne({_id:newdoc3._id}).populate(populate).exec((err,doc)=>{
+								dbModel.recipes.findOne({_id:newDoc3._id}).populate(populate).exec((err,doc)=>{
 									if(dberr(err,next)){
 										cb(doc)
 									}
