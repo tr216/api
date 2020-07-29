@@ -1,6 +1,6 @@
 module.exports = (dbModel, member, req, res, next, cb)=>{
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	switch(req.method){
 		case 'GET':

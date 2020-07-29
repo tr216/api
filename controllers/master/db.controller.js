@@ -161,9 +161,9 @@ function resonance_mysql(member, req, res, next, cb){
 								}
 							})
 						}
-					})   
+					}
+				})   
 			}
 		}
 	})
-}
 }

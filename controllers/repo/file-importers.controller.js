@@ -166,7 +166,7 @@ function put(dbModel, member, req, res, next, cb){
 
 function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	var data = req.body || {}
 	data._id = req.params.param1
@@ -179,7 +179,7 @@ function deleteItem(dbModel, member, req, res, next, cb){
 
 function saveFile(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	if(req.params.param2==undefined)
 		error.param2(req)
 	var data = req.body || {}
@@ -255,7 +255,7 @@ function saveFile(dbModel, member, req, res, next, cb){
 
 function setStart(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
 		error.param2(req)
 
@@ -282,7 +282,7 @@ function setStart(dbModel, member, req, res, next, cb){
 
 function deleteFile(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
 		error.param2(req)
 
@@ -311,7 +311,7 @@ function deleteFile(dbModel, member, req, res, next, cb){
 
 function runCode(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	if(req.params.param2==undefined)
 		error.param2(req)
 

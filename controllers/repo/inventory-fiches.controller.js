@@ -205,7 +205,7 @@ function post(dbModel, member, req, res, next, cb){
 
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	var data=req.body || {}
 	data._id = req.params.param1
@@ -334,7 +334,7 @@ function fazlaliklariTemizleDuzelt(data){
 
 function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.inventory_fiches.removeOne(member,{ _id: data._id},(err,doc)=>{

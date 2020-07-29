@@ -4,6 +4,7 @@
 			"port" : 3500
 		},
 		"mongodb": {
+			"address111":"mongodb://localhost:27017/etuliaportal",
 			"address":"mongodb://localhost:27017/plasetdb",
 			"userAddress":"mongodb://localhost:27017/"
 		},
@@ -15,8 +16,13 @@
 			"url":"http://localhost:3600/eInvoice",
 			"enabled":true
 		},
-		"connector_service":{
-			"port":33216
+		"posDeviceService":{
+			"url":"http://localhost:3800",
+			"enabled":true
+		},
+		"connectorService":{
+			"url":"http://localhost:3800",
+			"enabled":true
 		},
 		"tmpDir":"/tmp"
 	},
@@ -25,6 +31,7 @@
 			"port" : 3500
 		},
 		"mongodb": {
+			"address1111":"mongodb://localhost:27017/etuliaportal",
 			"address":"mongodb://localhost:27017/plasetdb",
 			"userAddress":"mongodb://localhost:27017/"
 		},
@@ -36,8 +43,13 @@
 			"url":"http://localhost:3600/eInvoice",
 			"enabled":true
 		},
-		"connector_service":{
-			"port":33216
+		"posDeviceService":{
+			"url":"http://localhost:3800",
+			"enabled":true
+		},
+		"connectorService":{
+			"url":"http://localhost:3800",
+			"enabled":true
 		},
 		"tmpDir":"C:\\arge\\tr216\\temp"
 	},
@@ -49,15 +61,20 @@
 			"address":"mongodb://localhost:27017/tr216-test",
 			"userAddress":"mongodb://localhost:27017/"
 		},
-		"connector_service":{
-			"port":33218
-		},
 		"eDespatchService":{
 			"url":"http://localhost:3601/eDespatch",
 			"enabled":true
 		},
 		"eInvoiceService":{
 			"url":"http://localhost:3601/eInvoice",
+			"enabled":true
+		},
+		"posDeviceService":{
+			"url":"http://localhost:3800",
+			"enabled":true
+		},
+		"connectorService":{
+			"url":"http://localhost:3800",
 			"enabled":true
 		},
 		"tmpDir":"C:\\arge\\tr216\\temp"

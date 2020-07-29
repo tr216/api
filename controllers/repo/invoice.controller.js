@@ -1,6 +1,6 @@
 module.exports = (dbModel, member, req, res, next, cb)=>{
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	switch(req.method){
 		case 'GET':
@@ -795,7 +795,7 @@ function approveDeclineInvoice(type, dbModel,member,req,res,cb){
 
 function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	
 	var data = req.body || {}
 	data._id = req.params.param1

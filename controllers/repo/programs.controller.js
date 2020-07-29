@@ -8,7 +8,11 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		}
 		break
 		case 'POST':
-		post(dbModel, member, req, res, next, cb)
+		if(req.params.param1=='copy'){
+			copy(dbModel, member, req, res, next, cb)
+		}else{
+			post(dbModel, member, req, res, next, cb)
+		}
 		break
 		case 'PUT':
 		put(dbModel, member, req, res, next, cb)
@@ -20,41 +24,61 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		error.method(req)
 		break
 	}
-
 }
 
+function copy(dbModel, member, req, res, next, cb){
+	var id=req.params.param2 || req.body['id'] || req.query.id || ''
+	var newName=req.body['newName'] || req.body['name'] || ''
+
+	if(id=='')
+		return error.param1(req,next)
+
+	dbModel.programs.findOne({ _id: id},(err,doc)=>{
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
+				var data=doc.toJSON()
+				data._id=undefined
+				delete data._id
+				if(newName!=''){
+					data.name=newName
+				}else{
+					data.name +=' copy'
+				}
+				data.createdDate=new Date()
+				data.modifiedDate=new Date()
+				var newDoc = new dbModel.programs(data)
+				if(!epValidateSync(newDoc,next))
+					return
+				newDoc.save((err, newDoc2)=>{
+					if(dberr(err,next)){
+						cb(newDoc2)
+					} 
+				})
+			}
+		}
+	})
+}
+
+
 function getList(dbModel, member, req, res, next, cb){
-	var options={page: (req.query.page || 1)}
-	if(!req.query.page){
-		options.limit=50000
+	var options={page: (req.query.page || 1), 
+		
 	}
+
+	if((req.query.pageSize || req.query.limit))
+		options['limit']=req.query.pageSize || req.query.limit
+	
+
 	var filter = {}
 
 	if((req.query.passive || '')!='')
 		filter['passive']=req.query.passive
+
+	if((req.query.name || '')!='')
+		filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }
 	
-	if((req.query.firstName || req.query.name || '')!='')
-		filter['firstName.value']={ $regex: '.*' + (req.query.firstName || req.query.name) + '.*' ,$options: 'i' }
 	
-	if((req.query.familyName || req.query.name || '')!='')
-		filter['familyName.value']={ $regex: '.*' + (req.query.familyName || req.query.name) + '.*' ,$options: 'i' }
-
-	if((req.query.cityName || '')!='')
-		filter['postalAddress.cityName.value']={ $regex: '.*' + req.query.cityName + '.*' ,$options: 'i' }
-	
-	if((req.query.district || '')!='')
-		filter['postalAddress.district.value']={ $regex: '.*' + req.query.district + '.*' ,$options: 'i' }
-
-	if((req.query.shift || '')!='')
-		filter['shift']=req.query.shift
-
-	if((req.query.station || '')!='')
-		filter['shift']=req.query.shift
-
-	if((req.query.bloodGroup || '')!='')
-		filter['bloodGroup']=req.query.bloodGroup
-
-	dbModel.persons.paginate(filter,options,(err, resp)=>{
+	dbModel.programs.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
 			cb(resp)
 		}
@@ -62,7 +86,7 @@ function getList(dbModel, member, req, res, next, cb){
 }
 
 function getOne(dbModel, member, req, res, next, cb){
-	dbModel.persons.findOne({_id:req.params.param1},(err,doc)=>{
+	dbModel.programs.findOne({_id:req.params.param1},(err,doc)=>{
 		if(dberr(err,next)){
 			cb(doc)
 		}
@@ -72,14 +96,9 @@ function getOne(dbModel, member, req, res, next, cb){
 function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
-	if((data.account || '')=='')
-		data.account=undefined
-	if((data.shift || '')=='')
-		data.shift=undefined
-	if((data.station || '')=='')
-		data.station=undefined
-
-	var newDoc = new dbModel.persons(data)
+	data=fazlaliklariTemizleDuzelt(data)
+	
+	var newDoc = new dbModel.programs(data)
 	if(!epValidateSync(newDoc,next))
 		return
 	newDoc.save((err, newDoc2)=>{
@@ -92,24 +111,19 @@ function post(dbModel, member, req, res, next, cb){
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		return error.param1(req, next)
-	var data=req.body || {}
+	var data = req.body || {}
+	
 	data._id = req.params.param1
 	data.modifiedDate = new Date()
-	if((data.account || '')=='')
-		data.account=undefined
-	if((data.shift || '')=='')
-		data.shift=undefined
-	if((data.station || '')=='')
-		data.station=undefined
-
-	dbModel.persons.findOne({ _id: data._id},(err,doc)=>{
+	data=fazlaliklariTemizleDuzelt(data)
+	
+	dbModel.programs.findOne({ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				var doc2 = Object.assign(doc, data)
-				var newDoc = new dbModel.persons(doc2)
+				var newDoc = new dbModel.programs(doc2)
 				if(!epValidateSync(newDoc,next))
 					return
-				
 				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
 						cb(newDoc2)
@@ -120,12 +134,18 @@ function put(dbModel, member, req, res, next, cb){
 	})
 }
 
+
+function fazlaliklariTemizleDuzelt(data){
+	
+	return data
+}
+
 function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		return error.param1(req, next)
 	var data = req.body || {}
 	data._id = req.params.param1
-	dbModel.persons.removeOne(member,{ _id: data._id},(err,doc)=>{
+	dbModel.programs.removeOne(member,{ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			cb(null)
 		}

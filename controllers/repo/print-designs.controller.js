@@ -32,7 +32,7 @@ function copy(dbModel, member, req, res, next, cb){
 	var newName=req.body['newName'] || req.body['name'] || ''
 
 	if(id=='')
-		error.param1(req)
+		return error.param1(req,next)
 
 	dbModel.print_designs.findOne({ _id: id},(err,doc)=>{
 		if(dberr(err,next)){
@@ -110,7 +110,7 @@ function post(dbModel, member, req, res, next, cb){
 
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	
 	var data = req.body || {}
 	data._id = req.params.param1
@@ -135,7 +135,7 @@ function put(dbModel, member, req, res, next, cb){
 
 function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.print_designs.removeOne(member,{ _id: data._id},(err,doc)=>{

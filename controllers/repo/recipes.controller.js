@@ -75,26 +75,41 @@ function post(dbModel, member, req, res, next, cb){
 	data._id=undefined
 
 	if((data.item || '')=='')
-		error.param1(req)
-
+		return error.param1(req, next)
 	dbModel.items.findOne({_id:data.item},(err,itemDoc)=>{
 		if(dberr(err,next)){
 			if(itemDoc==null)
 				return next({code: 'ITEM_NOT_FOUND', message: 'item bulunamadi.'})
 
+			
 			if(data.process){
-				if(data.process.machines){
-					data.process.machines.forEach((e)=>{
-						if((e.machineGroup || '')=='') e.machineGroup=undefined
-							if((e.mold || '')=='') e.mold=undefined
+				data.process.forEach((p)=>{
+					if(p.machines){
+						p.machines.forEach((e)=>{
+							if((e.machineGroup || '')==''){
+								e.machineGroup=undefined
+							}else{
+								if((e.machineGroup._id || '')==''){
+									e.machineGroup=undefined
+								}
+							}
+
+							if((e.mold || '')==''){
+								e.mold=undefined
+							}else{
+								if((e.mold._id || '')==''){
+									e.mold=undefined
+								}
+							}
 						})
-				}
+					}
+				})
 			}
 
 			var newDoc = new dbModel.recipes(data)
 
 			if(!epValidateSync(newDoc,next))
-		return
+				return
 
 			newDoc=calculateMaterialSummary(newDoc)
 			newDoc.save((err, newDoc2)=>{
@@ -124,12 +139,12 @@ function post(dbModel, member, req, res, next, cb){
 
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	var data=req.body || {}
 	data._id = req.params.param1
 	data.modifiedDate = new Date()
 	if((data.item || '')=='')
-		error.param1(req)
+		return error.param1(req, next)
 
 	dbModel.items.findOne({_id:data.item},(err,itemDoc)=>{
 		if(dberr(err,next)){
@@ -151,7 +166,7 @@ function put(dbModel, member, req, res, next, cb){
 						var doc2 = Object.assign(doc, data)
 						var newDoc = new dbModel.recipes(doc2)
 						if(!epValidateSync(newDoc,next))
-					return
+							return
 
 						newDoc=calculateMaterialSummary(newDoc)
 						newDoc.save((err, newDoc2)=>{
@@ -250,7 +265,7 @@ function defaultReceteAyarla(dbModel,doc,cb){
 
 function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	var data = req.body || {}
 	data._id = req.params.param1
 	dbModel.recipes.removeOne(member,{ _id: data._id},(err,doc)=>{

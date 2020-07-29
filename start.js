@@ -1,6 +1,5 @@
 global.config=require('./config').release
 config.status='release'
-global.privateConfig=require('./private-config.json')
 
 var log=require('./bin/event-log')
 

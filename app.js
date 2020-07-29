@@ -13,6 +13,11 @@ var methodOverride = require('method-override')
 global.__root=__dirname
 
 global.util = require('./bin/util')
+global.privateConfig={}
+if(fs.existsSync('./private-config.json')){
+	global.privateConfig=require('./private-config.json')
+}
+
 global.mail=require('./bin/mail')
 
 
@@ -62,6 +67,8 @@ module.exports=(cb)=>{
 			global.services.start(()=>{})
 			global.eDespatchService = require('./bin/rest-helper')(config.eDespatchService.url)
 			global.eInvoiceService = require('./bin/rest-helper')(config.eInvoiceService.url)
+			global.posDeviceService = require('./bin/rest-helper')(config.posDeviceService.url)
+			global.connectorService = require('./bin/rest-helper')(config.connectorService.url)
 			cb(null,app)
 
 		}else{

@@ -11,7 +11,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		case 'POST':
 
 		if(req.params.param1=='test'){
-			//qwerty
+			
 			test(dbModel, member, req, res, next, cb)
 		}else{
 			if(req.params.param2=='file'){
@@ -166,7 +166,7 @@ function post(dbModel, member, req, res, next, cb){
 
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	var data = req.body || {}
 
@@ -191,7 +191,7 @@ function put(dbModel, member, req, res, next, cb){
 
 function deleteItem(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	var data = req.body || {}
 	data._id = req.params.param1
@@ -204,7 +204,7 @@ function deleteItem(dbModel, member, req, res, next, cb){
 
 function saveFile(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	if(req.params.param2==undefined)
 		error.param2(req)
@@ -279,7 +279,7 @@ function saveFile(dbModel, member, req, res, next, cb){
 
 function setStart(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
 		error.param2(req)
@@ -305,7 +305,7 @@ function setStart(dbModel, member, req, res, next, cb){
 
 function deleteFile(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
 		error.param2(req)
@@ -336,7 +336,7 @@ function deleteFile(dbModel, member, req, res, next, cb){
 
 function runCode(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	if(req.params.param2==undefined)
 		error.param2(req)
@@ -360,35 +360,53 @@ function runCode(dbModel, member, req, res, next, cb){
 	})
 }
 
-//qwerty
 
 function test(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 
 	if(data['connectorId']==undefined || data['connectorPass']==undefined || data['connectionType']==undefined)
 		return next({code:'WRONG_PARAMETER',message:'connectorId, connectorPass, connectionType are required.'})
-
-
 	switch(data.connectionType){
 		case 'mssql':
-
-		services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
-		                                                ,'MSSQL_CONNECTION_TEST',{connection:data.connection,query:''},(result)=>{
-		                                                	cb(result.data)
-		                                                })
+			data['command']='MSSQL_CONNECTION_TEST'
 		break
 		case 'mysql':
-		services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
-		                                                ,'MYSQL_CONNECTION_TEST',{connection:data.connection,query:''},(result)=>{
-		                                                	cb(result.data)
-		                                                })
+			data['command']='MYSQL_CONNECTION_TEST'
 		break
 		default:
-		services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
-		                                                ,'TIME',{},(result)=>{
-		                                                	cb(result.data)
-		                                                })
+			data['command']='TIME'
 		break
 	}
+	connectorService.post(dbModel,`/send`,data,(err,data)=>{
+		if(dberr(err,next)){
+			cb(data)
+		}
+	})
+
+	// switch(data.connectionType){
+	// 	case 'mssql':
+	// 	connectorService.post(dbModel,`/send`,{},(err,data)=>{
+	// 			if(dberr(err,next)){
+	// 				cb(data)
+	// 			}
+	// 		})
+	// 	services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
+	// 	                                                ,'MSSQL_CONNECTION_TEST',{connection:data.connection,query:''},(result)=>{
+	// 	                                                	cb(result.data)
+	// 	                                                })
+	// 	break
+	// 	case 'mysql':
+	// 	services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
+	// 	                                                ,'MYSQL_CONNECTION_TEST',{connection:data.connection,query:''},(result)=>{
+	// 	                                                	cb(result.data)
+	// 	                                                })
+	// 	break
+	// 	default:
+	// 	services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
+	// 	                                                ,'TIME',{},(result)=>{
+	// 	                                                	cb(result.data)
+	// 	                                                })
+	// 	break
+	// }
 
 }

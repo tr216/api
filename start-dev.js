@@ -1,8 +1,6 @@
 global.config=require('./config').development
 config.status='development'
 
-global.privateConfig=require('./private-config.json')
-
 var log=require('./bin/event-log')
 
 require('./app')((err,app)=>{

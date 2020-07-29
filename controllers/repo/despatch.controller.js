@@ -177,7 +177,7 @@ function getErrors(dbModel, member, req, res, next, cb){
 
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 
 	var data = req.body || {}
 	data._id = req.params.param1
@@ -400,7 +400,7 @@ function getDespatch(dbModel, member, req, res, next, cb){
 		select=''
 
 	if(_id=='')
-		error.param1(req)
+		return error.param1(req, next)
 
 	dbModel.despatches.findOne({_id:_id}).select(select).exec((err,doc)=>{
 		if(dberr(err,next)){
@@ -471,7 +471,7 @@ function getEDespatchUserList(dbModel, member, req, res, next, cb){
 function deleteItem(dbModel, member, req, res, next, cb){
 	console.log('despatch.deleteItem calisti')
 	if(req.params.param1==undefined)
-		error.param1(req)
+		return error.param1(req, next)
 	
 	var data = req.body || {}
 	data._id = req.params.param1
