@@ -8,7 +8,7 @@ module.exports = (member, req, res, next, cb)=>{
 		put(member,req,res,next, cb)
 		break
 		default:
-		error.method(req)
+		error.method(req, next)
 		break
 	}
 }

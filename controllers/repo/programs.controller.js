@@ -10,6 +10,11 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		case 'POST':
 		if(req.params.param1=='copy'){
 			copy(dbModel, member, req, res, next, cb)
+		}else if(req.params.param1=='render'){
+
+			render(dbModel, member, req, res, next, cb)
+		}else if(req.params.param1=='run'){
+			runCode(dbModel, member, req, res, next, cb)
 		}else{
 			post(dbModel, member, req, res, next, cb)
 		}
@@ -21,9 +26,42 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
-		error.method(req)
+		error.method(req, next)
 		break
 	}
+}
+
+function render(dbModel, member, req, res, next, cb){
+	var doc=req.body || {}
+	if(!doc.files)
+		return error.data(req,next,'files')
+	if(doc.data==undefined){
+		doc.data={}
+	}
+
+	util.renderFiles(doc.files,doc.data,(err,rendered)=>{
+		if(!err){
+			cb(rendered)
+		}else{
+			next(err)
+		}
+	})
+}
+
+function runCode(dbModel, member, req, res, next, cb){
+	var doc=req.body || {}
+	if(!doc.files)
+		return error.data(req,next,'files')
+	
+	var data=doc.data || {}
+
+	services.programs.run(dbModel,doc,data,(err,result)=>{
+		if(!err){
+			cb(result)
+		}else{
+			next(err)
+		}
+	})
 }
 
 function copy(dbModel, member, req, res, next, cb){
@@ -31,7 +69,7 @@ function copy(dbModel, member, req, res, next, cb){
 	var newName=req.body['newName'] || req.body['name'] || ''
 
 	if(id=='')
-		return error.param1(req,next)
+		return error.param2(req,next)
 
 	dbModel.programs.findOne({ _id: id},(err,doc)=>{
 		if(dberr(err,next)){

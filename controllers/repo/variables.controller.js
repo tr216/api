@@ -8,16 +8,16 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		}
 		break
 		case 'POST':
-		error.method(req)
+		error.method(req, next)
 		break
 		case 'PUT':
 		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
-		error.method(req)
+		error.method(req, next)
 		break
 		default:
-		error.method(req)
+		error.method(req, next)
 		break
 	}
 }

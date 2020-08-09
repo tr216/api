@@ -13,30 +13,14 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		if(req.params.param1=='test'){
 			
 			test(dbModel, member, req, res, next, cb)
+		}else if(req.params.param1=='run' || req.params.param1=='send'){
+			send(dbModel, member, req, res, next, cb)
 		}else{
-			if(req.params.param2=='file'){
-
-				saveFile(dbModel, member, req, res, next, cb)
-			}else if(req.params.param2=='run'){
-
-				runCode(dbModel, member, req, res, next, cb)
-			}else if(req.params.param2=='setstart' || req.params.param2=='setStart'){
-				setStart(dbModel, member, req, res, next, cb)
-			}else{
 				post(dbModel, member, req, res, next, cb)
-			}
 		}
 		break
 		case 'PUT':
-		if(req.params.param2=='file'){
-			saveFile(dbModel, member, req, res, next, cb)
-		}else if(req.params.param2=='run'){
-			runCode(dbModel, member, req, res, next, cb)
-		}else if(req.params.param2=='setstart' || req.params.param2=='setStart'){
-			setStart(dbModel, member, req, res, next, cb)
-		}else{
 			put(dbModel, member, req, res, next, cb)
-		}
 		break
 		case 'DELETE':
 		if(req.params.param2=='file'){
@@ -47,7 +31,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 		break
 		default:
-		error.method(req)
+		error.method(req, next)
 		break
 	}
 
@@ -202,160 +186,24 @@ function deleteItem(dbModel, member, req, res, next, cb){
 }
 
 
-function saveFile(dbModel, member, req, res, next, cb){
-	if(req.params.param1==undefined)
-		return error.param1(req, next)
-
-	if(req.params.param2==undefined)
-		error.param2(req)
+function send(dbModel, member, req, res, next, cb){
 
 	var data = req.body || {}
-	var populate=[{path:'files',select:'_id name extension size type fileName '}]
+	if(data['connectorId']==undefined || data['connectorPass']==undefined || data['connectionType']==undefined)
+		return next({code:'WRONG_PARAMETER',message:'connectorId, connectorPass, connectionType are required.'})
 
-	data['_id']=req.body._id || req.query.fileId || req.query.fileid
-
-	dbModel.local_connectors.findOne({ _id: req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err,next)){
-			if(dbnull(doc,next)){
-				if(data._id==undefined){
-					var newfileDoc = new dbModel.files(data)
-					epValidateSync(newfileDoc)
-					newfileDoc.save(function(err, newfileDoc2) {
-						if(dberr(err,next)){
-							doc.files.push(newfileDoc2._id)
-							doc.modifiedDate=new Date()
-							doc.save((err)=>{
-								if(dberr(err,next))
-									cb('')
-							})
-						}
-					})
-				}else{
-					var bFound=false
-					doc.files.forEach((f)=>{
-						if(f._id != undefined){
-							if(f.name==data['name'] && f.extension==data['extension'] && f._id != data._id){
-								bFound=true
-								return
-							}
-						}
-					})
-
-					if(bFound)
-						return next({code: 'ALREADY_EXISTS', message: 'Ayni dosya isminden baska bir kayit daha var!'})
-					
-
-					dbModel.files.findOne({_id:data._id},(err,fileDoc)=>{
-						if(dberr(err,next)){
-							if(dbnull(fileDoc)){
-								fileDoc.name=data.name
-								fileDoc.extension=data.extension
-								fileDoc.data=data.data
-								fileDoc.type=data.type
-								fileDoc.size=data.size
-
-								epValidateSync(fileDoc)
-
-								if(dberr(err,next)){
-									fileDoc.save((err)=>{
-										if(dberr(err,next)){
-											doc.modifiedDate=new Date()
-											doc.save((err)=>{
-												if(dberr(err,next))
-													cb('')
-											})
-										}
-									})
-
-								}
-							}
-						}
-					})
-				}
+	if(data.connection){
+		if(data.connection.port){
+			if(!isNaN(data.connection.port)){
+				data.connection.port=Number(data.connection.port)
 			}
 		}
-	})
-}
+	}
+	
 
-function setStart(dbModel, member, req, res, next, cb){
-	if(req.params.param1==undefined)
-		return error.param1(req, next)
-
-	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
-		error.param2(req)
-
-	var fileId=req.query.fileId || req.query.fileid || ''
-	dbModel.local_connectors.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
+	connectorService.post(dbModel,`/send`,data,(err,data)=>{
 		if(dberr(err,next)){
-			if(dbnull(doc,next)){
-				doc.files.forEach((e,index)=>{
-					if(e==req.query.fileId){
-						doc.startFile=e._id
-						return
-					}
-				})
-				doc.save((err,doc2)=>{
-					if(dberr(err,next))
-						cb('')
-				})
-			}
-		}
-	})
-}
-
-function deleteFile(dbModel, member, req, res, next, cb){
-	if(req.params.param1==undefined)
-		return error.param1(req, next)
-
-	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
-		error.param2(req)
-
-	var fileId=req.query.fileId || req.query.fileid || ''
-
-	dbModel.local_connectors.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
-		if(dberr(err,next)){
-			if(dbnull(doc,next)){
-				doc.files.forEach((e,index)=>{
-					if(e==req.query.fileId){
-						doc.files.splice(index,1)
-						return
-					}
-				})
-				doc.save((err,doc2)=>{
-					if(dberr(err,next)){
-						dbModel.files.removeOne(member,{ _id: req.query.fileId },(err)=>{
-							if(dberr(err,next))
-								cb(doc2)
-						})
-					}
-				})
-			}
-		}
-	})
-}
-
-function runCode(dbModel, member, req, res, next, cb){
-	if(req.params.param1==undefined)
-		return error.param1(req, next)
-
-	if(req.params.param2==undefined)
-		error.param2(req)
-
-	var data = req.body || {}
-	var populate=['startFile','files']
-
-	dbModel.local_connectors.findOne({_id:req.params.param1}).populate(populate).exec((err,doc)=>{
-		if(dberr(err,next)){
-			if(dbnull(doc,next)){
-				var sampleData={}
-
-				if(data.sampleData!=undefined)
-					sampleData=data.sampleData
-				services.tr216LocalConnector.run(doc,sampleData,(err,resp)=>{
-					if(dberr(err,next))
-						cb((resp || ''))
-				})
-			}
+			cb(data)
 		}
 	})
 }
@@ -364,8 +212,19 @@ function runCode(dbModel, member, req, res, next, cb){
 function test(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 
+
 	if(data['connectorId']==undefined || data['connectorPass']==undefined || data['connectionType']==undefined)
 		return next({code:'WRONG_PARAMETER',message:'connectorId, connectorPass, connectionType are required.'})
+	if(data.connection){
+		if(data.connection.port){
+			if(!isNaN(data.connection.port)){
+				data.connection.port=Number(data.connection.port)
+			}
+		}
+	}
+	console.log(`data:`,data)
+	tempLog('local_connectors.send.json',JSON.stringify(data,null,2))
+
 	switch(data.connectionType){
 		case 'mssql':
 			data['command']='MSSQL_CONNECTION_TEST'
@@ -377,36 +236,10 @@ function test(dbModel, member, req, res, next, cb){
 			data['command']='TIME'
 		break
 	}
-	connectorService.post(dbModel,`/send`,data,(err,data)=>{
+	connectorService.post(dbModel,`/test`,data,(err,data)=>{
 		if(dberr(err,next)){
 			cb(data)
 		}
 	})
-
-	// switch(data.connectionType){
-	// 	case 'mssql':
-	// 	connectorService.post(dbModel,`/send`,{},(err,data)=>{
-	// 			if(dberr(err,next)){
-	// 				cb(data)
-	// 			}
-	// 		})
-	// 	services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
-	// 	                                                ,'MSSQL_CONNECTION_TEST',{connection:data.connection,query:''},(result)=>{
-	// 	                                                	cb(result.data)
-	// 	                                                })
-	// 	break
-	// 	case 'mysql':
-	// 	services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
-	// 	                                                ,'MYSQL_CONNECTION_TEST',{connection:data.connection,query:''},(result)=>{
-	// 	                                                	cb(result.data)
-	// 	                                                })
-	// 	break
-	// 	default:
-	// 	services.tr216LocalConnector.sendCommand({connectorId:data.connectorId,connectorPass:data.connectorPass}
-	// 	                                                ,'TIME',{},(result)=>{
-	// 	                                                	cb(result.data)
-	// 	                                                })
-	// 	break
-	// }
 
 }

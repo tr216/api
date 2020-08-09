@@ -33,7 +33,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			return getErrors(dbModel, member, req, res, next, cb)
 
 			default:
-			return error.method(req)
+			return error.method(req, next)
 			break
 		}
 		break
@@ -43,9 +43,9 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			if(req.params.param2.lcaseeng()=='import'){
 				transferImport(dbModel, member, req, res, next, cb)
 			}else if(req.params.param2.lcaseeng()=='export'){
-				return error.method(req)
+				return error.method(req, next)
 			}else{
-				return error.method(req)
+				return error.method(req, next)
 			}
 			break
 			case 'sendtogib':
@@ -61,7 +61,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			case 'importoutboxinvoice':
 			return importOutboxInvoice(dbModel, member, req, res, next, cb)
 			default:
-			return error.method(req)
+			return error.method(req, next)
 			break
 		}
 
@@ -74,12 +74,12 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			return put(dbModel, member, req, res, next, cb)
 
 			default:
-			return error.method(req)
+			return error.method(req, next)
 			break
 		}
 		break
 		default:
-		return error.method(req)
+		return error.method(req, next)
 		break
 	}
 }

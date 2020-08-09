@@ -6,7 +6,7 @@ module.exports = (member, req, res, next, cb)=>{
             login(member,req,res,next, cb)
         break
         default:
-            error.method(req)
+            error.method(req, next)
         break
     }
 }

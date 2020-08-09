@@ -62,6 +62,7 @@ process.on('uncaughtException', function (err) {
 module.exports=(cb)=>{
 	dbLoader((err)=>{
 		if(!err){
+			
 			global.taskHelper=require('./bin/taskhelper')
 			global.services=require('./services/services.js')
 			global.services.start(()=>{})

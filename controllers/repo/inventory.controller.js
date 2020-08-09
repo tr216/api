@@ -9,7 +9,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
         break
         
         default:
-        error.method(req)
+        error.method(req, next)
         break
     }
 

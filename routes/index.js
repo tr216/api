@@ -193,14 +193,21 @@ function clearProtectedFields(funcName,data,cb){
 global.error={
 	param1:function(req, next){
 		next({code:'WRONG_PARAMETER', message:`function:[/${req.params.func}] [/:param1] is required`})
-		// next({code:'WRONG_PARAMETER', message:`[/:param1] is required`})
 	},
 	param2:function(req, next){
 		next({code:'WRONG_PARAMETER', message:`function:[/${req.params.func}/${req.params.param1}] [/:param2] is required`})
-		// next({code:'WRONG_PARAMETER', message:`/param1 [/:param2] is required`})
 	},
 	method:function(req, next){
 		next({code:'WRONG_METHOD', message:`function:${req.params.func} WRONG METHOD: ${req.method}`})
+	},
+	data:function(req, next,field){
+		if(field){
+			next({code:'WRONG_DATA', message:`"${field}" Yanlış ya da eksik veri`})
+
+		}else{
+			next({code:'WRONG_DATA', message:`Yanlış ya da eksik veri`})
+
+		}
 	}
 }
 

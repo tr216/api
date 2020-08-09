@@ -14,7 +14,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		deleteItem(dbModel, member, req, res, next, cb)
 		break
 		default:
-		return error.method(req)
+		return error.method(req, next)
 		break
 	}
 
@@ -83,7 +83,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 				case 'importoutbox':
 				return importOutbox(dbModel, member, req, res, next, cb)
 				default:
-				return error.method(req)
+				return error.method(req, next)
 				
 			}
 		}else{
