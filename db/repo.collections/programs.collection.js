@@ -1,21 +1,39 @@
 module.exports=function(conn){
 	var schema = mongoose.Schema({
 		name: {type: String, required: [true,'Isim gereklidir.']},
+		showButtonText: {type: Boolean, default: false},
 		type: {type: String, required: [true,'Program türü gereklidir.'],enum:['file-importer','file-exporter','connector-importer','connector-exporter','email','sms']},
+		icon: {type :String, default:''},		
 		collections:[{
 			name:{type :String, default:''},
-			filter:{type :String, default:''}
+			filter:{type :String, default:''},
+			updateExpression:{type :String, default:''},
+			updateErrorExpression:{type :String, default:''}
 		}],
 		files:[{
 			fileName:{type :String, default:''},
 			data:{type :String, default:''}, //base64
 			randerEngine:{type :String, default:'ejs'}
 		}],
-		importer:{
+		fileImporter:{
 			accept:{type :String, default: ''}
 		},
-		exporter:{
+		fileExporter:{
 			fileName:{type :String, default: ''}
+		},
+		emailSender:{
+			host: {type :String, default: ''},
+      port: {type :Number, default: 587},
+      secure: {type :Boolean, default: false},
+      auth: {
+          user: {type :String, default: ''},
+          pass: {type :String, default: ''}
+      },
+      from:{type :String, default: ''}
+		},
+		smsSender:{
+			api: {type :String, default: ''},
+			method: {type :String, default: 'GET', enum:['','GET','POST','PUT']}
 		},
 		connector:{
 			connectorId: {type: String, default:''},

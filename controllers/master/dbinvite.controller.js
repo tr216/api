@@ -5,23 +5,23 @@ module.exports = (member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param2=='invite'){
-			getMemberList(member,req,res,cb)
+			getMemberList(member,req,res,next,cb)
 		}else{
 			if(req.params.param2!=undefined){
-				getOne(member,req,res,cb)
+				getOne(member,req,res,next,cb)
 			}else{
-				getList(member,req,res,cb)
+				getList(member,req,res,next,cb)
 			}
 		}
 		break
 		case 'POST':
-		post(member,req,res,cb)
+		post(member,req,res,next,cb)
 		break
 		case 'PUT':
-		put(member,req,res,cb)
+		put(member,req,res,next,cb)
 		break
 		case 'DELETE':
-		deleteItem(member,req,res,cb)
+		deleteItem(member,req,res,next,cb)
 		break
 		default:
 		error.method(req,next)
@@ -31,7 +31,7 @@ module.exports = (member, req, res, next, cb)=>{
 
 
 
-function getList(member,req,res,cb){
+function getList(member,req,res,next,cb){
 	var filter={}
 	filter={deleted:false,_id:req.params.param1,owner:member._id}
 	db.dbdefines.findOne(filter).populate([{path:'authorizedMembers.memberId', select:'_id username'}]).exec((err,doc)=>{
@@ -42,7 +42,7 @@ function getList(member,req,res,cb){
 	})
 }
 
-function getOne(member,req,res,cb){
+function getOne(member,req,res,next,cb){
 	var filter={}
 	filter={deleted:false, _id:req.params.param1,owner:member._id , $or:[{'authorizedMembers.memberId':req.params.param2},{'authorizedMembers._id':req.params.param2}]}
 
@@ -62,7 +62,7 @@ function getOne(member,req,res,cb){
 	})
 }
 
-function getMemberList(member,req,res,cb){
+function getMemberList(member,req,res,next,cb){
 	var filter={
 		_id:{$ne:member._id},
 		username:{ $regex: '.*' + req.query.username + '.*' ,$options: 'i' }
@@ -75,12 +75,12 @@ function getMemberList(member,req,res,cb){
 }
 
 
-function post(member,req,res,cb){
+function post(member,req,res,next,cb){
 
 	var data = req.body || {}
 
 	if((data.memberId || '')=='')
-		throw {code:'WRONG_PARAMETER',message:'memberId gereklidir.'}
+		next({code:'WRONG_PARAMETER',message:'memberId gereklidir.'})
 
 	db.dbdefines.findOne({owner:member._id,_id:req.params.param1,deleted:false},(err,doc)=>{
 		if(dberr(err, next)){
@@ -93,7 +93,7 @@ function post(member,req,res,cb){
 					}
 				})
 				if(bFound) 
-					throw {code:'ALREADY_EXISTS',message:'Uye zaten bu veri ambarina ekli.'}
+					next({code:'ALREADY_EXISTS',message:'Uye zaten bu veri ambarina ekli.'})
 				doc.authorizedMembers.push({
 					memberId:data.memberId,
 					canRead:(data.canRead || false),
@@ -112,7 +112,7 @@ function post(member,req,res,cb){
 
 
 
-function put(member,req,res,cb){
+function put(member,req,res,next,cb){
 	var data = req.body || {}
 
 	if(req.params.param2==undefined)
@@ -144,7 +144,7 @@ function put(member,req,res,cb){
 	})
 }
 
-function deleteItem(member,req,res,cb){
+function deleteItem(member,req,res,next,cb){
 	var data = req.body || {}
 	if(req.params.param2==undefined)
 		error.param2(req)

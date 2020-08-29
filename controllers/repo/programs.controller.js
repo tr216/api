@@ -11,10 +11,11 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		if(req.params.param1=='copy'){
 			copy(dbModel, member, req, res, next, cb)
 		}else if(req.params.param1=='render'){
-
 			render(dbModel, member, req, res, next, cb)
-		}else if(req.params.param1=='run'){
+		}else if(req.params.param1=='runCode'){
 			runCode(dbModel, member, req, res, next, cb)
+		}else if(req.params.param1=='run'){
+			run(dbModel, member, req, res, next, cb)
 		}else{
 			post(dbModel, member, req, res, next, cb)
 		}
@@ -29,6 +30,25 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		error.method(req, next)
 		break
 	}
+}
+
+function run(dbModel, member, req, res, next, cb){
+	var id=req.params.param2 || req.body['id'] || req.query.id || ''
+	var data=req.body || {}
+	dbModel.programs.findOne({_id:id},(err,doc)=>{
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
+				
+				services.programs.run(dbModel,doc,data,(err,result)=>{
+					if(!err){
+						cb(result)
+					}else{
+						next(err)
+					}
+				})
+			}
+		}
+	})
 }
 
 function render(dbModel, member, req, res, next, cb){
@@ -100,7 +120,7 @@ function copy(dbModel, member, req, res, next, cb){
 
 function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1), 
-		
+		select:'-files'
 	}
 
 	if((req.query.pageSize || req.query.limit))

@@ -18,11 +18,11 @@ module.exports = function(member, req, res, next, cb) {
 			break
 
 			default:
-			throw {code:'UNKNOWN_DB_COMMAND',message:'Unknown database command'}
+			next({code:'UNKNOWN_DB_COMMAND',message:'Unknown database command'})
 			break
 		}
 	}else{
-		error.param1()
+		error.param1(req,next)
 	}
 	
 }
@@ -107,7 +107,7 @@ function resonance_mssql(member, req, res, next, cb){
 		filter={owner:member._id, dbName:dbName}
 	}
 	if(query.trim()=='')
-		throw {code:"QUERY_EMPTY",message:"Sql sorgu bos olamaz."}
+		return next({code:"QUERY_EMPTY",message:"Sql sorgu bos olamaz."})
 	
 
 	db.dbdefines.findOne(filter,(err,doc)=>{

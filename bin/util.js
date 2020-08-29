@@ -1448,3 +1448,26 @@ exports.renderFiles=(files,data,cb)=>{
 
 // global.ObjectId = (m = Math, d = Date, h = 16, s = s => m.floor(s).toString(h)) =>
 //     s(d.now() / 1000) + ' '.repeat(h).replace(/./g, () => s(m.random() * h))
+
+global.fixJSON=(text)=>{
+	try{
+		if(text==null)
+			return {}
+		
+		if(typeof text=='object')
+			return text
+		text=text.replaceAll('\r','')
+		var dizi=text.split('\n')
+		var s=''
+		dizi.forEach((e)=>{
+			if(e.trim().substr(0,2)!='//'){
+				s+=e + '\r\n'
+			}
+		})
+		return JSON.parse(s)
+	}catch(err){
+		return {}
+	}
+	
+
+}

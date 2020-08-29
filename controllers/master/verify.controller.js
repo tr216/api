@@ -8,7 +8,7 @@ module.exports= function (member, req, res, next, cb) {
 		var devicetoken = util.clearText(req.body.devicetoken || req.query.devicetoken || '')
 
 		if(username.trim()=='')
-			throw {code:'USERNAME_EMPTY',message:'Telefon numarasi veya email bos olamaz.'}
+			return next({code:'USERNAME_EMPTY',message:'Telefon numarasi veya email bos olamaz.'})
 		
 		db.members.findOne({username:username},function(err,doc){
 			if(dberr(err, next))
@@ -47,7 +47,7 @@ module.exports= function (member, req, res, next, cb) {
 							}
 						})
 					}else{
-						throw {code:'AUTH_CODE_ERROR',message:'Onay kod hatali.'}
+						return next({code:'AUTH_CODE_ERROR',message:'Onay kod hatali.'})
 					}
 				}
 			})

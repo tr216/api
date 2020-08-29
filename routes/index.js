@@ -14,8 +14,9 @@ module.exports=(app)=>{
 		})
 	})
 	
-	clientControllers(app)
 	masterControllers(app)
+	clientControllers(app)
+	
 	
 
 	// catch 404 and forward to error handler
@@ -32,7 +33,8 @@ module.exports=(app)=>{
 function clientControllers(app){
 	app.all('/api/v1/:dbId/*', (req, res, next)=>{
 		if(repoDb[req.params.dbId]==undefined){
-			throw Error(`db:'${req.params.dbId}' bulunamadi`)
+				next()
+			//throw Error(`db:'${req.params.dbId}' bulunamadi`)
 		}else{
 			next()
 		}
@@ -55,6 +57,9 @@ function clientControllers(app){
 	function setRepoAPIFunctions(req,res,next){
 		passport(req,res,(member)=>{
 			var ctl=getRepoController(req.params.func)
+			if(!ctl){
+				return next()
+			}
 			ctl(repoDb[req.params.dbId],member,req,res,next,(data)=>{
 				if(data==undefined)
 					res.json({success:true})
@@ -74,7 +79,6 @@ function clientControllers(app){
 				}
 			})
 		})
-
 		
 	}
 
@@ -82,7 +86,8 @@ function clientControllers(app){
 
 		var controllerName=path.join(__dirname,'../controllers/repo',`${funcName}.controller.js`)
 		if(fs.existsSync(controllerName)==false){
-			throw `'${funcName}' controller function was not found`
+			//throw `'${funcName}' controller function was not found`
+			return
 		}else{
 			return require(controllerName)
 		}
@@ -116,7 +121,9 @@ function masterControllers(app){
 	function setAPIFunctions(req, res,next){
 		passport(req,res,(member)=>{
 			var ctl=getController(req.params.func)
-
+			if(!ctl){
+				return next()
+			}
 			ctl(member,req,res,next,(data)=>{
 				
 				if(data==undefined)
@@ -139,7 +146,8 @@ function masterControllers(app){
 
 		var controllerName=path.join(__dirname,'../controllers/master',`${funcName}.controller.js`)
 		if(fs.existsSync(controllerName)==false){
-			throw Error(`'${funcName}' controller function was not found`)
+			//throw Error(`'${funcName}' controller function was not found`)
+			return
 		}else{
 			return require(controllerName)
 		}

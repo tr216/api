@@ -1,15 +1,15 @@
 module.exports = (member, req, res, next, cb)=>{
     switch(req.method){
         case 'GET':
-            getMyProfile(member,req,res,cb)
+            getMyProfile(member,req,res,next,cb)
         break
         case 'PUT':
         if(req.params.param1==undefined){
-            put(member,req,res,cb)
+            put(member,req,res,next,cb)
         }else if(req.params.param1=='change-password'){
-            changePassword(member,req,res,cb)
+            changePassword(member,req,res,next,cb)
         }else{
-            error.param1(req)
+            error.param1(req,next)
         }
         break
         default:
@@ -20,7 +20,7 @@ module.exports = (member, req, res, next, cb)=>{
 
 
 
-function getMyProfile(member,req,res,cb){
+function getMyProfile(member,req,res,next,cb){
     db.members.findOne({_id:member._id},(err,doc)=>{
         if(dberr(err, next)){
             if(dbnull(doc, next)){
@@ -38,7 +38,7 @@ function getMyProfile(member,req,res,cb){
     })  
 }
 
-function put(member,req,res,cb){
+function put(member,req,res,next,cb){
     db.members.findOne({_id:member._id},(err,doc)=>{
         if(dberr(err, next)){
             if(dbnull(doc, next)){
@@ -51,12 +51,12 @@ function put(member,req,res,cb){
 	            var newPassword=req.body.newPassword || ''
 
 	            if(doc.name.trim()=='') 
-	            	throw {code:'REQUIRE_FIELD',message:'Isim gereklidir.'}
+	            	return next({code:'REQUIRE_FIELD',message:'Isim gereklidir.'})
 	            if(doc.lastName.trim()=='') 
-	            	throw {code:'REQUIRE_FIELD',message:'Soyad gereklidir.'}
+	            	return next({code:'REQUIRE_FIELD',message:'Soyad gereklidir.'})
 	            
 	            if(doc.gender!='male' && doc.gender!='female') 
-	            	throw {code:'REQUIRE_FIELD',message:'Cinsiyet hatali.'}
+	            	return next({code:'REQUIRE_FIELD',message:'Cinsiyet hatali.'})
 
 	            doc.save((err,newDoc)=>{
 	                if(dberr(err, next)){
@@ -76,7 +76,7 @@ function put(member,req,res,cb){
     })  
 }
 
-function changePassword(member,req,res,cb){
+function changePassword(member,req,res,next,cb){
     db.members.findOne({_id:member._id},(err,doc)=>{
         if(dberr(err, next)){
             if(dbnull(doc, next)){
@@ -84,9 +84,9 @@ function changePassword(member,req,res,cb){
 	            var newPassword=req.body.newPassword || ''
 
 	            if(newPassword.trim()=='') 
-	            	throw {code:'REQUIRE_FIELD',message:'Yeni parola gereklidir.'}
+	            	return next({code:'REQUIRE_FIELD',message:'Yeni parola gereklidir.'})
 	            if(oldPassword!=doc.password) 
-	            	throw {code:'PASSWORD_WRONG',message:'Eski parola hatali.'}
+	            	return next({code:'PASSWORD_WRONG',message:'Eski parola hatali.'})
 	            doc.password=newPassword
 	            doc.save((err,newDoc)=>{
 	                if(dberr(err, next)){

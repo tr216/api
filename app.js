@@ -70,6 +70,7 @@ module.exports=(cb)=>{
 			global.eInvoiceService = require('./bin/rest-helper')(config.eInvoiceService.url)
 			global.posDeviceService = require('./bin/rest-helper')(config.posDeviceService.url)
 			global.connectorService = require('./bin/rest-helper')(config.connectorService.url)
+			
 			cb(null,app)
 
 		}else{

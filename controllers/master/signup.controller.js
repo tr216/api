@@ -15,13 +15,14 @@ module.exports= (member, req, res, next, cb)=>{
 			devicetoken: util.clearText(req.body.devicetoken || req.query.devicetoken || '')
 		}
 		if(formdata.username.trim()=='')
-			throw {code:'USERNAME_EMPTY',message:'Telefon numarasi veya email bos olamaz.'}
+			return next({code:'USERNAME_EMPTY',message:'Telefon numarasi veya email bos olamaz.'})
 
 		db.members.findOne({username:formdata.username},(err,doc)=>{
 			if(dberr(err, next)){
 				if(doc!=null){
 					if(doc.verified)
-						throw {code:'USER_EXISTS',message:'Kullanici zaten kayitli.'}
+						return next({code:'USER_EXISTS',message:'Kullanici zaten kayitli.'})
+
 					if(doc.authCode==''){
 						doc.authCode=util.randomNumber(100200,998000).toString()
 						doc.save()
@@ -36,7 +37,7 @@ module.exports= (member, req, res, next, cb)=>{
 							cb(data)
 						})
 					}else{
-						throw {code:'USERNAME_WRONG',message:'Kullanici adi hatali.'}
+						return next({code:'USERNAME_WRONG',message:'Kullanici adi hatali.'})
 					}
 				}else{
 					signup(formdata,(data)=>{
@@ -59,7 +60,7 @@ function signup(formdata,cb){
 	}else if(util.validTelephone(formdata.username)){
 		ismobile=true
 	}else{
-		throw {code:'USERNAME_WRONG',message:'Kullanici adi hatali.'}
+		return next({code:'USERNAME_WRONG',message:'Kullanici adi hatali.'})
 	}
 	var newmember = new db.members({
 		username:formdata.username,
@@ -97,7 +98,7 @@ function smssend(phonenumber,authCode,cb){
 		res.on('data', (chunk)=>{ body += chunk	})
 		res.on('end', ()=>{	cb(body) })
 	}).on('error', function(e){
-		throw e
+		next(e)
 	})
 }
 
@@ -108,7 +109,7 @@ function mailsend(email,authCode,cb){
 		if(!err){
 			cb(data)
 		}else{
-			throw err
+			next(err)
 		}
 	})
 

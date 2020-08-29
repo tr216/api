@@ -72,7 +72,7 @@ exports.post=(endpoint,jsonData, cb)=>{
 		json:jsonData,
 		dataType:'json'
 	}
-	console.log(`jsonData:`,jsonData)
+
 	request(options, (error, response, body)=>{
 		if (!error && response.statusCode==200) {
 			if(typeof body=='string'){

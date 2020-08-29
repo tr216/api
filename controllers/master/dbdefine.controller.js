@@ -2,19 +2,19 @@ module.exports = (member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(member,req,res,cb)
+			getOne(member,req,res,next,cb)
 		}else{
-			getList(member,req,res,cb)
+			getList(member,req,res,next,cb)
 		}
 		break
 		case 'POST':
-		post(member,req,res,cb)
+		post(member,req,res,next,cb)
 		break
 		case 'PUT':
-		put(member,req,res,cb)
+		put(member,req,res,next,cb)
 		break
 		case 'DELETE':
-		deleteItem(member,req,res,cb)
+		deleteItem(member,req,res,next,cb)
 		break
 		default:
 		error.method(req,next)
@@ -23,7 +23,7 @@ module.exports = (member, req, res, next, cb)=>{
 }
 
 
-function getOne(member,req,res,cb){
+function getOne(member,req,res,next,cb){
 
 	var filter = {owner: member._id, deleted:false}
 	filter._id=req.params.param1
@@ -34,7 +34,7 @@ function getOne(member,req,res,cb){
 }
 
 
-function getList(member,req,res,cb){
+function getList(member,req,res,next,cb){
 	var options={page: (req.query.page || 1) }
 	if((req.query.pageSize || req.query.limit)){
 		options.limit=req.query.pageSize || req.query.limit
@@ -49,13 +49,13 @@ function getList(member,req,res,cb){
 }
 
 
-function post(member,req,res,cb){
+function post(member,req,res,next,cb){
 	var data = req.body || {}
 	if(!data.hasOwnProperty("dbName"))
-		throw {code: "ERROR", message: "dbName is required."}
+		return next({code: "ERROR", message: "dbName is required."})
 
 	if(data.dbName.trim()=="")
-		throw {code: "ERROR", message: "dbName must not be empty."}
+		return next({code: "ERROR", message: "dbName must not be empty."})
 
 
 	data.owner = member._id
@@ -69,7 +69,7 @@ function post(member,req,res,cb){
 	db.dbdefines.findOne({owner:member._id,dbName:data.dbName,deleted:false},function(err,foundDoc){
 		if(dberr(err, next))
 			if(foundDoc!=null){
-				throw {code: `DB_ALREADY_EXISTS`, message: `Database '${data.dbName}' already exists.`}
+				return next({code: `DB_ALREADY_EXISTS`, message: `Database '${data.dbName}' already exists.`})
 			}else{
 				var newDoc = new db.dbdefines(data)
 				newDoc.save(function(err, newDoc2) {
@@ -89,7 +89,7 @@ function post(member,req,res,cb){
 							}
 						})
 					} else {
-						throw {code: err.name, message: err.message}
+						next({code: err.name, message: err.message})
 					}
 				})
 			}
@@ -105,14 +105,14 @@ function newUserDb(_id,userDb,userDbHost,dbName,cb){
 		if(!err){
 			cb(null)
 		}else{
-			throw {code:'NEW_USERDB',message:err.message}
+			next({code:'NEW_USERDB',message:err.message})
 		}
 	})
 
 }
 
 
-function put(member,req,res,cb){
+function put(member,req,res,next,cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 	
@@ -135,7 +135,7 @@ function put(member,req,res,cb){
 	})
 }
 
-function deleteItem(member,req,res,cb){
+function deleteItem(member,req,res,next,cb){
 	if(req.params.param1==undefined)
 		error.param1(req)
 
@@ -148,9 +148,7 @@ function deleteItem(member,req,res,cb){
 				doc.deleted=true
 				doc.modifiedDate = new Date()
 				doc.save(function(err, newDoc2) {
-					if (err) {
-						throw {code: err.name, message: err.message}
-					} else {
+					if(dberr(err,next)){
 						cb({success: true})
 					}
 				})
