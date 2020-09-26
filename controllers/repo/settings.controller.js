@@ -74,8 +74,7 @@ function save(dbModel, member, req, res, next, cb){
 					if(dberr(err,next)){
 						var obj={
 							default:defaultSettings,
-							settings:doc2.settings,
-							user:(doc2.settings || {})
+							settings:doc2.settings
 						}
 						cb(obj)
 					}
