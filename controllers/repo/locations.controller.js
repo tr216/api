@@ -23,14 +23,6 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 }
 
-var locationTypes=[
-{"text":"(0)Depo","value": 0},
-{"text":"(1)Magaza","value": 1},
-{"text":"(2)Uretim","value":2},
-{"text":"(3)Iade","value":3},
-{"text":"(4)Seyyar","value":4},
-{"text":"(5)Diger","value":5}
-]
 
 function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
@@ -43,9 +35,9 @@ function getList(dbModel, member, req, res, next, cb){
 		filter['passive']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }
 	
 
-	if((req.query.locationType || '')!=''){
-		// if(Number(req.query.locationType>=0)){
-		filter['locationType']=req.query.locationType
+	if((req.query.type || '')!=''){
+		// if(Number(req.query.type>=0)){
+		filter['type']=req.query.type
 		// }
 	}
 
@@ -54,15 +46,7 @@ function getList(dbModel, member, req, res, next, cb){
 	
 	dbModel.locations.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
-			// resp.docs.forEach((doc)=>{
-			// 	doc['locationTypeName']=''
-			// 	locationTypes.forEach((e)=>{
-			// 		if(e.value==doc.locationType){
-			// 			doc['locationTypeName']=e.text
-			// 			return
-			// 		}
-			// 	})
-			// })
+			
 			cb(resp)
 		}
 	})

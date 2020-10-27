@@ -118,10 +118,13 @@ function receteleriKaydet(dbModel,itemDoc,newItemDoc,cb){
 
 function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)
-
+		,limit:10
 	}
-	if(!req.query.page){
-		options.limit=50000
+	// if(!req.query.page){
+	// 	options.limit=50000
+	// }
+	if((req.query.pageSize || req.query.limit)){
+		options['limit']=req.query.pageSize || req.query.limit
 	}
 	var filter = {}
 
@@ -139,27 +142,33 @@ function getList(dbModel, member, req, res, next, cb){
     if((req.query.passive || '')!='')
     	filter['passive']=req.query.passive
     
-    if((req.query.name || '')!=''){
-    	filter['$or']=[
-    	{'name.value':{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }},
-    	{'description.value':{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }}
-    	]
-    }
+    // if((req.query.name || '')!=''){
+    // 	filter['$or']=[
+    // 	{'name.value':{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }},
+    // 	{'description.value':{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }}
+    // 	]
+    // }
     
-    if((req.query.brandName || '')!='')
-    	filter['brandName.value']={ $regex: '.*' + req.query.brandName + '.*' ,$options: 'i' }
+    if((req.query.name || req.query['name.value'] || '')!='')
+    	filter['name.value']={ $regex: '.*' + (req.query.name || req.query['name.value']) + '.*' ,$options: 'i' }
+
+    if((req.query.description  || req.query['description.value'] || '')!='')
+    	filter['description.value']={ $regex: '.*' + (req.query.description  || req.query['description.value']) + '.*' ,$options: 'i' }
+
+
+    if((req.query.brandName || req.query['brandName.value'] || '')!='')
+    	filter['brandName.value']={ $regex: '.*' + (req.query.brandName || req.query['brandName.value']) + '.*' ,$options: 'i' }
     
-    if((req.query.description || '')!='')
-    	filter['description.value']={ $regex: '.*' + req.query.description + '.*' ,$options: 'i' }
     
-    if((req.query.keyword || '')!='')
-    	filter['keyword.value']={ $regex: '.*' + req.query.keyword + '.*' ,$options: 'i' }
     
-    if((req.query.modelName || '')!='')
-    	filter['modelName.value']={ $regex: '.*' + req.query.modelName + '.*' ,$options: 'i' }
+    if((req.query.keyword || req.query['keyword.value'] || '')!='')
+    	filter['keyword.value']={ $regex: '.*' + (req.query.keyword || req.query['keyword.value']) + '.*' ,$options: 'i' }
     
-    if((req.query.itemClassificationCode || '')!='')
-    	filter['commodityClassification.itemClassificationCode.value']={ $regex: '.*' + req.query.itemClassificationCode + '.*' ,$options: 'i' }
+    if((req.query.modelName || req.query['modelName.value'] || '')!='')
+    	filter['modelName.value']={ $regex: '.*' + (req.query.modelName || req.query['modelName.value']) + '.*' ,$options: 'i' }
+    
+    if((req.query.itemClassificationCode || req.query['itemClassificationCode.value'] || '')!='')
+    	filter['commodityClassification.itemClassificationCode.value']={ $regex: '.*' + (req.query.itemClassificationCode || req.query['itemClassificationCode.value']) + '.*' ,$options: 'i' }
     
     
     if((req.query.accountGroup || '')!='')
@@ -185,6 +194,7 @@ function getOne(dbModel, member, req, res, next, cb){
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				if(!req.query.print){
+					console.log(`doc.name:`,doc.name)
 					cb(doc)
 				}else{
 					var moduleType='item'
@@ -195,7 +205,7 @@ function getOne(dbModel, member, req, res, next, cb){
 						if(!err){
 							cb({file: {data:html}})
 						}else{
-							cb({success:false,error:{code:(err.code || err.name || 'PRINT_ERROR'),message:err.message}})
+							next({code:(err.code || err.name || 'PRINT_ERROR'),message:err.message})
 						}
 					})
 				}

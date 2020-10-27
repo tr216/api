@@ -46,6 +46,7 @@ app.set('version',require('./package').version)
 app.set('port',config.httpserver.port)
 
 
+
 process.on('uncaughtException', function (err) {
 	errorLog('Caught exception: ', err)
 	

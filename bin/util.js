@@ -1380,12 +1380,13 @@ global.btoa2=(str)=>{
 }
 
 exports.renderFiles=(files,data,cb)=>{
+
 	try{
 		if(typeof data=='string'){
 			data=atob2(data)
 			try{
 				data=JSON.parse(data)
-			}catch(err){
+			}catch(err1){
 
 			}
 		}else{
@@ -1397,7 +1398,7 @@ exports.renderFiles=(files,data,cb)=>{
 		}
 
 		
-		var renderedCode=''
+		// var renderedCode=''
 		var includeCode=''
 		var code=''
 		files.forEach((e)=>{
@@ -1406,6 +1407,7 @@ exports.renderFiles=(files,data,cb)=>{
 				return
 			}
 		})
+
 
 		code=code.replaceAll('include(','includeLocal(')
 		code=code.replaceAll('encodeURIComponent(','encodeURIComponent2(')
@@ -1432,16 +1434,23 @@ exports.renderFiles=(files,data,cb)=>{
 			}
 		} %>`
 
+
 		code=includeCode + code
 
+		fs.writeFileSync(path.join('../temp','code.ejs'),code,'utf8')
+		fs.writeFileSync(path.join('../temp','data.json'),JSON.stringify(data,null,2),'utf8')
 
-		renderedCode=ejs.render(code,{data:data})
+		var renderedCode = ejs.render(code,{data:data})
 
+		fs.writeFileSync(path.join('../temp','renderedCode.ejs'),renderedCode,'utf8')
 		cb(null,renderedCode)
-	}catch(err){
-		errorLog(err)
+		
+		
+	}catch(tryErr2){
+		console.log(`tryErr2:`,tryErr2)
+		errorLog(tryErr2)
 
-		cb({code:err.name || 'EJS_RENDER_ERROR' ,name:err.name || 'EJS_RENDER_ERROR',message: err.message || err.toString()})
+		cb({code:tryErr2.name || 'EJS_RENDER_ERROR' ,name:tryErr2.name || 'EJS_RENDER_ERROR',message: tryErr2.message || tryErr2.toString()})
 	}
 
 }
