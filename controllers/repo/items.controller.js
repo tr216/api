@@ -118,14 +118,12 @@ function receteleriKaydet(dbModel,itemDoc,newItemDoc,cb){
 
 function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)
-		,limit:10
+		
 	}
-	// if(!req.query.page){
-	// 	options.limit=50000
-	// }
-	if((req.query.pageSize || req.query.limit)){
+	
+	if((req.query.pageSize || req.query.limit))
 		options['limit']=req.query.pageSize || req.query.limit
-	}
+	
 	var filter = {}
 
 
@@ -138,47 +136,64 @@ function getList(dbModel, member, req, res, next, cb){
 	}
 
 
-    //filter['passive']=false
-    if((req.query.passive || '')!='')
-    	filter['passive']=req.query.passive
-    
-    // if((req.query.name || '')!=''){
-    // 	filter['$or']=[
-    // 	{'name.value':{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }},
-    // 	{'description.value':{ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }}
-    // 	]
-    // }
-    
-    if((req.query.name || req.query['name.value'] || '')!='')
-    	filter['name.value']={ $regex: '.*' + (req.query.name || req.query['name.value']) + '.*' ,$options: 'i' }
-
-    if((req.query.description  || req.query['description.value'] || '')!='')
-    	filter['description.value']={ $regex: '.*' + (req.query.description  || req.query['description.value']) + '.*' ,$options: 'i' }
+	if((req.query.passive || '')!='')
+		filter['passive']=req.query.passive
 
 
-    if((req.query.brandName || req.query['brandName.value'] || '')!='')
-    	filter['brandName.value']={ $regex: '.*' + (req.query.brandName || req.query['brandName.value']) + '.*' ,$options: 'i' }
-    
-    
-    
-    if((req.query.keyword || req.query['keyword.value'] || '')!='')
-    	filter['keyword.value']={ $regex: '.*' + (req.query.keyword || req.query['keyword.value']) + '.*' ,$options: 'i' }
-    
-    if((req.query.modelName || req.query['modelName.value'] || '')!='')
-    	filter['modelName.value']={ $regex: '.*' + (req.query.modelName || req.query['modelName.value']) + '.*' ,$options: 'i' }
-    
-    if((req.query.itemClassificationCode || req.query['itemClassificationCode.value'] || '')!='')
-    	filter['commodityClassification.itemClassificationCode.value']={ $regex: '.*' + (req.query.itemClassificationCode || req.query['itemClassificationCode.value']) + '.*' ,$options: 'i' }
-    
-    
-    if((req.query.accountGroup || '')!='')
-    	filter['accountGroup']=req.query.accountGroup
+	if((req.query.name || req.query['name.value'] || '')!='')
+		filter['name.value']={ $regex: '.*' + (req.query.name || req.query['name.value']) + '.*' ,$options: 'i' }
 
-    dbModel.items.paginate(filter,options,(err, resp)=>{
-    	if(dberr(err,next)){
-    		cb(resp)
-    	}
-    })
+	if((req.query.description  || req.query['description.value'] || '')!='')
+		filter['description.value']={ $regex: '.*' + (req.query.description  || req.query['description.value']) + '.*' ,$options: 'i' }
+
+
+	if((req.query.brandName || req.query['brandName.value'] || '')!='')
+		filter['brandName.value']={ $regex: '.*' + (req.query.brandName || req.query['brandName.value']) + '.*' ,$options: 'i' }
+
+
+
+	if((req.query.keyword || req.query['keyword.value'] || '')!='')
+		filter['keyword.value']={ $regex: '.*' + (req.query.keyword || req.query['keyword.value']) + '.*' ,$options: 'i' }
+
+	if((req.query.modelName || req.query['modelName.value'] || '')!='')
+		filter['modelName.value']={ $regex: '.*' + (req.query.modelName || req.query['modelName.value']) + '.*' ,$options: 'i' }
+
+	if((req.query.search || '')!=''){
+		filter['$or']=[
+		{'name.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+		{'description.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+		{'brandName.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+		{'keyword.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+		{'modelName.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }}
+		]
+	}
+	if((req.query.itemClassificationCode || req.query['itemClassificationCode.value'] || '')!='')
+		filter['commodityClassification.itemClassificationCode.value']={ $regex: '.*' + (req.query.itemClassificationCode || req.query['itemClassificationCode.value']) + '.*' ,$options: 'i' }
+
+
+	if((req.query.accountGroup || '')!='')
+		filter['accountGroup']=req.query.accountGroup
+
+	if((req.query.lotNo || req.query['tracking.lotNo'] || '')!='')
+		filter['tracking.lotNo']=req.query.lotNo || req.query['tracking.lotNo']
+
+	if((req.query.serialNo || req.query['tracking.serialNo'] || '')!='')
+		filter['tracking.serialNo']=req.query.serialNo || req.query['tracking.serialNo']
+
+	if((req.query.color || req.query['tracking.color'] || '')!='')
+		filter['tracking.color']=req.query.color || req.query['tracking.color']
+
+	if((req.query.pattern || req.query['tracking.pattern'] || '')!='')
+		filter['tracking.pattern']=req.query.pattern || req.query['tracking.pattern']
+
+	if((req.query.size || req.query['tracking.size'] || '')!='')
+		filter['tracking.size']=req.query.size || req.query['tracking.size']
+
+	dbModel.items.paginate(filter,options,(err, resp)=>{
+		if(dberr(err,next)){
+			cb(resp)
+		}
+	})
 }
 
 function getOne(dbModel, member, req, res, next, cb){
@@ -194,7 +209,7 @@ function getOne(dbModel, member, req, res, next, cb){
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				if(!req.query.print){
-					console.log(`doc.name:`,doc.name)
+
 					cb(doc)
 				}else{
 					var moduleType='item'
@@ -218,13 +233,12 @@ function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id=undefined
 
-	if((data.accountGroup || '')=='')
-		data.accountGroup=undefined
+	data=dataDuzenle(data,req)
 
 	saveFiles(dbModel,data,(err,data)=>{
 		var newDoc = new dbModel.items(data)
 		if(!epValidateSync(newDoc,next))
-		return
+			return
 		newDoc.save((err, newDoc2)=>{
 			if(dberr(err,next)){
 				cb(newDoc2)
@@ -239,8 +253,7 @@ function put(dbModel, member, req, res, next, cb){
 	var data=req.body || {}
 	data._id = req.params.param1
 	data.modifiedDate = new Date()
-	if((data.accountGroup || '')=='')
-		data.accountGroup=undefined
+	data=dataDuzenle(data,req)
 
 	dbModel.items.findOne({ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
@@ -249,7 +262,7 @@ function put(dbModel, member, req, res, next, cb){
 					var doc2 = Object.assign(doc, data)
 					var newDoc = new dbModel.items(doc2)
 					if(!epValidateSync(newDoc,next))
-					return
+						return
 
 					newDoc.save((err, newDoc2)=>{
 						if(dberr(err,next)){
@@ -260,6 +273,29 @@ function put(dbModel, member, req, res, next, cb){
 			}
 		}
 	})
+}
+
+function dataDuzenle(data,req){
+	if((data.accountGroup || '')=='')
+		data.accountGroup=undefined
+
+	if(!Array.isArray(data.unitPacks)){
+		if(typeof data.unitPacks!='object'){
+			data.unitPacks=[]
+		}
+	}
+
+	if(!Array.isArray(data.vendors)){
+		if(typeof data.vendors!='object'){
+			data.vendors=[]
+		}
+	}
+
+	if((req.query.itemType || '')!=''){
+		data['itemType']=req.query.itemType
+	}
+
+	return data
 }
 
 function deleteItem(dbModel, member, req, res, next, cb){

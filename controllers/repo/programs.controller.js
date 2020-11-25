@@ -39,13 +39,10 @@ function run(dbModel, member, req, res, next, cb){
 	dbModel.programs.findOne({_id:id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
-				console.log(`services.programs.run:`)
 				services.programs.run(dbModel,doc,data,(err,result)=>{
 					if(!err){
-						console.log(`result:`,result)
 						cb(result)
 					}else{
-						console.log(`next err:`,err)
 						next(err)
 					}
 				})

@@ -41,10 +41,11 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 
 function rapor1(dbModel, member, req, res, next, cb){
-	var options={page: (req.query.page || 1)}
-	if((req.query.pageSize || req.query.limit)){
-		options.limit=req.query.pageSize || req.query.limit
+	var options={page: (req.query.page || 1)
 	}
+	if((req.query.pageSize || req.query.limit))
+		options.limit=req.query.pageSize || req.query.limit
+	
 
 	var filter = {}
 

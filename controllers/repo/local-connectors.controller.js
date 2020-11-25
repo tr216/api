@@ -39,8 +39,8 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
-	if(!req.query.page)
-		options.limit=50000
+	if((req.query.pageSize || req.query.limit))
+		options['limit']=req.query.pageSize || req.query.limit
 
 
 	var filter = {}

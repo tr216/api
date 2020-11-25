@@ -383,9 +383,9 @@ function getInvoiceList(ioType, dbModel, member, req, res, next, cb){
 		sort:{'issueDate.value':'desc' , 'ID.value':'desc'}
 	}
 
-	if((req.query.pageSize || req.query.limit)){
+	if((req.query.pageSize || req.query.limit))
 		options['limit']=req.query.pageSize || req.query.limit
-	}
+
 
 	var filter = {ioType:ioType}
 	

@@ -76,13 +76,13 @@ function getList(dbModel, member, req, res, next, cb){
 		sort:{name:1}
 
 	}
-	if(!req.query.page)
-		options.limit=50000
+	if((req.query.pageSize || req.query.limit))
+		options['limit']=req.query.pageSize || req.query.limit
 
 	var filter = {}
 
-	if((req.query.name || '')!='')
-		filter['name']={ '$regex': '.*' + req.query.name + '.*' ,'$options': 'i' }
+	if((req.query.name || req.query.search || '')!='')
+		filter['name']={ '$regex': '.*' + (req.query.name || req.query.search) + '.*' ,'$options': 'i' }
 
 	dbModel.account_groups.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
@@ -94,6 +94,56 @@ function getList(dbModel, member, req, res, next, cb){
 function getOne(dbModel, member, req, res, next, cb){
 	dbModel.account_groups.findOne({_id:req.params.param1}).exec((err,doc)=>{
 		if(dberr(err,next)){
+			var obj=clone(doc.toJSON())
+			if(obj.account){
+				obj['pop_account']=obj['account']
+				obj['account']=doc.account._id
+			}else{
+				obj['pop_account']={_id:'', accountCode:'', name:''}
+			}
+
+			if(obj.salesAccount){
+				obj['pop_salesAccount']=obj['salesAccount']
+				obj['salesAccount']=doc.salesAccount._id
+			}else{
+				obj['pop_salesAccount']={_id:'', accountCode:'', name:''}
+			}
+
+			if(obj.returnAccount){
+				obj['pop_returnAccount']=obj['returnAccount']
+				obj['returnAccount']=doc.returnAccount._id
+			}else{
+				obj['pop_returnAccount']={_id:'', accountCode:'', name:''}
+			}
+
+			if(obj.exportSalesAccount){
+				obj['pop_exportSalesAccount']=obj['exportSalesAccount']
+				obj['exportSalesAccount']=doc.exportSalesAccount._id
+			}else{
+				obj['pop_exportSalesAccount']={_id:'', accountCode:'', name:''}
+			}
+
+			if(obj.salesDiscountAccount){
+				obj['pop_salesDiscountAccount']=obj['salesDiscountAccount']
+				obj['salesDiscountAccount']=doc.salesDiscountAccount._id
+			}else{
+				obj['pop_salesDiscountAccount']={_id:'', accountCode:'', name:''}
+			}
+
+			if(obj.buyingDiscountAccount){
+				obj['pop_buyingDiscountAccount']=obj['buyingDiscountAccount']
+				obj['buyingDiscountAccount']=doc.buyingDiscountAccount._id
+			}else{
+				obj['pop_buyingDiscountAccount']={_id:'', accountCode:'', name:''}
+			}
+
+			if(obj.costOfGoodsSoldAccount){
+				obj['pop_costOfGoodsSoldAccount']=obj['costOfGoodsSoldAccount']
+				obj['costOfGoodsSoldAccount']=doc.costOfGoodsSoldAccount._id
+			}else{
+				obj['pop_costOfGoodsSoldAccount']={_id:'', accountCode:'', name:''}
+			}
+
 			cb(doc)
 		}
 	})

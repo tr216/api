@@ -55,7 +55,6 @@ Date.prototype.yyyymmdd = function () {
   }
 
 
-
 exports.timeStamp = function () { return (new Date).yyyymmddhhmmss() };  //UTC time stamp
 
 

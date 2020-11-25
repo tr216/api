@@ -25,8 +25,8 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
-	if(!req.query.page)
-		options.limit=50000
+	if((req.query.pageSize || req.query.limit))
+		options['limit']=req.query.pageSize || req.query.limit
 
 	var filter = {partyType:'Customer'}
 
@@ -44,6 +44,14 @@ function getList(dbModel, member, req, res, next, cb){
 	if((req.query.district || '')!='')
 		filter['postalAddress.district.value']={ $regex: '.*' + req.query.district + '.*' ,$options: 'i' }
 
+	if((req.query.search || '')!=''){
+		filter['$or']=[
+			{'partyName.name.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+			{'postalAddress.district.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+			{'postalAddress.cityName.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }}
+		]
+	}
+	
 	dbModel.parties.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
 			resp.docs.forEach((e)=>{

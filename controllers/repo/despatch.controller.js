@@ -229,8 +229,7 @@ function getDespatchList(ioType, dbModel, member, req, res, next, cb){
 		populate:[
 		{path:'eIntegrator',select:'_id eIntegrator name username'}
 		],
-		limit:10
-		,
+		
 		select:'_id ioType eIntegrator profileId ID uuid issueDate issueTime despatchAdviceTypeCode lineCountNumeric despatchLine localDocumentId deliveryCustomerParty despatchSupplierParty receiptAdvice despatchStatus despatchErrors localStatus localErrors',
 		sort:{'issueDate.value':'desc' , 'ID.value':'desc'}
 	}

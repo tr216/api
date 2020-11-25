@@ -26,6 +26,7 @@
 		"productionOrdersPlan":true,
 		"waitingSaleOrders":true,
 		"products":true,
+		"semiProducts":true,
 		"materialPlanning":true,
 		"raports":{
 			"productionAnalize":true,

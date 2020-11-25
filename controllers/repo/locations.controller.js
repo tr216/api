@@ -25,14 +25,20 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 
 function getList(dbModel, member, req, res, next, cb){
-	var options={page: (req.query.page || 1)}
-	if(!req.query.page)
-		options.limit=50000
+	var options={page: (req.query.page || 1)
+		,limit:10
+	}
 	
+	if((req.query.pageSize || req.query.limit)){
+		options['limit']=req.query.pageSize || req.query.limit
+	}
+
 	var filter = {}
 
-	if((req.query.name || '')!='')
-		filter['passive']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }
+	if((req.query.name || '')!=''){
+		if(req.query.name!='*' && req.query.name!=' ')
+			filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }
+	}
 	
 
 	if((req.query.type || '')!=''){

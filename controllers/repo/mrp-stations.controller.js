@@ -25,9 +25,9 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1), 
-		populate:[
-		{path:'location',select:'_id locationName'}
-		]
+		// populate:[
+		// {path:'location',select:'_id name'}
+		// ]
 	}
 
 	if((req.query.pageSize || req.query.limit))

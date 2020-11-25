@@ -77,8 +77,11 @@ function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1),
 		sort:{accountCode:1}
 	}
-	if(!req.query.page)
-		options.limit=50000
+	if((req.query.pageSize || req.query.limit))
+		options['limit']=req.query.pageSize || req.query.limit
+	if((req.query.pageSize || req.query.limit)){
+		options['limit']=req.query.pageSize || req.query.limit
+	}
 
 	var filter = {}
 
@@ -88,6 +91,13 @@ function getList(dbModel, member, req, res, next, cb){
 	if((req.query.name || '')!='')
 		filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }
 
+	if((req.query.search || '')!=''){
+		filter['$or']=[
+			{name:{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+			{accountCode:{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }}
+		]
+	}
+	
 	dbModel.accounts.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
 			cb(resp)
@@ -98,7 +108,14 @@ function getList(dbModel, member, req, res, next, cb){
 function getOne(dbModel, member, req, res, next, cb){
 	dbModel.accounts.findOne({_id:req.params.param1}).populate([{path:'parentAccount',select:'_id accountCode name'}]).exec((err,doc)=>{
 		if(dberr(err,next)){
-			cb(doc)
+			var obj=clone(doc.toJSON())
+			if(obj.parentAccount){
+				obj['pop_parentAccount']=obj['parentAccount']
+				obj['parentAccount']=doc.parentAccount._id
+			}else{
+				obj['pop_parentAccount']={_id:'', accountCode:'', name:''}
+			}
+			cb(obj)
 		}
 	})
 }
@@ -132,11 +149,17 @@ function put(dbModel, member, req, res, next, cb){
 	dbModel.accounts.findOne({ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
-				var doc2 = Object.assign(doc, data)
-				var newDoc = new dbModel.accounts(doc2)
+				console.log(`data:`,data)
+				var newDoc = Object.assign(doc, data)
+				if(!data.parentAccount){
+					newDoc.parentAccount=undefined
+
+				}
+				// var newDoc = new dbModel.accounts(doc2)
+				// console.log(`newDoc:`,newDoc)
 				if(!epValidateSync(newDoc,next))
 					return
-
+				console.log(`newDoc:`,newDoc)
 				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next))
 						cb(newDoc2)
