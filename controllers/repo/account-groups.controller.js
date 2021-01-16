@@ -33,7 +33,7 @@ function copy(dbModel, member, req, res, next, cb){
 	var newName=req.body['newName'] || req.body['name'] || ''
 
 	if(id=='')
-		error.param2(req)
+		return error.param2(req,next)
 
 	dbModel.account_groups.findOne({ _id: id},(err,doc)=>{
 		if(dberr(err,next)){
@@ -168,7 +168,7 @@ function post(dbModel, member, req, res, next, cb){
 
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
-		error.param2(req)
+		return error.param2(req,next)
 
 	var data=req.body || {}
 	data._id = req.params.param1

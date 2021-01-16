@@ -121,7 +121,7 @@ function getErrors(dbModel, member, req, res, next, cb){
 	var select='-receiptAdviceLineInfos'
 
 	if(_id=='') 
-		error.param2(req)
+		return error.param2(req,next)
 	dbModel.despatches_receipt_advice.findOne({_id:_id},select).exec((err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){

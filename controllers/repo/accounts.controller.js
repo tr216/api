@@ -32,7 +32,7 @@ function copy(dbModel, member, req, res, next, cb){
 	var newName=req.body['newName'] || req.body['name'] || ''
 
 	if(id=='')
-		error.param2(req)
+		return error.param2(req,next)
 
 	dbModel.accounts.findOne({ _id: id},(err,doc)=>{
 		if(dberr(err,next)){

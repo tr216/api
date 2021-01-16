@@ -181,7 +181,7 @@ function saveFile(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		return error.param1(req, next)
 	if(req.params.param2==undefined)
-		error.param2(req)
+		return error.param2(req,next)
 	var data = req.body || {}
 	var populate=[{path:'files',select:'_id name extension size type fileName '}]
 
@@ -257,7 +257,7 @@ function setStart(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		return error.param1(req, next)
 	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
-		error.param2(req)
+		return error.param2(req,next)
 
 	var fileId=req.query.fileId || req.query.fileid || ''
 	dbModel.file_importers.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
@@ -284,7 +284,7 @@ function deleteFile(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		return error.param1(req, next)
 	if(req.params.param2==undefined || (req.query.fileId || req.query.fileid || '') == '')
-		error.param2(req)
+		return error.param2(req,next)
 
 	var fileId=req.query.fileId || req.query.fileid || ''
 	dbModel.file_importers.findOne({ _id: req.params.param1,files:{$elemMatch:{$eq:fileId}}},(err,doc)=>{
@@ -313,7 +313,7 @@ function runCode(dbModel, member, req, res, next, cb){
 	if(req.params.param1==undefined)
 		return error.param1(req, next)
 	if(req.params.param2==undefined)
-		error.param2(req)
+		return error.param2(req,next)
 
 	var data = req.body || {}
 	var populate=['startFile','files']

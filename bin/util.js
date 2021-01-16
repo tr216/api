@@ -1479,3 +1479,85 @@ global.fixJSON=(text)=>{
 	
 
 }
+
+
+global.listObjectToObject=function(listObj){
+	if(typeof listObj!='object' || listObj==null )
+		return listObj
+	var obj={}
+	
+	Object.keys(listObj).forEach((mainKey)=>{
+		if(mainKey.indexOf('.')>-1){
+			var keys=mainKey.split('.')
+			
+			if(obj[keys[0]]==undefined)
+				obj[keys[0]]={}
+
+
+			if(obj[keys[0]][keys[1]]==undefined){
+				if(keys.length==2)
+					return obj[keys[0]][keys[1]]=listObj[`${keys[0]}.${keys[1]}`]
+				else
+					obj[keys[0]][keys[1]]={}
+			}
+
+			if(obj[keys[0]][keys[1]][keys[2]]==undefined){
+				if(keys.length==3)
+					return obj[keys[0]][keys[1]][keys[2]]=listObj[`${keys[0]}.${keys[1]}.${keys[2]}`]
+				else
+					obj[keys[0]][keys[1]][keys[2]]={}
+			}
+
+			if(obj[keys[0]][keys[1]][keys[2]][keys[3]]==undefined){
+				if(keys.length==4)
+					return obj[keys[0]][keys[1]][keys[2]][keys[3]]=listObj[`${keys[0]}.${keys[1]}.${keys[2]}.${keys[3]}`]
+				else
+					obj[keys[0]][keys[1]][keys[2]][keys[3]]={}
+			}
+
+			if(obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]]==undefined){
+				if(keys.length==5)
+					return obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]]=listObj[`${keys[0]}.${keys[1]}.${keys[2]}.${keys[3]}.${keys[4]}`]
+				else
+					obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]]={}
+			}
+
+		}else{
+			obj[mainKey]=listObj[mainKey]
+		}
+	})
+	return obj
+}
+
+global.objectToListObject=function(obj){
+	var listObj={}
+	Object.keys(obj).forEach((key)=>{
+		if(typeof obj[key]=='object'){
+			Object.keys(obj[key]).forEach((key2)=>{
+				if(typeof obj[key][key2]=='object'){
+					Object.keys(obj[key][key2]).forEach((key3)=>{
+						if(typeof obj[key][key2][key3]=='object'){
+							Object.keys(obj[key][key2][key3]).forEach((key4)=>{
+								if(typeof obj[key][key2][key3][key4]=='object'){
+									Object.keys(obj[key][key2][key3][key4]).forEach((key5)=>{
+										listObj[`${key}.${key2}.${key3}.${key4}.${key5}`]=obj[key][key2][key3][key4][key5]
+									})
+								}else{
+									listObj[`${key}.${key2}.${key3}.${key4}`]=obj[key][key2][key3][key4]
+								}
+							})
+						}else{
+							listObj[`${key}.${key2}.${key3}`]=obj[key][key2][key3]
+						}
+				  })
+				}else{
+					listObj[`${key}.${key2}`]=obj[key][key2]
+				}
+			})
+		}else{
+			listObj[key]=obj[key]
+		}
+		
+	})
+	return listObj
+}

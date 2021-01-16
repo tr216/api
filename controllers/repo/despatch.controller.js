@@ -164,7 +164,7 @@ function getErrors(dbModel, member, req, res, next, cb){
 	var select='_id profileId ID despatchTypeCode localDocumentId issueDate ioType eIntegrator despatchErrors localErrors despatchStatus localStatus'
 
 	if(_id=='') 
-		error.param2(req)
+		return error.param2(req,next)
 	dbModel.despatches.findOne({_id:_id},select).exec((err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
@@ -182,8 +182,8 @@ function put(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
 	data._id = req.params.param1
 	data.modifiedDate = new Date()
+	data=util.amountValueFixed2Digit(data,'')
 	data=fazlaliklariTemizleDuzelt(data)
-
 	dbModel.despatches.findOne({ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
@@ -221,6 +221,17 @@ function fazlaliklariTemizleDuzelt(data){
 					e.item._id=undefined
 			})
 	}
+
+	if((data.deliveryCustomerParty || '')!='' && (data.buyerCustomerParty || '')==''){
+		data['buyerCustomerParty']=clone(data.deliveryCustomerParty)
+	}else if((data.deliveryCustomerParty || '')=='' && (data.buyerCustomerParty || '')!=''){
+		data['deliveryCustomerParty']=clone(data.buyerCustomerParty)
+	}
+	if((data.despatchSupplierParty || '')!='' && (data.sellerSupplierParty || '')==''){
+		data['sellerSupplierParty']=clone(data.despatchSupplierParty)
+	}else if((data.despatchSupplierParty || '')=='' && (data.sellerSupplierParty || '')!=''){
+		data['despatchSupplierParty']=clone(data.sellerSupplierParty)
+	}
 	return data
 }
 
@@ -242,21 +253,21 @@ function getDespatchList(ioType, dbModel, member, req, res, next, cb){
 	if(req.query.eIntegrator)
 		filter['eIntegrator']=req.query.eIntegrator
 
-	if((req.query.despatchNo || req.query.ID || '')!=''){
+	if((req.query.despatchNo || req.query.ID || req.query['ID.value'] || '')!=''){
 		if(filter['$or']==undefined)
 			filter['$or']=[]
-		filter['$or'].push({'ID.value':{ '$regex': '.*' + req.query.despatchNo || req.query.ID + '.*' , '$options': 'i' }})
-		filter['$or'].push({'localDocumentId':{ '$regex': '.*' + req.query.despatchNo || req.query.ID + '.*' ,'$options': 'i' }})
+		filter['$or'].push({'ID.value':{ '$regex': '.*' + req.query.despatchNo || req.query.ID || req.query['ID.value'] + '.*' , '$options': 'i' }})
+		filter['$or'].push({'localDocumentId':{ '$regex': '.*' + req.query.despatchNo || req.query.ID || req.query['ID.value'] + '.*' ,'$options': 'i' }})
 	}
 
 	if(req.query.despatchStatus)
 		filter['despatchStatus']=req.query.despatchStatus
 	
-	if((req.query.profileId || '')!='')
-		filter['profileId.value']=req.query.profileId
+	if((req.query.profileId || req.query['profileId.value'] || '')!='')
+		filter['profileId.value']=req.query.profileId || req.query['profileId.value']
 	
-	if((req.query.despatchAdviceTypeCode || '')!='')
-		filter['despatchAdviceTypeCode.value']=req.query.despatchAdviceTypeCode
+	if((req.query.despatchAdviceTypeCode || req.query['despatchAdviceTypeCode.value'] || '')!='')
+		filter['despatchAdviceTypeCode.value']=req.query.despatchAdviceTypeCode || req.query['despatchAdviceTypeCode.value']
 	
 
 	if((req.query.date1 || '')!='')
@@ -506,7 +517,7 @@ function autoCreateCariKart(dbModel, doc, cb){
 
 function autoCreateVendor(dbModel, doc, cb){
 	
-		var newDoc = new dbModel.parties(data)
+	var newDoc = new dbModel.parties(data)
 	if(!epValidateSync(newDoc,next))
 		return
 

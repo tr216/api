@@ -17,6 +17,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 function getList(dbModel, member, req, res, next, cb){
 	var keys=[]
+	console.log(`req.query.search :`,req.query.search )
 	var forbiddens=['_id', 'name', 'conn', 'dbName', 'userDb', 'settings', 'recycle', 'actions','variables']
 	Object.keys(dbModel).forEach((e)=>{
 		bFound=false
@@ -27,9 +28,31 @@ function getList(dbModel, member, req, res, next, cb){
 			}
 		})
 		if(!bFound)
-			keys.push(e)
+			if((req.query.search || req.query.name || '')==''){
+				keys.push(e)
+			}else {
+				if((req.query.search || req.query.name)==' ' || (req.query.search || req.query.name)=='*'){
+					keys.push(e)
+				}else{
+					if(e.indexOf(req.query.search || req.query.name)>-1){
+						keys.push(e)
+					}
+				}
+			}
+			
 	})
-	cb(keys)
+	var resp={
+		docs:[],
+		page:1,
+		pageSize:50000,
+		pageCount:1,
+		recordCount:keys.length
+
+	}
+	keys.forEach((e)=>{
+		resp.docs.push({_id:e,name:e})
+	})
+	cb(resp)
 }
 
 function getOne(dbModel, member, req, res, next, cb){

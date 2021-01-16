@@ -31,6 +31,26 @@ function getList(dbModel, member, req, res, next, cb){
 
 	var filter = {}
 
+	if((req.query.name || '')!=''){
+		if(req.query.name!='*' && req.query.name!=' ')
+			filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }
+	}
+	
+	if((req.query.search || '')!=''){
+		filter['$or']=[
+		{'name':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }}
+		]
+	}
+
+	if((req.query.type || '')!=''){
+		// if(Number(req.query.type>=0)){
+		filter['type']=req.query.type
+		// }
+	}
+
+	if((req.query.passive || '')!='')
+		filter['passive']=req.query.passive
+
 	dbModel.pos_device_services.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
 			cb(resp)

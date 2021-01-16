@@ -47,7 +47,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 function approveDecline(status, dbModel,member,req,res,next, cb){
 	if(req.params.param2==undefined)
-		error.param2(req)
+		return error.param2(req,next)
 	var data = req.body || {}
 
 	data._id = req.params.param2

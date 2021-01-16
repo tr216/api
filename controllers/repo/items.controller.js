@@ -2,7 +2,12 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel, member, req, res, next, cb)
+			if(req.params.param1.indexOf(',')>-1 || req.params.param1.indexOf(';')>-1){
+				getIdList(dbModel, member, req, res, next, cb)
+			}else{
+				getOne(dbModel, member, req, res, next, cb)
+			}
+			
 		}else{
 			getList(dbModel, member, req, res, next, cb)
 		}
@@ -33,7 +38,7 @@ function copy(dbModel, member, req, res, next, cb){
 	var newName=req.body['newName'] || req.body['name'] || ''
 
 	if(id=='')
-		error.param2(req)
+		error.param2(req,next)
 
 	dbModel.items.findOne({ _id: id},(err,doc)=>{
 		if(dberr(err,next)){
@@ -195,6 +200,21 @@ function getList(dbModel, member, req, res, next, cb){
 		}
 	})
 }
+
+function getIdList(dbModel, member, req, res, next, cb){
+	
+	var filter = {}
+	var idList=req.params.param1.replaceAll(';',',').split(',')
+
+	filter['_id']={$in:idList}
+
+	dbModel.items.find(filter,(err, docs)=>{
+		if(dberr(err,next)){
+			cb(docs)
+		}
+	})
+}
+
 
 function getOne(dbModel, member, req, res, next, cb){
 	var populate=[

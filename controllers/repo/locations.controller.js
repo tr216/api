@@ -40,6 +40,11 @@ function getList(dbModel, member, req, res, next, cb){
 			filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }
 	}
 	
+	if((req.query.search || '')!=''){
+		filter['$or']=[
+		{'name':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }}
+		]
+	}
 
 	if((req.query.type || '')!=''){
 		// if(Number(req.query.type>=0)){

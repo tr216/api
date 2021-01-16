@@ -1,0 +1,42 @@
+db.getCollection('locations').find({}).forEach((e)=>{
+    e.name=e.locationName || e.name || ''
+    e.locationName=undefined
+    delete e.locationName
+    
+    e.type=e.locationType || e.type || 'warehouse'
+    e.locationType=undefined
+    delete e.locationType
+    if(typeof e.type =='number'){
+        e.type='shop'
+    }
+    e.hasSubLocations=undefined
+    delete e.hasSubLocations
+    
+    e.hasChilderen=undefined
+    delete e.hasChilderen
+    e.subLocations=e.subLocations || []
+    
+    db.getCollection('locations').deleteOne({_id:e._id})
+    db.getCollection('locations').insertOne(e)
+})
+
+
+db.getCollection('pos_device_services').find({}).forEach((e)=>{
+  
+    e.type=e.serviceType || e.type || 'ingenico'
+    e.serviceType=undefined
+    delete e.serviceType
+   
+    
+    db.getCollection('pos_device_services').deleteOne({_id:e._id})
+    db.getCollection('pos_device_services').insertOne(e)
+})
+
+
+
+db.getCollection('members').find({}).forEach((e)=>{
+    e.modules.posDevice.defines.services=e.modules.posDevice.defines.serviceDefines
+    e.modules.posDevice.defines.serviceDefines=undefined
+    delete e.modules.posDevice.defines.serviceDefines
+    db.getCollection('members').update({_id:e._id},{$set:{modules:e.modules}})
+})

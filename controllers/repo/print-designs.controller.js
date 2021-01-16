@@ -72,12 +72,18 @@ function getList(dbModel, member, req, res, next, cb){
 
 	if((req.query.module || '')!='')
 		filter['module']=req.query.module
+	if((req.query.function || '')!='')
+		filter['function']=req.query.function
 
 	if((req.query.passive || '')!='')
 		filter['passive']=req.query.passive
 
 	if((req.query.name || '')!='')
 		filter['name']={ $regex: '.*' + req.query.name + '.*' ,$options: 'i' }
+
+	
+	if((req.query.search || '')!='')
+		filter['name']={ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }
 
 	dbModel.print_designs.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){

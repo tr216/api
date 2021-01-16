@@ -15,7 +15,6 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		}else if(req.params.param1=='runCode'){
 			runCode(dbModel, member, req, res, next, cb)
 		}else if(req.params.param1=='run'){
-			console.log(`run calisti:`)
 			run(dbModel, member, req, res, next, cb)
 		}else{
 			post(dbModel, member, req, res, next, cb)
@@ -194,7 +193,7 @@ function put(dbModel, member, req, res, next, cb){
 
 
 function fazlaliklariTemizleDuzelt(data){
-	
+	tempLog('programs.controller.data.json',JSON.stringify(data,null,2))
 	return data
 }
 

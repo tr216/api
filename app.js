@@ -21,6 +21,7 @@ if(fs.existsSync('./private-config.json')){
 global.mail=require('./bin/mail')
 
 
+
 var indexRouter = require('./routes/index')
 var dbLoader = require('./db/db-loader')
 

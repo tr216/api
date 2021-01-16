@@ -8,7 +8,11 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		}
 		break
 		case 'POST':
-		post(dbModel, member, req, res, next, cb)
+		if(req.params.param1=='copy'){
+			copy(dbModel, member, req, res, next, cb)
+		}else{
+			post(dbModel, member, req, res, next, cb)
+		}
 		break
 		case 'PUT':
 		put(dbModel, member, req, res, next, cb)
@@ -22,12 +26,50 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 	}
 }
 
+function copy(dbModel, member, req, res, next, cb){
+	var id=req.params.param2 || req.body['id'] || req.query.id || ''
+	var newName=req.body['newName'] || req.body['name'] || ''
+
+	if(id=='')
+		return error.param2(req,next)
+
+	dbModel.parties.findOne({ _id: id},(err,doc)=>{
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
+				var data=doc.toJSON()
+				data._id=undefined
+				delete data._id
+
+				if(newName!=''){
+					data.partyName.name.value=newName
+				}else{
+					data.partyName.name.value +=' copy'
+				}
+
+				data.createdDate=new Date()
+				data.modifiedDate=new Date()
+
+				var newDoc = new dbModel.parties(data)
+				if(!epValidateSync(newDoc,next))
+					return
+
+				newDoc.save((err, newDoc2)=>{
+					if(dberr(err,next)){
+						cb(newDoc2)
+					} 
+				})
+			}
+		}
+	})
+}
+
 function getList(dbModel, member, req, res, next, cb){
 	var options={page: (req.query.page || 1)}
-	if(!req.query.page){
-		options.limit=50000
-	}
+	if((req.query.pageSize || req.query.limit))
+		options['limit']=req.query.pageSize || req.query.limit
+
 	var filter = {partyType:'Vendor'}
+
 
 	if((req.query.passive || '')!='')
 		filter['passive']=req.query.passive
@@ -35,12 +77,21 @@ function getList(dbModel, member, req, res, next, cb){
 	if((req.query.name || req.query.partyName || '')!='')
 		filter['partyName.name.value']={ $regex: '.*' + (req.query.name || req.query.partyName) + '.*' ,$options: 'i' }
 
+
 	if((req.query.cityName || '')!='')
 		filter['postalAddress.cityName.value']={ $regex: '.*' + req.query.cityName + '.*' ,$options: 'i' }
 
 	if((req.query.district || '')!='')
 		filter['postalAddress.district.value']={ $regex: '.*' + req.query.district + '.*' ,$options: 'i' }
 
+	if((req.query.search || '')!=''){
+		filter['$or']=[
+			{'partyName.name.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+			{'postalAddress.district.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
+			{'postalAddress.cityName.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }}
+		]
+	}
+	
 	dbModel.parties.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
 			resp.docs.forEach((e)=>{

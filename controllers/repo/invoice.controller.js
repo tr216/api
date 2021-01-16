@@ -89,7 +89,7 @@ function getErrors(dbModel, member, req, res, next, cb){
 	var select='_id profileId ID invoiceTypeCode localDocumentId issueDate ioType eIntegrator invoiceErrors localErrors invoiceStatus localStatus'
 	
 	if(_id=='')
-		error.param2(req)
+		return error.param2(req,next)
 	dbModel.invoices.findOne({_id:_id}).select(select).exec((err,doc)=>{
 		if(dberr(err,next))
 			if(dbnull(doc,next)){
@@ -166,7 +166,7 @@ function importOutboxInvoice(dbModel, member, req, res, next, cb){
 
 function put(dbModel, member, req, res, next, cb){
 	if(req.params.param2==undefined)
-		error.param2(req)
+		return error.param2(req,next)
 	var data = req.body || {}
 	data._id = req.params.param2
 	data.modifiedDate = new Date()
@@ -392,8 +392,8 @@ function getInvoiceList(ioType, dbModel, member, req, res, next, cb){
 	if(req.query.eIntegrator){
 		filter['eIntegrator']=req.query.eIntegrator
 	}
-	if((req.query.ID || '')!=''){
-		filter['ID.value']={ $regex: '.*' + req.query.ID + '.*' ,$options: 'i' }
+	if((req.query.ID || req.query['ID.value'] || '')!=''){
+		filter['ID.value']={ $regex: '.*' + req.query.ID || req.query['ID.value'] + '.*' ,$options: 'i' }
 	}
 	if((req.query.invoiceNo || '')!=''){
 		if(filter['$or']==undefined)
@@ -404,14 +404,14 @@ function getInvoiceList(ioType, dbModel, member, req, res, next, cb){
 	if(req.query.invoiceStatus)
 		filter['invoiceStatus']=req.query.invoiceStatus
 
-	if((req.query.profileId || '')!='')
-		filter['profileId.value']=req.query.profileId
+	if((req.query.profileId || req.query['profileId.value'] || '')!='')
+		filter['profileId.value']=req.query.profileId || req.query['profileId.value']
 	
-	if((req.query.invoiceTypeCode || '')!='')
-		filter['invoiceTypeCode.value']=req.query.invoiceTypeCode
+	if((req.query.invoiceTypeCode || req.query['invoiceTypeCode.value'] || '')!='')
+		filter['invoiceTypeCode.value']=req.query.invoiceTypeCode || req.query['invoiceTypeCode.value']
 
-	if((req.query.documentCurrencyCode || '')!='')
-		filter['documentCurrencyCode.value']=req.query.documentCurrencyCode
+	if((req.query.documentCurrencyCode || req.query['documentCurrencyCode.value'] || '')!='')
+		filter['documentCurrencyCode.value']=req.query.documentCurrencyCode || req.query['documentCurrencyCode.value']
 
 	if((req.query.date1 || '')!='')
 		filter['issueDate.value']={$gte:req.query.date1}
@@ -534,7 +534,7 @@ function getInvoice(dbModel, member, req, res, next, cb){
 		select=''
 
 	if(_id=='')
-		error.param2(req)
+		return error.param2(req,next)
 
 	dbModel.invoices.findOne({_id:_id},select).exec((err,doc)=>{
 		if(dberr(err,next)){
@@ -549,7 +549,7 @@ function getInvoice(dbModel, member, req, res, next, cb){
 function invoiceView(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
-		error.param2(req)
+		return error.param2(req,next)
 
 	dbModel.invoices.findOne({_id:_id}).populate(['html']).exec((err,doc)=>{
 		if(dberr(err,next)){
@@ -563,7 +563,7 @@ function invoiceView(dbModel, member, req, res, next, cb){
 function invoicePdf(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
-		error.param2(req)
+		return error.param2(req,next)
 
 	dbModel.invoices.findOne({_id:_id}).populate(['pdf']).exec((err,doc)=>{
 		if(dberr(err,next)){
@@ -577,7 +577,7 @@ function invoicePdf(dbModel, member, req, res, next, cb){
 function getInvoiceXmlXslt(dbModel, member, req, res, next, cb){
 	var _id= req.params.param2 || req.query._id || ''
 	if(_id=='')
-		error.param2(req)
+		return error.param2(req,next)
 	dbModel.invoices.findOne({_id:_id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){

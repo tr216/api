@@ -24,11 +24,13 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 }
 
 function getList(dbModel, member, req, res, next, cb){
-	var options={page: (req.query.page || 1), 
+	var options={page: (req.query.page || 1)
+		, 
 		populate:[
-		{path:'location',select:'_id locationName'},
-		{path:'service',select:'_id name serviceType'},
-		{path:'localConnector',select:'_id name'}
+		{path:'location',select:'_id name'},
+		{path:'service',select:'_id name serviceType'}
+		// ,
+		// {path:'localConnector',select:'_id name'}
 		]
 	}
 
@@ -49,8 +51,8 @@ function getList(dbModel, member, req, res, next, cb){
 	if((req.query.service || '')!='')
 		filter['service']=req.query.service
 
-	if((req.query.localConnector || '')!='')
-		filter['localConnector']=req.query.localConnector
+	// if((req.query.localConnector || '')!='')
+	// 	filter['localConnector']=req.query.localConnector
 
 	if((req.query.passive || '')!='')
 		filter['passive']=req.query.passive
