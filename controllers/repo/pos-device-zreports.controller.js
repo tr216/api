@@ -76,10 +76,10 @@ function getList(dbModel, member, req, res, next, cb){
 		filter['status']='transferred'
 	}else if(req.query.status=='error'){
 		filter['status']='error'
-	}else if(req.query.status=='*'){
-		
-	}else {
+	}else if(req.query.status=='waiting'){
 		filter['status']={$nin:['transferred']}
+	}else {
+		
 	}
 
 

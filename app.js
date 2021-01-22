@@ -38,6 +38,7 @@ app.use(bodyParser.json({limit: "100mb"}))
 app.use(bodyParser.urlencoded({limit: "100mb", extended: true, parameterLimit:50000}))
 app.use(cookieParser())
 app.use(methodOverride())
+app.use(methodOverride())
 
 indexRouter(app)
 testControllers(false)

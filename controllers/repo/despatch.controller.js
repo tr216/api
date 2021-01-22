@@ -184,14 +184,17 @@ function put(dbModel, member, req, res, next, cb){
 	data.modifiedDate = new Date()
 	data=util.amountValueFixed2Digit(data,'')
 	data=fazlaliklariTemizleDuzelt(data)
+
 	dbModel.despatches.findOne({ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
 				data=util.amountValueFixed2Digit(data,'')
 				var doc2 = Object.assign(doc, data)
+				
 				var newDoc = new dbModel.despatches(doc2)
 				if(!epValidateSync(newDoc,next))
 					return
+
 				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
 						cb(newDoc2)
@@ -231,6 +234,34 @@ function fazlaliklariTemizleDuzelt(data){
 		data['sellerSupplierParty']=clone(data.despatchSupplierParty)
 	}else if((data.despatchSupplierParty || '')=='' && (data.sellerSupplierParty || '')!=''){
 		data['despatchSupplierParty']=clone(data.sellerSupplierParty)
+	}
+
+	if((data.deliveryCustomerParty || '')!=''){
+		if((data.deliveryCustomerParty.party || '')!=''){
+			if((data.deliveryCustomerParty.party._id || '')=='')
+				data.deliveryCustomerParty.party._id=null
+		}
+	}
+
+	if((data.buyerCustomerParty || '')!=''){
+		if((data.buyerCustomerParty.party || '')!=''){
+			if((data.buyerCustomerParty.party._id || '')=='')
+				data.buyerCustomerParty.party._id=null
+		}
+	}
+
+	if((data.despatchSupplierParty || '')!=''){
+		if((data.despatchSupplierParty.party || '')!=''){
+			if((data.despatchSupplierParty.party._id || '')=='')
+				data.despatchSupplierParty.party._id=null
+		}
+	}
+
+	if((data.sellerSupplierParty || '')!=''){
+		if((data.sellerSupplierParty.party || '')!=''){
+			if((data.sellerSupplierParty.party._id || '')=='')
+				data.sellerSupplierParty.party._id=null
+		}
 	}
 	return data
 }
