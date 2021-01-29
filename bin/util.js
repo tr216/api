@@ -1522,6 +1522,25 @@ global.listObjectToObject=function(listObj){
 					obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]]={}
 			}
 
+			if(obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]]==undefined){
+				if(keys.length==6)
+					return obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]]=listObj[`${keys[0]}.${keys[1]}.${keys[2]}.${keys[3]}.${keys[4]}.${keys[5]}`]
+				else
+					obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]]={}
+			}
+			if(obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]][keys[6]]==undefined){
+				if(keys.length==7)
+					return obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]][keys[6]]=listObj[`${keys[0]}.${keys[1]}.${keys[2]}.${keys[3]}.${keys[4]}.${keys[5]}.${keys[6]}`]
+				else
+					obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]][keys[6]]={}
+			}
+			if(obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]][keys[6]][keys[7]]==undefined){
+				if(keys.length==8)
+					return obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]][keys[6]][keys[7]]=listObj[`${keys[0]}.${keys[1]}.${keys[2]}.${keys[3]}.${keys[4]}.${keys[5]}.${keys[6]}.${keys[7]}`]
+				else
+					obj[keys[0]][keys[1]][keys[2]][keys[3]][keys[4]][keys[5]][keys[6]][keys[7]]={}
+			}
+			
 		}else{
 			obj[mainKey]=listObj[mainKey]
 		}
@@ -1540,7 +1559,21 @@ global.objectToListObject=function(obj){
 							Object.keys(obj[key][key2][key3]).forEach((key4)=>{
 								if(typeof obj[key][key2][key3][key4]=='object'){
 									Object.keys(obj[key][key2][key3][key4]).forEach((key5)=>{
-										listObj[`${key}.${key2}.${key3}.${key4}.${key5}`]=obj[key][key2][key3][key4][key5]
+										if(typeof obj[key][key2][key3][key4][key5]=='object'){
+											Object.keys(obj[key][key2][key3][key4][key5]).forEach((key6)=>{
+												if(typeof obj[key][key2][key3][key4][key5]=='object'){
+													Object.keys(obj[key][key2][key3][key4][key5][key6]).forEach((key7)=>{
+														listObj[`${key}.${key2}.${key3}.${key4}.${key5}.${key6}.${key7}`]=obj[key][key2][key3][key4][key5][key6][key7]
+													})
+												}else{
+													listObj[`${key}.${key2}.${key3}.${key4}.${key5}.${key6}`]=obj[key][key2][key3][key4][key5][key6]
+												}
+												
+											})
+										}else{
+											listObj[`${key}.${key2}.${key3}.${key4}.${key5}`]=obj[key][key2][key3][key4][key5]
+										}
+										
 									})
 								}else{
 									listObj[`${key}.${key2}.${key3}.${key4}`]=obj[key][key2][key3][key4]
@@ -1549,7 +1582,7 @@ global.objectToListObject=function(obj){
 						}else{
 							listObj[`${key}.${key2}.${key3}`]=obj[key][key2][key3]
 						}
-				  })
+					})
 				}else{
 					listObj[`${key}.${key2}`]=obj[key][key2]
 				}
@@ -1557,7 +1590,7 @@ global.objectToListObject=function(obj){
 		}else{
 			listObj[key]=obj[key]
 		}
-		
+
 	})
 	return listObj
 }
