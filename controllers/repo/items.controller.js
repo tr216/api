@@ -163,7 +163,7 @@ function getList(dbModel, member, req, res, next, cb){
 	if((req.query.modelName || req.query['modelName.value'] || '')!='')
 		filter['modelName.value']={ $regex: '.*' + (req.query.modelName || req.query['modelName.value']) + '.*' ,$options: 'i' }
 
-	if((req.query.search || '')!=''){
+	if((req.query.search || '').trim()!=''){
 		filter['$or']=[
 		{'name.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
 		{'description.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},

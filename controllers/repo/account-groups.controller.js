@@ -3,7 +3,12 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel, member, req, res, next, cb)
+			if(req.params.param1.indexOf(',')>-1 || req.params.param1.indexOf(';')>-1){
+				getIdList(dbModel, member, req, res, next, cb)
+			}else{
+				getOne(dbModel, member, req, res, next, cb)
+			}
+			
 		}else{
 			getList(dbModel, member, req, res, next, cb)
 		}
@@ -81,12 +86,29 @@ function getList(dbModel, member, req, res, next, cb){
 
 	var filter = {}
 
-	if((req.query.name || req.query.search || '')!='')
-		filter['name']={ '$regex': '.*' + (req.query.name || req.query.search) + '.*' ,'$options': 'i' }
+	if((req.query.name || '')!='')
+		filter['name']={ '$regex': '.*' + req.query.name + '.*' ,'$options': 'i' }
+
+	if((req.query.search || '').trim()!='')
+		filter['name']={ '$regex': '.*' + req.query.search + '.*' ,'$options': 'i' }
 
 	dbModel.account_groups.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
 			cb(resp)
+		}
+	})
+}
+
+function getIdList(dbModel, member, req, res, next, cb){
+	
+	var filter = {}
+	var idList=req.params.param1.replaceAll(';',',').split(',')
+
+	filter['_id']={$in:idList}
+
+	dbModel.account_groups.find(filter,(err, docs)=>{
+		if(dberr(err,next)){
+			cb(docs)
 		}
 	})
 }

@@ -84,7 +84,7 @@ function getList(dbModel, member, req, res, next, cb){
 	if((req.query.district || '')!='')
 		filter['postalAddress.district.value']={ $regex: '.*' + req.query.district + '.*' ,$options: 'i' }
 
-	if((req.query.search || '')!=''){
+	if((req.query.search || '').trim()!=''){
 		filter['$or']=[
 			{'partyName.name.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},
 			{'postalAddress.district.value':{ $regex: '.*' + req.query.search + '.*' ,$options: 'i' }},

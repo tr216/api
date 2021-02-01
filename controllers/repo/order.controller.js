@@ -27,23 +27,7 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			return getOrderList(0, dbModel, member, req, res, next, cb)
 			break
 			
-			// case 'errors':
-			// case 'logs':
-			// eOrderService.get(dbModel,`/${req.params.param1}/${req.params.param2}`,{},(err,data)=>{
-			// 	if(dberr(err,next)){
-			// 		cb(data)
-			// 	}
-			// })
-			// break
-			// case 'view':
-			// case 'xslt':
-			// case 'xml':
-			// eOrderService.getFile(dbModel,`/${req.params.param1}/${req.params.param2}`,{},(err,data)=>{
-			// 	if(dberr(err,next)){
-			// 		cb({file:{fileName:req.params.param2,data:data}})
-			// 	}
-			// })
-			// break
+		
 			
 			case 'errors':
 			return getErrors(dbModel, member, req, res, next, cb)
