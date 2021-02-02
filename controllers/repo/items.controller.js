@@ -130,7 +130,9 @@ function getList(dbModel, member, req, res, next, cb){
 		options['limit']=req.query.pageSize || req.query.limit
 	
 	var filter = {}
-
+	options.sort={
+		'name.value':1
+	}
 
 	if(req.query.itemType!='all'){
 		if((req.query.itemType || req.query.itemtype || req.query.type || '')!=''){
