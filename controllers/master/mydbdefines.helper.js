@@ -22,17 +22,18 @@ exports.getList=function(member,req,res,next,cb){
 					})
 				}
 				if(auth.canRead){
-					data.push({_id:e._id,dbName:e.dbName,owner:e.owner, auth:auth, settings:(e.settings || {})})
+					data.push({_id:e._id,dbName:e.dbName,owner:e.owner, auth:auth})
 				}
 			})
-			preparePageSettings(data,(err,data2)=>{
-				if(!err){
-					cb(data2)
-				}else{
-					next(err)
-				}
+			cb(data)
+			// preparePageSettings(data,(err,data2)=>{
+			// 	if(!err){
+			// 		cb(data2)
+			// 	}else{
+			// 		next(err)
+			// 	}
 				
-			})
+			// })
 			
 		}else{
 			next({code: err.name, message: err.message})
@@ -44,7 +45,7 @@ exports.getOne=function(member,req,res,next,cb){
 	db.dbdefines.findOne({_id:req.params.param1, deleted:false, passive:false,owner:member._id}).populate('owner','_id username name lastName modules').populate('authorizedMembers.memberId','_id username name lastName').exec((err,doc)=>{
 		if(dberr(err, next)){
 			if(dbnull(doc, next)){
-				console.log(`mydbdefines.helper getOne doc:`,doc)
+				
 				cb(doc)
 			}
 		}
@@ -56,7 +57,6 @@ function preparePageSettings(databases,callback){
 		if(!dbItem.settings.page)
 			return cb(null)
 		var sayfalar=Object.keys(dbItem.settings.page)
-		console.log(`sayfalar:`,sayfalar)
 
 		iteration(sayfalar,(sayfa,cb2)=>{
 			var programs=clone(dbItem.settings.page[sayfa].programs)

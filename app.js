@@ -27,6 +27,7 @@ var dbLoader = require('./db/db-loader')
 
 global.fileImporter = require('./lib/file_importer')
 global.documentHelper = require('./lib/document_helper')
+global.printHelper = require('./lib/print_helper')
 
 var app = express()
 var cors = require('cors')

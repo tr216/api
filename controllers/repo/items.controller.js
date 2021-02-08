@@ -61,7 +61,9 @@ function copy(dbModel, member, req, res, next, cb){
 					if(dberr(err,next)){
 						receteleriKaydet(dbModel,doc,newDoc2,(err,newDoc3)=>{
 							if(!err){
-								cb(newDoc3)
+								var obj=newDoc3.toJSON()
+								obj['newName']=data.name.value
+								cb(obj)
 							}else{
 								dbModel.items.deleteOne({_id:newDoc2._id},(err2)=>{
 									return dberr(err,next)

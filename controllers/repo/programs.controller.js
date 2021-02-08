@@ -2,7 +2,12 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
 		if(req.params.param1!=undefined){
-			getOne(dbModel, member, req, res, next, cb)
+			if(req.params.param1.indexOf(',')>-1 || req.params.param1.indexOf(';')>-1){
+				getIdList(dbModel, member, req, res, next, cb)
+			}else{
+				getOne(dbModel, member, req, res, next, cb)
+			}
+			
 		}else{
 			getList(dbModel, member, req, res, next, cb)
 		}
@@ -32,12 +37,27 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 	}
 }
 
+function getIdList(dbModel, member, req, res, next, cb){
+	
+	var filter = {}
+	var idList=req.params.param1.replaceAll(';',',').split(',')
+
+	filter['_id']={$in:idList}
+
+	dbModel.programs.find(filter,(err, docs)=>{
+		if(dberr(err,next)){
+			cb(docs)
+		}
+	})
+}
+
 function run(dbModel, member, req, res, next, cb){
 	var id=req.params.param2 || req.body['id'] || req.query.id || ''
 	var data=req.body || {}
 	dbModel.programs.findOne({_id:id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
+				
 				services.programs.run(dbModel,doc,data,(err,result)=>{
 					if(!err){
 						cb(result)
@@ -108,7 +128,9 @@ function copy(dbModel, member, req, res, next, cb){
 					return
 				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
-						cb(newDoc2)
+						var obj=newDoc2.toJSON()
+						obj['newName']=data.name
+						cb(obj)
 					} 
 				})
 			}
@@ -193,7 +215,6 @@ function put(dbModel, member, req, res, next, cb){
 
 
 function fazlaliklariTemizleDuzelt(data){
-	tempLog('programs.controller.data.json',JSON.stringify(data,null,2))
 	return data
 }
 

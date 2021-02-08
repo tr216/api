@@ -1,11 +1,17 @@
 module.exports = (dbModel, member, req, res, next, cb)=>{
 	switch(req.method){
 		case 'GET':
-		getSettings(dbModel, member, req, res, next, cb)
+		if(req.params.param1!=undefined){
+			getOne(dbModel, member, req, res, next, cb)
+		}else{
+			getList(dbModel, member, req, res, next, cb)
+		}
 		break
 		case 'POST':
+		post(dbModel, member, req, res, next, cb)
+		break
 		case 'PUT':
-		save(dbModel, member, req, res, next, cb)
+		put(dbModel, member, req, res, next, cb)
 		break
 		case 'DELETE':
 		deleteItem(dbModel, member, req, res, next, cb)
@@ -14,92 +20,114 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		error.method(req, next)
 		break
 	}
+
 }
-var defaultSettings=fixJSON(fs.readFileSync(path.join(__root,'db/repo.resources','repodb-settings.json'),'utf8'))
 
+function getList(dbModel, member, req, res, next, cb){
+	
+	var options={page: (req.query.page || 1)}
+	if(!req.query.page){
+		options.limit=50000
+	}
+	options.populate=[
+		{
+			path:'programButtons.program',
+			select:'_id name type passive'
+		},
+		{
+			path:'print.form',
+			select:'_id name module isDefault passive'
+		},
+		{
+			path:'print.list',
+			select:'_id name module isDefault passive'
+		}
+	]
+		
 
-function getSettings(dbModel, member, req, res, next, cb){
-	db.dbdefines.findOne({_id:dbModel._id},(err,doc)=>{
+	var filter = {}
+
+	if((req.query.module || '')!='')
+		filter['module']=req.query.module
+
+	dbModel.settings.paginate(filter,options,(err, resp)=>{
 		if(dberr(err,next)){
-			if(dbnull(doc,next)){
-				var obj={
-					default:defaultSettings,
-					settings:Object.assign({}, defaultSettings,doc.settings )
-				}
-				cb(obj)
-			}
+			
+			cb(resp)
 		}
 	})
 }
 
+function getOne(dbModel, member, req, res, next, cb){
+	dbModel.settings.findOne({_id:req.params.param1},(err,doc)=>{
+		if(dberr(err,next)){
+			console.log(`doc:`,doc)
+			cb(doc)
+		}
+	})
+}
 
-function save(dbModel, member, req, res, next, cb){
-	var data = Object.assign({}, defaultSettings, req.body )
-	console.log(`data:`,data)
-	db.dbdefines.findOne({_id:dbModel._id},(err,doc)=>{
+function post(dbModel, member, req, res, next, cb){
+	var data = req.body || {}
+	data._id=undefined
+	data=dataDuzenle(data,req)
+	var newDoc = new dbModel.settings(data)
+	if(!epValidateSync(newDoc,next))
+		return
+	newDoc.save((err, newDoc2)=>{
+		if(dberr(err,next)){
+			cb(newDoc2)
+		} 
+	})
+}
+
+function put(dbModel, member, req, res, next, cb){
+	if(req.params.param1==undefined)
+		return error.param1(req, next)
+	var data=req.body || {}
+	data._id = req.params.param1
+	data.modifiedDate = new Date()
+	data=dataDuzenle(data,req)
+	dbModel.settings.findOne({ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
-				var settings=doc.settings || {}
-
-				if(settings.page==undefined)
-					settings.page={}
-
-				doc.settings=Object.assign({}, settings,data)
-			
-				if(data.page){
-					for(let k in data.page){
-						var sayfa={}
-						sayfa=clone(data.page[k])
-						for(let j in sayfa){
-							if(Array.isArray(sayfa[j])){
-								var dizi=[]
-								sayfa[j].forEach((e)=>{
-									if((e || '')!=''){
-										dizi.push(e)
-									}
-								})
-								sayfa[j]=dizi
-							}
-						}
-						console.log(`${k}:`,sayfa)
-						doc.settings.page[k]=sayfa
-					}
-
-				}else{
-					//doc.settings.page={}
-				}
+				var doc2 = Object.assign(doc, data)
+				var newDoc = new dbModel.settings(doc2)
+				if(!epValidateSync(newDoc,next))
+					return
 				
-
-				doc.save((err,doc2)=>{
+				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
-						var obj={
-							default:defaultSettings,
-							settings:doc2.settings
-						}
-						cb(obj)
-					}
+						cb(newDoc2)
+					} 
 				})
 			}
 		}
 	})
 }
 
+function dataDuzenle(data,req){
+
+	if(data.print){
+		if((data.print.form || '')=='')
+			data.print.form=undefined
+		if((data.print.list || '')=='')
+			data.print.list=undefined
+	}
+
+	
+
+	return data
+}
 
 function deleteItem(dbModel, member, req, res, next, cb){
-	db.dbdefines.findOne({_id:dbModel._id},(err,doc)=>{
+	if(req.params.param1==undefined)
+		return error.param1(req, next)
+	var data = req.body || {}
+	data._id = req.params.param1
+	dbModel.settings.removeOne(member,{ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
-			if(dbnull(doc,next)){
-				doc.settings=clone(defaultSettings)
-				doc.save((err,doc2)=>{
-					if(dberr(err,next)){
-						var obj={
-							default:defaultSettings,
-							settings:doc2.settings
-						}
-						cb(obj)
-					}
-				})
-			}
+			cb(null)
 		}
 	})
 }

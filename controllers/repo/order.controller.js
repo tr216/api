@@ -5,7 +5,11 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		return get()
 		break
 		case 'POST':
-		return postData()
+		if(req.params.param1=='copy'){
+			copy(dbModel, member, req, res, next, cb)
+		}else{
+			return postData()
+		}
 		break
 		case 'PUT':
 		return put(dbModel, member, req, res, next, cb)
@@ -26,8 +30,9 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			case 'outbox':
 			return getOrderList(0, dbModel, member, req, res, next, cb)
 			break
-			
-		
+			case 'print':
+			return print(dbModel, member, req, res, next, cb)
+			break
 			
 			case 'errors':
 			return getErrors(dbModel, member, req, res, next, cb)
@@ -73,6 +78,76 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 	}
 
 	
+}
+
+function print(dbModel, member, req, res, next, cb){
+	var id=req.params.param2 || req.body['id'] || req.query.id || ''
+	if(id=='')
+		return error.param2(req,next)
+
+	dbModel.orders.findOne({ _id: id},(err,doc)=>{
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
+				var module=doc.ioType==0?'order.outbox':'order.inbox'
+				printHelper.print(dbModel,module,doc,(req.query.designId || ''),(err,renderedCode)=>{
+					if(!err){
+						cb(renderedCode)
+					}else{
+						next(err)
+					}
+				})
+			}
+		}
+	})
+}
+
+function copy(dbModel, member, req, res, next, cb){
+	var id=req.params.param2 || req.body['id'] || req.query.id || ''
+	var newName=req.body['newName'] || req.body['name'] || ''
+	if(id=='')
+		return error.param2(req,next)
+
+	dbModel.orders.findOne({ _id: id},(err,doc)=>{
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
+				var data=doc.toJSON()
+				data._id=undefined
+				delete data._id
+				if(newName.length==16){
+					data.ID.value=newName
+				}else{
+					data.ID.value=''
+				}
+
+				var newDoc = new dbModel.orders(data)
+				if(!epValidateSync(newDoc,next))
+					return
+				newDoc.createdDate=new Date()
+				newDoc.modifiedDate=new Date()
+				newDoc.orderStatus='Draft'
+				newDoc.orderErrors=[]
+				newDoc.localErrors=[]
+				newDoc.uuid.value=uuid.v4()
+
+				dbModel.integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
+					if(dberr(err,next)){
+						if(eIntegratorDoc==null){
+							return next({code: 'ENTEGRATOR', message: 'Entegrator bulanamadi.'})
+						}
+						documentHelper.yeniSiparisNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc2)=>{
+							newDoc2.save((err, newDoc3)=>{
+								if(dberr(err,next)){
+									var obj=newDoc3.toJSON()
+									obj['newName']=obj.ID.value
+									cb(obj)
+								} 
+							})
+						})
+					}
+				})
+			}
+		}
+	})
 }
 
 function post(dbModel, member, req, res, next, cb){

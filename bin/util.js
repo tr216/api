@@ -715,9 +715,6 @@ exports.e_invoice2xml=function(invoiceObject,rootName='Invoice'){
 	}
 
 	jsObject=einvoiceXmlHazirla(jsObject)
-    //jsObject=exports.renameObjectProperty(jsObject,einvoiceRenameKeys)
-
-    //fs.writeFileSync(fileName + '.json', JSON.stringify(jsObject,null,2),'utf8')
     
     var options={
     	attributeString:'attr',
@@ -769,24 +766,19 @@ exports.e_invoice2xml=function(invoiceObject,rootName='Invoice'){
   exports.e_invoiceXslt=function(jsObject){
 
   	var xsltString=''
-    // var html=''
-    // fs.writeFileSync(fileName + '.xml', xmlString,'utf8')
+  
     if(jsObject.additionalDocumentReference!=undefined){
     	jsObject.additionalDocumentReference.forEach((e,index)=>{
     		if((e.documentType.value || '').toLowerCase() == 'xslt' )
     			if(e.attachment.embeddedDocumentBinaryObject.value!='') {
-                    //xsltString=atob(e.attachment.embeddedDocumentBinaryObject.value)
                     xsltString=e.attachment.embeddedDocumentBinaryObject.value
                   }
 
                 })
     }
 
-    //fs.writeFileSync(fileName + '.xslt', xsltString,'utf8')
     
     return xsltString
-
-    //cb(null,html)
   }
 
   exports.eInvoiceRenameKeys=(key)=>{
@@ -1436,12 +1428,10 @@ exports.renderFiles=(files,data,cb)=>{
 
 		code=includeCode + code
 
-		fs.writeFileSync(path.join('../temp','code.ejs'),code,'utf8')
-		fs.writeFileSync(path.join('../temp','data.json'),JSON.stringify(data,null,2),'utf8')
+
 
 		var renderedCode = ejs.render(code,{data:data})
 
-		fs.writeFileSync(path.join('../temp','renderedCode.ejs'),renderedCode,'utf8')
 		cb(null,renderedCode)
 		
 		

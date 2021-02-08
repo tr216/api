@@ -52,8 +52,11 @@ function copy(dbModel, member, req, res, next, cb){
 						if(!epValidateSync(newDoc,next))
 					return
 						newDoc.save((err, newDoc2)=>{
-							if(dberr(err,next))
-								cb(newDoc2)
+							if(dberr(err,next)){
+								var obj=newDoc2.toJSON()
+								obj['newName']=data.name
+								cb(obj)
+							}
 						})
 					}
 				})

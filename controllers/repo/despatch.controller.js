@@ -5,7 +5,10 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 		return get()
 		break
 		case 'POST':
-		return postData()
+		
+			return postData()
+		
+		
 		break
 		case 'PUT':
 		return put(dbModel, member, req, res, next, cb)
@@ -26,9 +29,9 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 			case 'outbox':
 			return getDespatchList(0, dbModel, member, req, res, next, cb)
 			break
-			// case 'despatch':
-			// return getDespatch(dbModel, member, req, res, next, cb)
-			// break
+			case 'print':
+			return print(dbModel, member, req, res, next, cb)
+			break
 			case 'errors':
 			case 'logs':
 			eDespatchService.get(dbModel,`/${req.params.param1}/${req.params.param2}`,{},(err,data)=>{
@@ -82,6 +85,8 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 				
 				case 'importoutbox':
 				return importOutbox(dbModel, member, req, res, next, cb)
+				case 'copy':
+				return copy(dbModel, member, req, res, next, cb)
 				default:
 				return error.method(req, next)
 				
@@ -94,6 +99,85 @@ module.exports = (dbModel, member, req, res, next, cb)=>{
 
 	
 }
+
+function print(dbModel, member, req, res, next, cb){
+	var id=req.params.param2 || req.body['id'] || req.query.id || ''
+	if(id=='')
+		return error.param2(req,next)
+	dbModel.despatches.findOne({ _id: id},(err,doc)=>{
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
+				if(doc.ioType==0){
+					var module=doc.ioType==0?'despatch.outbox':'despatch.inbox'
+						printHelper.print(dbModel,module,doc,(req.query.designId || ''),(err,renderedCode)=>{
+							if(!err){
+								cb(renderedCode)
+							}else{
+								next(err)
+							}
+						})
+				}else{
+					eDespatchService.getFile(dbModel,`/view/${id}`,{},(err,data)=>{
+						
+						if(dberr(err,next)){
+							cb({file:{fileName:id,data:data}})
+						}
+					})
+				}
+			}
+		}
+	})
+}
+
+function copy(dbModel, member, req, res, next, cb){
+	var id=req.params.param2|| req.body['id'] || req.query.id || ''
+	var newName=req.body['newName'] || req.body['name'] || ''
+	if(id=='')
+		return error.param2(req,next)
+
+	dbModel.despatches.findOne({ _id: id},(err,doc)=>{
+		if(dberr(err,next)){
+			if(dbnull(doc,next)){
+				var data=doc.toJSON()
+				data._id=undefined
+				delete data._id
+				if(newName.length==16){
+					data.ID.value=newName
+				}else{
+					data.ID.value=''
+				}
+
+				var newDoc = new dbModel.despatches(data)
+				if(!epValidateSync(newDoc,next))
+					return
+				newDoc.createdDate=new Date()
+				newDoc.modifiedDate=new Date()
+				newDoc.despatchStatus='Draft'
+				newDoc.despatchErrors=[]
+				newDoc.localErrors=[]
+				newDoc.uuid.value=uuid.v4()
+				dbModel.integrators.findOne({_id:newDoc.eIntegrator},(err,eIntegratorDoc)=>{
+					if(dberr(err,next)){
+						if(eIntegratorDoc==null){
+							return next({code: 'ENTEGRATOR', message: 'Entegrator bulanamadi.'})
+						}
+						documentHelper.yeniIrsaliyeNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc2)=>{
+							newDoc2.save((err, newDoc3)=>{
+								if(dberr(err,next)){
+									var obj=newDoc3.toJSON()
+									obj['newName']=obj.ID.value
+									cb(obj)
+								} 
+							})
+						})
+					}
+				})
+			}
+		}
+	})
+}
+
+
 
 function post(dbModel, member, req, res, next, cb){
 	var data = req.body || {}
@@ -261,6 +345,12 @@ function fazlaliklariTemizleDuzelt(data){
 		if((data.sellerSupplierParty.party || '')!=''){
 			if((data.sellerSupplierParty.party._id || '')=='')
 				data.sellerSupplierParty.party._id=null
+		}
+	}
+
+	if(data.issueTime.value.length<8){
+		if(data.issueTime.value.length==5){
+			data.issueTime.value+=':00'
 		}
 	}
 	return data
@@ -510,7 +600,7 @@ function getEDespatchUserList(dbModel, member, req, res, next, cb){
 }
 
 function deleteItem(dbModel, member, req, res, next, cb){
-	console.log('despatch.deleteItem calisti')
+	
 	if(req.params.param1==undefined)
 		return error.param1(req, next)
 	

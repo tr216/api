@@ -55,7 +55,9 @@ function copy(dbModel, member, req, res, next, cb){
 
 				newDoc.save((err, newDoc2)=>{
 					if(dberr(err,next)){
-						cb(newDoc2)
+						var obj=newDoc2.toJSON()
+						obj['newName']=data.partyName.name.value
+						cb(obj)
 					} 
 				})
 			}
