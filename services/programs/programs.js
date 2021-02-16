@@ -75,25 +75,8 @@ function fileExporter(dbModel,programDoc,data,cb){
 			// 	tempIndex++
 			util.renderFiles(programDoc.files,docs,(err,renderedCode)=>{
 				if(!err){
-
 					runRendered(renderedCode,(err,veri)=>{
-
 						cb(err,veri)
-						// if(!err){
-						// 	if(typeof veri=='string'){
-						// 		sonuc+=veri + '\r\n'
-						// 	}else if(Array.isArray(veri)){
-						// 		veri.forEach((e)=>{
-						// 			sonuc+=e.toString() + '\r\n'
-						// 		})
-						// 	}else{
-						// 		sonuc +=veri.toString()
-						// 	}
-							
-						// 	cb(null,veri)
-						// }else{
-						// 	cb(err)
-						// }
 					})
 				}else{
 					console.error(err)
@@ -104,11 +87,11 @@ function fileExporter(dbModel,programDoc,data,cb){
 		// ,500,false,(err)=>{
 		// 	cb(err,sonuc)
 		// 	})
-		}else{
-			console.error('err3:',err)
-			cb(err)
-		}
-	})
+	}else{
+		console.error('err3:',err)
+		cb(err)
+	}
+})
 }
 
 function fileImporter(dbModel,programDoc,data,cb){
@@ -129,11 +112,46 @@ function fileImporter(dbModel,programDoc,data,cb){
 					}else{
 						dizi=veri
 					}
+
 					dizi.forEach((e)=>{
 						if(e.collection==undefined)
 							e.collection=programDoc.collections[0].name
 					})
-					insertUpdateCollection(dbModel,dizi,cb)
+					
+					var collection=dizi[0].collection
+					var s=''
+					switch(collection){
+						case 'invoices':
+						s='fatura'
+						break
+						case 'despatches':
+						s='irsaliye'
+						break
+						case 'orders':
+						s='sipariş'
+						break
+						case 'orders':
+						s='mahsup fişi'
+						break
+						default:
+						s=collection
+						break
+					}
+
+					insertUpdateCollection(dbModel,dizi,(err)=>{
+						var data={}
+						if(!err){
+							data.status='success'
+							data.text=`${dizi.length} adet ${s} içeri alma islemi basarili`
+							cb(null,data.text)
+						}else{
+							data.status='error'
+							data.text=`${s} içeri alma işleminde hata: ${err.name || err.code} - ${err.message || err.name}`
+							cb(err)
+						}
+
+						ispiyonService.post(dbModel,`/notify`,data)
+					})
 				}else{
 					cb(err)
 				}
@@ -486,8 +504,8 @@ function insertUpdateCollection(dbModel,data,callback){
 			if(!epValidateSync(newDoc,cb))
 				return
 			switch(collection){
-				case 'despatches':
-				saveDespatch(dbModel, newDoc,cb)
+				case 'invoices':
+				saveInvoice(dbModel, newDoc,cb)
 				break
 				case 'despatches':
 				saveDespatch(dbModel, newDoc,cb)
@@ -502,11 +520,14 @@ function insertUpdateCollection(dbModel,data,callback){
 				})
 				break
 			}
-		},0,true,callback)
+		},0,true,(err)=>{
+			callback(err)
+		})
 	}catch(tryErr){
-		return cb({code:tryErr.name || 'PARSING_ERROR',message:tryErr.message || 'execCmd error' })
+		callback({code:tryErr.name || 'PARSING_ERROR',message:tryErr.message || 'execCmd error' })
 	}
 }
+
 
 function saveDespatch(dbModel, newDoc,cb){
 	if(newDoc.localDocumentId=='')
@@ -522,7 +543,56 @@ function saveDespatch(dbModel, newDoc,cb){
 						documentHelper.yeniIrsaliyeNumarasi(dbModel,eIntegratorDoc,newDoc,(err,newDoc2)=>{
 							newDoc2.save((err,newDoc3)=>{
 								if(!err){
-									cb(null,newDoc3._id)
+									var partyDizi=[]
+									if(newDoc3.ioType==0){
+										if(newDoc3.deliveryCustomerParty){
+											if(newDoc3.deliveryCustomerParty.party){
+												var obj=clone(newDoc3.deliveryCustomerParty.party)
+												obj['partyType']='Customer'
+												partyDizi.push(obj)
+											}
+										}
+										if(newDoc3.buyerCustomerParty){
+											if(newDoc3.buyerCustomerParty.party){
+												var obj=clone(newDoc3.buyerCustomerParty.party)
+												obj['partyType']='Customer'
+												partyDizi.push(obj)
+											}
+										}
+									}else{
+										if(newDoc3.despatchSupplierParty){
+											if(newDoc3.despatchSupplierParty.party){
+												var obj=clone(newDoc3.despatchSupplierParty.party)
+												obj['partyType']='Vendor'
+												partyDizi.push(obj)
+											}
+										}
+										if(newDoc3.sellerSupplierParty){
+											if(newDoc3.sellerSupplierParty.party){
+												var obj=clone(newDoc3.sellerSupplierParty.party)
+												obj['partyType']='Vendor'
+												partyDizi.push(obj)
+											}
+										}
+									}
+									autoNewParties(dbModel,partyDizi,()=>{
+										var dizi=[]
+										newDoc3.despatchLine.forEach((e)=>{
+											if(e.item){
+												if(e.item.name){
+													if(e.item.name.value){
+														dizi.push(clone(e.item))
+													}
+												}
+											}
+											
+										})
+
+										
+										autoNewItems(dbModel,dizi,()=>{
+											cb(null,newDoc3._id)
+										})
+									})
 								}else{
 									cb(err)
 								}
@@ -537,6 +607,92 @@ function saveDespatch(dbModel, newDoc,cb){
 			}
 		}
 	})
+}
+
+function autoNewParties(dbModel,dizi,callback){
+	try{
+		tempLog('autoNewParties.json',JSON.stringify(dizi,null,2))
+		var index=0
+		function calistir(cb){
+			if(index>=dizi.length)
+				return cb()
+
+			dbModel.autonew_parties.find({'partyName.name.value':dizi[index].partyName.name.value}).limit(1).exec((err,docs)=>{
+				if(dberr(err,cb)){
+					if(docs.length==0){
+						dbModel.parties.find({'partyName.name.value':dizi[index].partyName.name.value}).limit(1).exec((err,docs)=>{
+							if(dberr(err,cb)){
+								if(docs.length==0){
+									var newDoc=new dbModel.autonew_parties(dizi[index])
+									newDoc.save((err,newDoc2)=>{
+										index++
+										setTimeout(calistir,0,cb)
+									})
+								}else{
+									index++
+									setTimeout(calistir,0,cb)
+								}
+							}
+						})
+					}else{
+						index++
+						setTimeout(calistir,0,cb)
+					}
+				}
+			})
+		}
+
+		calistir((err)=>{
+			callback(null)
+		})
+	}catch(tryErr){
+		errorLog('autoNewItems',tryErr)
+		callback(null)
+	}
+}
+
+function autoNewItems(dbModel,dizi,callback){
+	try{
+		
+		var index=0
+		function calistir(cb){
+			if(index>=dizi.length)
+				return cb()
+
+			dbModel.autonew_items.find({'name.value':dizi[index].name.value}).limit(1).exec((err,docs)=>{
+				if(dberr(err,cb)){
+					if(docs.length==0){
+						dbModel.items.find({'name.value':dizi[index].name.value}).limit(1).exec((err,docs)=>{
+							if(dberr(err,cb)){
+								if(docs.length==0){
+									dizi[index]['itemType']='item'
+									var newDoc=new dbModel.autonew_items(dizi[index])
+									newDoc.save((err,newDoc2)=>{
+										index++
+										setTimeout(calistir,0,cb)
+									})
+								}else{
+									index++
+									setTimeout(calistir,0,cb)
+								}
+							}
+						})
+					}else{
+						index++
+						setTimeout(calistir,0,cb)
+					}
+				}
+			})
+			
+		}
+
+		calistir((err)=>{
+			callback(null)
+		})
+	}catch(tryErr){
+		errorLog('autoNewItems',tryErr)
+		callback(null)
+	}
 }
 
 function saveInvoice(dbModel, newDoc,cb){

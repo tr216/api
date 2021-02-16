@@ -1,6 +1,9 @@
 module.exports=function(conn){
 	var schema = mongoose.Schema({
-		partyType:{ type: String, trim:true, default: '',enum:['Customer','Vendor','Both','Agency'],index:true},
+		partyId: {type: mongoose.Schema.Types.ObjectId, ref: 'parties', default:null},
+		generated: {type: Boolean, default: false},
+		cancelled: {type: Boolean, default: false},
+		partyType:{ type: String, trim:true, default: '',enum:['Customer','Vendor','Both','Agency']},
 		mainParty: {type: mongoose.Schema.Types.ObjectId, 
 			ref: 'parties',
 			validate: {
@@ -30,7 +33,7 @@ module.exports=function(conn){
 		},
 		contact:dbType.contactType,
 		person:dbType.personType,
-		tags:{ type: String, trim:true, default: '',index:true},
+		tags:{ type: String, trim:true, default: ''},
 		passive:{type:Boolean , default:false},
 		createdDate: { type: Date,default: Date.now},
 		modifiedDate:{ type: Date,default: Date.now}
@@ -54,11 +57,11 @@ module.exports=function(conn){
 	schema.on('init', function(model) {
 
 	})
-	
+
 
 	schema.plugin(mongoosePaginate)
 	schema.plugin(mongooseAggregatePaginate)
-	
+
 	schema.index({
 		"partyName.name.value":1,
 		"partyType":1,
@@ -72,10 +75,10 @@ module.exports=function(conn){
 		"tags":1
 	})
 
-	var collectionName='parties'
+	var collectionName='autonew_parties'
 	var model=conn.model(collectionName, schema)
-	
+
 	model.removeOne=(member, filter,cb)=>{ sendToTrash(conn,collectionName,member,filter,cb) }
-	
+
 	return model
 }

@@ -23,12 +23,15 @@ exports.get=(endpoint, params, cb)=>{
 		try{
 			var resp=JSON.parse(body)
 			if(resp.success){
-				cb(null,resp.data)
+				if(cb)
+					cb(null,resp.data)
 			}else{
-				cb(resp.error)
+				if(cb)
+					cb(resp.error)
 			}
 		}catch(e){
-			cb(e)
+			if(cb)
+				cb(e)
 		}
 	})
 }
@@ -49,9 +52,14 @@ exports.getFile=(endpoint, params, cb)=>{
 	}
 
 	request(options, (error, response, body)=>{
-		if(error)
-			return cb(error)
-		cb(null,body)
+		if(error){
+			if(cb)
+				return cb(error)
+			else
+				return
+		}
+		if(cb)
+			cb(null,body)
 	})
 }
 
@@ -79,24 +87,30 @@ exports.post=(endpoint,jsonData, cb)=>{
 				try{
 					var resp=JSON.parse(body)
 					if(resp.success){
-						cb(null,resp.data)
+						if(cb)
+							cb(null,resp.data)
 					}else{
-						cb(resp.error)
+						if(cb)
+							cb(resp.error)
 					}
 
 				}catch(e){
-					cb(e)
+					if(cb)
+						cb(e)
 				}
 			}else{
 				if(body.success){
-					cb(null,body.data)
+					if(cb)
+						cb(null,body.data)
 				}else{
-					cb(body.error)
+					if(cb)
+						cb(body.error)
 				}
 			}
 
 		}else{
-			cb(error?error:body.error)
+			if(cb)
+				cb(error?error:body.error)
 		}
 	})
 
@@ -123,9 +137,11 @@ exports.put=(endpoint, jsonData, cb)=>{
 				try{
 					var resp=JSON.parse(body)
 					if(resp.success){
-						cb(null,resp.data)
+						if(cb)
+							cb(null,resp.data)
 					}else{
-						cb(resp.error)
+						if(cb)
+							cb(resp.error)
 					}
 
 				}catch(e){
@@ -133,13 +149,16 @@ exports.put=(endpoint, jsonData, cb)=>{
 				}
 			}else{
 				if(body.success){
-					cb(null,body.data)
+					if(cb)
+						cb(null,body.data)
 				}else{
-					cb(body.error)
+					if(cb)
+						cb(body.error)
 				}
 			}
 		}else{
-			cb(error?error:body.error)
+			if(cb)
+				cb(error?error:body.error)
 		}
 	})
 
@@ -161,17 +180,23 @@ exports.delete=(endpoint, cb)=>{
 
 	request(options, (error, response, body)=>{
 		if(error){
-			return cb(error)
+			if(cb)
+				return cb(error)
+			else
+				return
 		}
 		try{
 			var resp=JSON.parse(body)
 			if(resp.success){
-				cb(null,(resp.data || 'ok'))
+				if(cb)
+					cb(null,(resp.data || 'ok'))
 			}else{
-				cb(resp.error)
+				if(cb)
+					cb(resp.error)
 			}
 		}catch(e){
-			cb(e)
+			if(cb)
+				cb(e)
 		}
 	})
 }
@@ -218,6 +243,6 @@ module.exports=(url)=>{
 			}
 			return exports.delete(endpoint,cb)
 		}
-			
+
 	}
 }

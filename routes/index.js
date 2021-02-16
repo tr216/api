@@ -40,6 +40,7 @@ function clientControllers(app){
 		}
 	})
 
+	
 	app.all('/api/v1/:dbId/:func', (req, res, next)=>{
 		setRepoAPIFunctions(req,res,next)
 	})

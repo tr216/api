@@ -71,7 +71,7 @@ function getList(dbModel, member, req, res, next, cb){
 	if((req.query.pageSize || req.query.limit))
 		options['limit']=req.query.pageSize || req.query.limit
 
-	var filter = {partyType:'Customer'}
+	var filter = {partyType:{$in:['Customer','Both']}}
 
 
 	if((req.query.passive || '')!='')
@@ -133,7 +133,7 @@ function post(dbModel, member, req, res, next, cb){
 	data._id=undefined
 
 	var newDoc = new dbModel.parties(data)
-	newDoc.partyType='Customer'
+	newDoc.partyType=newDoc.partyType || 'Customer'
 	if(!epValidateSync(newDoc,next))
 		return
 
@@ -158,8 +158,8 @@ function put(dbModel, member, req, res, next, cb){
 	dbModel.parties.findOne({ _id: data._id},(err,doc)=>{
 		if(dberr(err,next)){
 			if(dbnull(doc,next)){
-				if(doc.partyType!='Customer' &&  doc.partyType!='CustomerAgency')
-					return next({code: 'WRONG_PARAMETER', message: 'Yanlis partyType'})
+				// if(doc.partyType!='Customer' &&  doc.partyType!='CustomerAgency')
+				// 	return next({code: 'WRONG_PARAMETER', message: 'Yanlis partyType'})
 
 				var doc2 = Object.assign(doc, data)
 				var newDoc = new dbModel.parties(doc2)

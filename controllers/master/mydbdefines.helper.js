@@ -1,9 +1,11 @@
 exports.getList=function(member,req,res,next,cb){
 	db.dbdefines.find({deleted:false, passive:false, $or:[{owner:member._id},{'authorizedMembers.memberId':member._id}]}).populate('owner','_id username name lastName modules').exec((err,docs)=>{
 		if(!err){
-
+			console.log(`mydbdefines member._id:`,member._id)
+			
 			var data=[]
 			docs.forEach((e)=>{
+				console.log(`mydbdefines db:`,e.dbName)
 				var auth={owner:false,canRead:false,canWrite:false,canDelete:false}
 
 				if(e.owner._id.toString()==member._id.toString()){

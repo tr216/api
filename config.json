@@ -24,6 +24,10 @@
 			"url":"http://localhost:3800",
 			"enabled":true
 		},
+		"ispiyonService":{
+			"url":"http://localhost:3900",
+			"enabled":true
+		},
 		"tmpDir":"/tmp"
 	},
 	"development":{
@@ -31,8 +35,7 @@
 			"port" : 3500
 		},
 		"mongodb": {
-			"address":"mongodb://localhost:27017/etuliaportal",
-			"address11":"mongodb://localhost:27017/plasetdb",
+			"address":"mongodb://localhost:27017/local_masterdb",
 			"userAddress":"mongodb://localhost:27017/"
 		},
 		"eDespatchService":{
@@ -49,6 +52,10 @@
 		},
 		"connectorService":{
 			"url":"http://localhost:3800",
+			"enabled":true
+		},
+		"ispiyonService":{
+			"url":"http://localhost:3900",
 			"enabled":true
 		},
 		"tmpDir":"C:\\arge\\tr216\\temp"
@@ -75,6 +82,10 @@
 		},
 		"connectorService":{
 			"url":"http://localhost:3801",
+			"enabled":true
+		},
+		"ispiyonService":{
+			"url":"http://localhost:3901",
 			"enabled":true
 		},
 		"tmpDir":"C:\\arge\\tr216\\temp"
