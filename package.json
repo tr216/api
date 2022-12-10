@@ -22,7 +22,7 @@
     "ejs-locals": "*",
     "email-validator": "^2.0.3",
     "eval": "^0.1.4",
-    "express": "^4.16.4",
+    "express": "^4.17.3",
     "express-session": "*",
     "hashids": "^1.1.4",
     "html-to-text": "^7.0.0",
